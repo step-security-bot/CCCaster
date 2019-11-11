@@ -61,6 +61,7 @@
 #define CC_PERF_FREQ_ADDR           ( ( uint64_t * ) 0x774A80 ) // Value of QueryPerformanceFrequency for game FPS
 #define CC_SKIPPABLE_FLAG_ADDR      ( ( uint32_t * ) 0x74D99C ) // Flag that indicates a skippable state when in-game
 #define CC_ALIVE_FLAG_ADDR          ( ( uint8_t * )  0x76E650 ) // Flag that indicates the game is alive
+#define CC_REPLAY_CREATED_ADDR      ( ( uint32_t * ) 0x774C30 ) // Flag that indicates whether a replay file has been written
 
 // Some menu state counter, incremented for each open menu, decremented when menu closes
 #define CC_MENU_STATE_COUNTER_ADDR  ( ( uint32_t * ) 0x767440 )
@@ -92,6 +93,7 @@
 #define CC_BUTTON_FN2               ( 0x0200 ) // Training reset
 #define CC_BUTTON_CONFIRM           ( 0x0400 )
 #define CC_BUTTON_CANCEL            ( 0x0800 )
+#define CC_PLAYER_FACING            ( 0x0002 )
 
 #define CC_GAME_MODE_ADDR           ( ( uint32_t * ) 0x54EEE8 ) // Current game mode, constants below
 

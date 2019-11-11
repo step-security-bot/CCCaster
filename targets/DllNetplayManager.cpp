@@ -8,15 +8,15 @@
 #include <cmath>
 #include <unordered_map>
 #include <unordered_set>
+#include <ctime>
 #include <fstream>
 
 using namespace std;
 
 
 // Max allowed retry menu index (once again, chara select, save replay).
-// Prevent saving replays during rollback for obvious reasons.
-// Prevent saving replays on Wine because MBAA crashes even without us.
-#define MAX_RETRY_MENU_INDEX ( ( config.rollback || config.mode.isWine() ) ? 1 : 2 )
+// Prevent returning to main menu
+#define MAX_RETRY_MENU_INDEX ( 2 )
 
 // Extra number to add to preserveStartIndex, this is a safety buffer for chained spectators.
 #define PRESERVE_START_INDEX_BUFFER ( 5 )
@@ -582,6 +582,18 @@ void NetplayManager::setState ( NetplayState state )
             _remoteRetryMenuIndex = -1;
         }
 
+        // Entering Game
+        if ( state == NetplayState::InGame )
+        {
+            inGameIndexes[ getIndex() - _startIndex ] = true;
+            RngState *rngState = new RngState ( 0 );
+            rngState->rngState0 = *CC_RNG_STATE0_ADDR;
+            rngState->rngState1 = *CC_RNG_STATE1_ADDR;
+            rngState->rngState2 = *CC_RNG_STATE2_ADDR;
+            copy ( CC_RNG_STATE3_ADDR, CC_RNG_STATE3_ADDR + CC_RNG_STATE3_SIZE, rngState->rngState3.begin() );
+            _roundRngStates.push_back(rngState);
+        }
+
         // Entering RetryMenu
         if ( state == NetplayState::RetryMenu )
         {
@@ -594,6 +606,7 @@ void NetplayManager::setState ( NetplayState state )
         if ( _state == NetplayState::RetryMenu )
         {
             AsmHacks::autoReplaySaveStatePtr = 0;
+            resetInGameIndexes();
         }
 
         // Reset state variables
@@ -1000,6 +1013,59 @@ bool NetplayManager::isValidNext ( NetplayState next )
     return ( it->second.find ( next.value ) != it->second.end() );
 }
 
+void NetplayManager::exportInputs() {
+    char buf[1000];
+    char namebuf[1000];
+    char namebuf2[1000];
+    char timebuf[200];
+
+    std::time_t now = time( NULL );
+    strftime( timebuf, 20, "%y%m%d-%H%M%S", localtime( &now ) );
+
+    sprintf( namebuf, "ReplayVS/%sx%s_%s.repraw",
+             getShortCharaName( *CC_P1_CHARACTER_ADDR ),
+             getShortCharaName( *CC_P2_CHARACTER_ADDR) ,
+             timebuf );
+    ofstream repFile2 ( namebuf, ios::out );
+    vector<int> c = getInGameIndexes();
+    repFile2 << c.size() << endl;
+    for ( int q : c ) {
+        sprintf( buf, "%d\n", _inputs[0].getEndFrame( q ) );
+        repFile2 << buf;
+        for ( int i = 0; i < _inputs[0].getEndFrame( q ); ++i ) {
+            sprintf( buf, "%04x %04x\n",
+                     _inputs[0].get ( q, i ),
+                     _inputs[1].get ( q, i ) );
+            repFile2 << buf;
+        }
+    }
+    repFile2.close();
+
+    sprintf( namebuf, "ReplayVS/%sx%s_%s.rngstates",
+             getShortCharaName( *CC_P1_CHARACTER_ADDR ),
+             getShortCharaName( *CC_P2_CHARACTER_ADDR ),
+             timebuf );
+    ofstream repFile ( namebuf, ios::out );
+    vector<int> w = getInGameIndexes();
+    repFile << w.size() << endl;
+    repFile << _roundRngStates.size() << endl;
+    for ( RngState* rng : _roundRngStates ) {
+        repFile << rng->dump() << endl;
+    }
+    repFile.close();
+
+    /*
+    sprintf( namebuf2, "%s2.rep", ( char* ) AsmHacks::replayName );
+    ReplayCreator::ReplayFile f;
+    ReplayCreator r;
+    r.load( &f, ( char* )AsmHacks::replayName );
+    r.fixReplay( &f, namebuf );
+    r.dump( f, namebuf2 );
+    */
+
+    exported = true;
+}
+
 void NetplayManager::exportResults() {
     ofstream resFile;
     resFile.open( "results.csv", ios::out | ios::app );
@@ -1026,4 +1092,18 @@ void NetplayManager::exportResults() {
     }
     resFile << buf << endl;
     resFile.close();
+}
+
+void NetplayManager::resetInGameIndexes() {
+    for (int i = 0; i < 30; ++i ){
+        inGameIndexes[i] = false;
+    }
+}
+
+vector<int> NetplayManager::getInGameIndexes() {
+    vector<int> v;
+    for (int i = 0; i < 30; ++i ){
+        if ( inGameIndexes[i] ) v.push_back(i);
+    }
+    return v;
 }

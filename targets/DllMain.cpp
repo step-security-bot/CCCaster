@@ -65,12 +65,12 @@ using namespace std;
              netMan.getState(), netMan.getIndexedFrame(), ## __VA_ARGS__ )
 
 #define LOG_SYNC_CHARACTER(N)                                                                                       \
-    LOG_SYNC ( "P%u: C=%u; M=%u; c=%u; seq=%u; st=%u; hp=%u; rh=%u; gb=%.1f; gq=%.1f; mt=%u; ht=%u; x=%d; y=%d",    \
+    LOG_SYNC ( "P%u: C=%u; M=%u; c=%u; seq=%u; st=%u; hp=%u; rh=%u; gb=%.1f; gq=%.1f; mt=%u; ht=%u; x=%d; y=%d; f=%d",    \
                N, *CC_P ## N ## _CHARACTER_ADDR, *CC_P ## N ## _MOON_SELECTOR_ADDR,                                 \
                *CC_P ## N ## _COLOR_SELECTOR_ADDR, *CC_P ## N ## _SEQUENCE_ADDR, *CC_P ## N ## _SEQ_STATE_ADDR,     \
                *CC_P ## N ## _HEALTH_ADDR, *CC_P ## N ## _RED_HEALTH_ADDR, *CC_P ## N ## _GUARD_BAR_ADDR,           \
                *CC_P ## N ## _GUARD_QUALITY_ADDR,  *CC_P ## N ## _METER_ADDR, *CC_P ## N ## _HEAT_ADDR,             \
-               *CC_P ## N ## _X_POSITION_ADDR, *CC_P ## N ## _Y_POSITION_ADDR )
+               *CC_P ## N ## _X_POSITION_ADDR, *CC_P ## N ## _Y_POSITION_ADDR, *CC_P ## N ## _FACING_FLAG_ADDR)
 
 
 // Main application state
@@ -91,6 +91,7 @@ ENUM ( Variable, WorldTime, GameMode, RoundStart,
 // Global stopping flag
 bool stopping = false;
 
+NetplayManager* netManPtr = 0;
 
 struct DllMain
         : public Main
@@ -248,11 +249,12 @@ struct DllMain
                             {
                                 shouldChangeDelayRollback = true;
 
-                                changeConfig.value = ChangeConfig::Delay;
                                 changeConfig.indexedFrame = netMan.getIndexedFrame();
                                 if ( KeyboardState::isDown( VK_MENU ) && netMan.config.mode.isOffline() ) {
+                                    changeConfig.value = ChangeConfig::RollbackDelay;
                                     changeConfig.rollbackDelay = delay;
                                 } else {
+                                    changeConfig.value = ChangeConfig::Delay;
                                     changeConfig.delay = delay;
                                 }
                                 changeConfig.rollback = netMan.getRollback();
@@ -1005,7 +1007,9 @@ struct DllMain
         }
 
         // Entering CharaSelect OR entering InGame
-        if ( !clientMode.isOffline() && ( state == NetplayState::CharaSelect || state == NetplayState::InGame ) )
+        if ( ( state == NetplayState::CharaSelect || state == NetplayState::InGame ||
+               state == NetplayState::Loading )
+             && !clientMode.isOffline() )
         {
             // Indicate we should sync the RngState now
             shouldSyncRngState = true;
@@ -1784,9 +1788,6 @@ struct DllMain
                     // Manually control intro state
                     WRITE_ASM_HACK ( AsmHacks::hijackIntroState );
 
-                    // Disable auto replay save (TODO)
-                    *CC_AUTO_REPLAY_SAVE_ADDR = 0;
-
                     // Disable stage animations (TODO)
                     *CC_STAGE_ANIMATION_OFF_ADDR = 1;
                 }
@@ -1885,6 +1886,7 @@ struct DllMain
 
         ChangeMonitor::get().addRef ( this, Variable ( Variable::GameMode ), *CC_GAME_MODE_ADDR );
         ChangeMonitor::get().addRef ( this, Variable ( Variable::RoundStart ), AsmHacks::roundStartCounter );
+        netManPtr = &netMan;
 
 #ifndef RELEASE
         ChangeMonitor::get().addRef ( this, Variable ( Variable::MenuConfirmState ), AsmHacks::menuConfirmState );

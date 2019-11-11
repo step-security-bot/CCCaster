@@ -34,6 +34,8 @@ uint32_t menuConfirmState = 0;
 
 uint32_t roundStartCounter = 0;
 
+char *replayName = 0;
+
 uint32_t *autoReplaySaveStatePtr = 0;
 
 uint8_t enableEscapeToExit = true;
@@ -141,6 +143,11 @@ static void loadingStateColorCb2 ( uint32_t *singlePaletteData )
     }
 
     ++numLoadedColors;
+}
+
+extern "C" void saveReplayCb()
+{
+    netManPtr->exportInputs();
 }
 
 extern "C" void loadingStateColorCb()

@@ -156,12 +156,31 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     // Only update player controls when the overlay is NOT enabled
     if ( !DllOverlayUi::isEnabled() || ProcessManager::isWine() )
     {
-        if ( _playerControllers[localPlayer - 1] )
-            localInputs[0] = getInput ( _playerControllers[localPlayer - 1] );
+        if ( _playerControllers[localPlayer - 1] ) {
+            uint16_t input = getInput ( _playerControllers[localPlayer - 1] );
+            if ( localPlayer == 1 ) {
+                if ( *CC_P1_FACING_FLAG_ADDR )
+                    input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+            }
+            if ( localPlayer == 2) {
+                if ( *CC_P2_FACING_FLAG_ADDR )
+                    input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+            }
+            localInputs[0] = input;
+        }
 
-        if ( _playerControllers[remotePlayer - 1] )
-            localInputs[1] = getInput ( _playerControllers[remotePlayer - 1] );
-
+        if ( _playerControllers[remotePlayer - 1] ) {
+            uint16_t input = getInput ( _playerControllers[remotePlayer - 1] );
+            if ( remotePlayer == 1 ) {
+                if ( *CC_P1_FACING_FLAG_ADDR )
+                    input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+            }
+            if ( remotePlayer == 2) {
+                if ( *CC_P2_FACING_FLAG_ADDR )
+                    input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+            }
+            localInputs[1] = input;
+        }
         return;
     }
 

@@ -49,6 +49,9 @@ void initializePreLoad()
     for ( const Asm& hack : muteSpecificSfx )
         WRITE_ASM_HACK ( hack );
 
+    for ( const Asm& hack : saveReplay )
+      WRITE_ASM_HACK ( hack );
+
     WRITE_ASM_HACK ( detectAutoReplaySave );
     WRITE_ASM_HACK ( hijackEscapeKey );
     WRITE_ASM_HACK ( disableTrainingMusicReset );
@@ -198,11 +201,9 @@ void initializePostLoad()
     if ( status != MH_OK )
         LOG ( "Enable hook failed: %s", MH_StatusString ( status ) );
 
-    // We can't save replays on Wine because MBAA crashes even without us.
     // We can't hook DirectX calls on Wine (yet?).
     if ( ProcessManager::isWine() )
     {
-        *CC_AUTO_REPLAY_SAVE_ADDR = 0;
         return;
     }
 

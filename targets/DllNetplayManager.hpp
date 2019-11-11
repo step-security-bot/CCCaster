@@ -57,6 +57,12 @@ public:
     IndexedFrame getLastChangedFrame() const;
     void clearLastChangedFrame();
 
+    // Dump netplay inputs
+    bool inGameIndexes[30] = {};
+    std::vector<int> getInGameIndexes();
+    void resetInGameIndexes();
+    void exportInputs();
+
     // Log Results
     void exportResults();
 
@@ -175,6 +181,7 @@ private:
 
     // Mapping: index offset -> RngState (can be null)
     std::vector<MsgPtr> _rngStates;
+    std::vector<RngState*> _roundRngStates;
 
     // Mapping: index offset -> retry menu index (invalid is -1)
     std::vector<int8_t> _retryMenuIndicies;
@@ -184,6 +191,9 @@ private:
 
     // The remote player, ie the one where setInputs gets called for each input message
     uint8_t _remotePlayer = 2;
+
+    // Exported
+    bool exported = false;
 
     // Separate delays for p1/p2
     bool splitDelay = true;
@@ -210,3 +220,5 @@ private:
     // Get the buffered preserveStartIndex
     uint32_t getBufferedPreserveStartIndex() const;
 };
+
+extern NetplayManager* netManPtr;

@@ -2,6 +2,7 @@
 
 #include "Constants.hpp"
 #include "Exceptions.hpp"
+#include "DllNetplayManager.hpp"
 
 #include <vector>
 #include <array>
@@ -47,6 +48,9 @@ extern uint32_t currentMenuIndex;
 // The value of menuConfirmState is set to 1 if a menu confirm happens.
 // A menu confirm will only go through if menuConfirmState is greater than 1.
 extern uint32_t menuConfirmState;
+
+// Filename of the saved replay
+extern char* replayName;
 
 // Round start counter, this gets incremented whenever players can start moving
 extern uint32_t roundStartCounter;
@@ -247,6 +251,42 @@ static const AsmList detectRoundStart =
     // Write this last due to dependencies
     { ( void * ) 0x440CC5, {
         0xEB, 0x4F                                                  // jmp 0x440D16
+    } },
+};
+
+extern "C" void saveReplayCb();
+
+// Copies the name of the replay
+static const AsmList saveReplay =
+{
+    { ( void * ) 0x4824D4, {
+        0xA3, INLINE_DWORD ( &replayName ),                         // mov [&replayName],eax
+        0xE9, 0x45, 0xFC, 0xFF, 0xFF,                               // jmp 0x482123
+    } },
+    { ( void * ) 0x482123, {
+        0x68, 0x34, 0xBF, 0x77, 0x00, 0x90,                         // pushl	$0x77bf34
+        0xE9, 0x10, 0x07, 0x00, 0x00,                               // jmp 0x48283e
+    } },
+    { ( void * ) 0x4830A4, {
+        0xE8, INLINE_DWORD ( ( ( char * ) &saveReplayCb ) - 0x4830A4 - 5 ),   // call callback
+        0x90, //0x90, 0x90, 0x90, 0x90, 0x90,
+        0xE9, 0xF2, 0xFE, 0xFF, 0xFF,                               // jmp 0x482FA1
+    } },
+    { ( void * ) 0x482FA1, {
+        //0x83, 0xC4, 0x04,                                         // add esp, 4
+        0x90, 0x90, 0x90,
+        //0xE9, 0x9E, 0xF8, 0xFF, 0xFF,                             // jmp 0x48283e
+        0x8B, 0x83, 0xCC, 0x00, 0x00, 0x00,                         // mov eax, [ebx+CC]
+        0xE9, 0x9E, 0xF8, 0xFF, 0xFF,                               // jmp 0x48284D
+    } },
+    // Write this last due to dependencies
+    { ( void * ) 0x482839, {
+        0xE9, 0x96, 0xFC, 0xFF, 0xFF,                               // jmp 0x4824D4
+    } },
+    // Write this last due to dependencies
+    { ( void * ) 0x482847, {
+        0xE9, 0x58, 0x08, 0x00, 0x00,                               // jmp 0x4830A4
+        0x90,                                                       // nop
     } },
 };
 
