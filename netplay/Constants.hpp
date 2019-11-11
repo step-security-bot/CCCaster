@@ -205,6 +205,8 @@
 #define MM_HOOK_CALL1_ADDR          ( ( char * )     0x40D032 )
 #define MM_HOOK_CALL2_ADDR          ( ( char * )     0x40D411 )
 
+// Allows for multiple instances of melty
+#define MULTIPLE_MELTY              ( ( char * )     0x40D25A )
 
 union IndexedFrame
 {

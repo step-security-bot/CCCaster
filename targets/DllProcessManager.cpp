@@ -82,6 +82,16 @@ void ProcessManager::connectPipe()
                 FILE_ATTRIBUTE_NORMAL,                   // default attributes
                 0 );                                     // no template file
 
+    if ( _pipe == INVALID_HANDLE_VALUE ) {
+        _pipe = CreateFile (
+                NAMED_PIPE2,                             // name of the pipe
+                GENERIC_READ | GENERIC_WRITE,            // 2-way pipe
+                FILE_SHARE_READ | FILE_SHARE_WRITE,      // R/W sharing mode
+                0,                                       // default security
+                OPEN_EXISTING,                           // open existing pipe
+                FILE_ATTRIBUTE_NORMAL,                   // default attributes
+                0 );                                     // no template file
+    }
     if ( _pipe == INVALID_HANDLE_VALUE )
         THROW_WIN_EXCEPTION ( GetLastError(), "CreateFile failed", ERROR_PIPE_START );
 

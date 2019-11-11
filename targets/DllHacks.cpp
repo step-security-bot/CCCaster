@@ -52,6 +52,7 @@ void initializePreLoad()
     for ( const Asm& hack : saveReplay )
       WRITE_ASM_HACK ( hack );
 
+    WRITE_ASM_HACK ( multiWindow );
     WRITE_ASM_HACK ( detectAutoReplaySave );
     WRITE_ASM_HACK ( hijackEscapeKey );
     WRITE_ASM_HACK ( disableTrainingMusicReset );

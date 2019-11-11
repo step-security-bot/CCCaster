@@ -300,6 +300,9 @@ static const Asm detectAutoReplaySave =
         0x59, 0x5E, 0x83, 0xC4, 0x10, 0xC2, 0x04, 0x00
     } };
 
+// Skips check of if the game is already open
+static const Asm multiWindow = { ( void * ) MULTIPLE_MELTY, { 0xEB } }; // jmp 0040D262
+
 // Force the game to go to a certain mode
 static const Asm forceGotoVersus    = { ( void * ) 0x42B475, { 0xEB, 0x3F } }; // jmp 0042B4B6
 static const Asm forceGotoVersusCPU = { ( void * ) 0x42B475, { 0xEB, 0x5C } }; // jmp 0042B4D3

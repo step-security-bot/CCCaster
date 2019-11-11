@@ -137,6 +137,17 @@ void ProcessManager::openGame ( bool highPriority )
                 0,                                                   // use default wait time
                 0 );                                                 // use default security attributes
 
+    if ( _pipe == INVALID_HANDLE_VALUE ){
+        _pipe = CreateNamedPipe (
+                NAMED_PIPE2,                                         // name of the pipe
+                PIPE_ACCESS_DUPLEX,                                  // 2-way pipe
+                PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,     // byte stream + blocking
+                1,                                                   // only allow 1 instance of this pipe
+                1024,                                                // outbound buffer size
+                1024,                                                // inbound buffer size
+                0,                                                   // use default wait time
+                0 );                                                 // use default security attributes
+    }
     if ( _pipe == INVALID_HANDLE_VALUE )
         THROW_WIN_EXCEPTION ( GetLastError(), "CreateNamedPipe failed", ERROR_PIPE_OPEN );
 
@@ -176,10 +187,18 @@ void ProcessManager::openGame ( bool highPriority )
             HANDLE tmpPipe = CreateFile ( NAMED_PIPE, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
                                           0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0 );
 
+            HANDLE tmpPipe2 = CreateFile ( NAMED_PIPE2, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                          0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0 );
+
+
             if ( tmpPipe == INVALID_HANDLE_VALUE )
                 return;
 
+            if ( tmpPipe2 == INVALID_HANDLE_VALUE )
+                return;
+
             CloseHandle ( tmpPipe );
+            CloseHandle ( tmpPipe2 );
         }
     };
 
