@@ -11,6 +11,7 @@ using namespace std;
 
 
 #define VK_TOGGLE_OVERLAY ( VK_F4 )
+#define VK_ENABLE_FRAMESTEP ( VK_F5 )
 
 extern bool stopping;
 
@@ -63,6 +64,10 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     if ( KeyboardState::isPressed ( VK_TOGGLE_OVERLAY ) )
     {
         toggleOverlay = true;
+    }
+    if ( KeyboardState::isPressed ( VK_ENABLE_FRAMESTEP ) )
+    {
+        framestepEnabled = true;
     }
 
     for ( Controller *controller : _allControllers )

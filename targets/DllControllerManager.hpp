@@ -46,6 +46,8 @@ public:
     // To be implemented
     virtual void saveMappings ( const Controller *controller ) const = 0;
 
+    bool framestepEnabled;
+
 private:
 
     std::vector<Controller *> _allControllers;

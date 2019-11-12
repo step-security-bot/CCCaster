@@ -230,6 +230,14 @@ struct DllMain
                 // Update controller state once per frame
                 KeyboardState::update();
                 updateControls ( &localInputs[0] );
+                while ( framestepEnabled && !netMan.config.mode.isOnline() ) {
+                    if ( ( GetAsyncKeyState ( VK_F6 ) & 0x1 )  == 1 )
+                        framestepEnabled = false;
+                    KeyboardState::update();
+                    updateControls ( &localInputs[0] );
+                    if ( ( GetAsyncKeyState ( VK_F7 ) & 0x1 )  == 1 )
+                        break;
+                }
 
                 if ( DllOverlayUi::isEnabled() )                                            // Overlay UI controls
                 {
