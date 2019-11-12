@@ -1111,7 +1111,7 @@ struct MainApp
                 if ( msg->getAs<ChangeConfig>().value == ChangeConfig::Delay )
                     delayChanged = true;
 
-                if ( msg->getAs<ChangeConfig>().value == ChangeConfig::Delay )
+                if ( msg->getAs<ChangeConfig>().value == ChangeConfig::RollbackDelay )
                     rollbackDelayChanged = true;
 
                 if ( msg->getAs<ChangeConfig>().value == ChangeConfig::Rollback )
