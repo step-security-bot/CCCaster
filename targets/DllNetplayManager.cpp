@@ -1018,7 +1018,6 @@ bool NetplayManager::isValidNext ( NetplayState next )
     return ( it->second.find ( next.value ) != it->second.end() );
 }
 
-<<<<<<< HEAD
 void NetplayManager::exportInputs() {
     char buf[1000];
     char namebuf[1000];

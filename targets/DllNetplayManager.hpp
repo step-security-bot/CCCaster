@@ -220,9 +220,9 @@ private:
     // Get the buffered preserveStartIndex
     uint32_t getBufferedPreserveStartIndex() const;
 
-    void sanitizePlayerName( std::string name );
+    std::string sanitizePlayerName( std::string name );
     void findAndReplaceAll( std::string& data, std::string toSearch, std::string replaceStr );
-    std::string NetplayManager::getISOTime();
+    std::string getISOTime();
 };
 
 extern NetplayManager* netManPtr;
