@@ -204,6 +204,7 @@ struct DllMain
 
             case NetplayState::CharaSelect:
             case NetplayState::Loading:
+            case NetplayState::CharaIntro:
             case NetplayState::Skippable:
             case NetplayState::RetryMenu:
             case NetplayState::ReplayMenu:
@@ -732,7 +733,8 @@ struct DllMain
         if ( dataSocket && dataSocket->isConnected()
                 && ( ( netMan.getFrame() % ( 5 * 60 ) == 0 ) || ( netMan.getFrame() % 150 == 149 ) )
                 && netMan.getState().value >= NetplayState::CharaSelect && netMan.getState() != NetplayState::Loading
-                && netMan.getState() != NetplayState::Skippable && netMan.getState() != NetplayState::RetryMenu )
+             && netman.getState() != NetplayState::CharaIntro
+             && netMan.getState() != NetplayState::Skippable && netMan.getState() != NetplayState::RetryMenu )
         {
             // Check for desyncs by periodically sending hashes
             if ( !netMan.isInRollback()
@@ -1016,7 +1018,7 @@ struct DllMain
 
         // Entering CharaSelect OR entering InGame
         if ( ( state == NetplayState::CharaSelect || state == NetplayState::InGame ||
-               state == NetplayState::Loading )
+               state == NetplayState::CharaIntro )
              && !clientMode.isOffline() )
         {
             // Indicate we should sync the RngState now
@@ -1096,7 +1098,7 @@ struct DllMain
         {
             // Versus mode in-game starts with character intros, which is a skippable state
             if ( netMan.config.mode.isVersus() && !netMan.config.mode.isReplay() )
-                netplayStateChanged ( NetplayState::Skippable );
+                netplayStateChanged ( NetplayState::CharaIntro );
             else
                 netplayStateChanged ( NetplayState::InGame );
             return;

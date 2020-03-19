@@ -638,6 +638,7 @@ uint16_t NetplayManager::getInput ( uint8_t player )
             return getCharaSelectInput ( player );
 
         case NetplayState::Loading:
+        case NetplayState::CharaIntro:
         case NetplayState::Skippable:
             // If the remote index is ahead, then we should mash to skip.
             if ( ( _startIndex + _inputs[_remotePlayer - 1].getEndIndex() ) > getIndex() + 1 )
@@ -827,7 +828,8 @@ void NetplayManager::setBothInputs ( const BothInputs& bothInputs )
 bool NetplayManager::isRemoteInputReady() const
 {
     if ( _state.value < NetplayState::CharaSelect || _state.value == NetplayState::Skippable
-            || _state.value == NetplayState::Loading || _state.value == NetplayState::RetryMenu )
+            || _state.value == NetplayState::Loading || _state.value == NetplayState::RetryMenu
+         || _state.value == NetplayState::CharaIntro )
     {
         return true;
     }
@@ -998,7 +1000,8 @@ bool NetplayManager::isValidNext ( NetplayState next )
         { NetplayState::Initial, { NetplayState::AutoCharaSelect, NetplayState::CharaSelect, NetplayState::ReplayMenu } },
         { NetplayState::AutoCharaSelect, { NetplayState::Loading } },
         { NetplayState::CharaSelect, { NetplayState::Loading } },
-        { NetplayState::Loading, { NetplayState::Skippable, NetplayState::InGame } },
+        { NetplayState::Loading, { NetplayState::CharaIntro, NetplayState::InGame } },
+        { NetplayState::CharaIntro, { NetplayState::InGame } },
         { NetplayState::Skippable, { NetplayState::InGame, NetplayState::RetryMenu } },
         { NetplayState::InGame, { NetplayState::Skippable, NetplayState::CharaSelect, NetplayState::ReplayMenu, NetplayState::RetryMenu } },
         { NetplayState::RetryMenu, { NetplayState::Loading, NetplayState::CharaSelect, NetplayState::ReplayMenu } },

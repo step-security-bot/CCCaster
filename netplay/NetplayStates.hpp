@@ -9,7 +9,9 @@
 
     { AutoCharaSelect (spectate only), CharaSelect, ReplayMenu } -> Loading
 
-    Loading -> { Skippable, InGame (training mode) }
+    Loading -> { CharaIntro, InGame (training mode) }
+
+    CharaIntro -> { InGame (versus mode) }
 
     Skippable -> { InGame (versus mode), RetryMenu }
 
@@ -25,8 +27,9 @@
 // AutoCharaSelect: Automatic character select (spectate only)
 // CharaSelect: Character select
 // Loading: Loading screen, distinct from skippable, so we can transition properly
-// Skippable: Skippable states (chara intros, round transitions, post-game, pre-retry)
+// CharaIntro: Character Introductions, distinct so pregame data can be captured properly
+// Skippable: Skippable states (round transitions, post-game, pre-retry)
 // InGame: In-game state
 // RetryMenu: Post-game retry menu
 // ReplayMenu: Replay select menu
-ENUM ( NetplayState, PreInitial, Initial, AutoCharaSelect, CharaSelect, Loading, Skippable, InGame, RetryMenu, ReplayMenu );
+ENUM ( NetplayState, PreInitial, Initial, AutoCharaSelect, CharaSelect, Loading, CharaIntro, Skippable, InGame, RetryMenu, ReplayMenu );
