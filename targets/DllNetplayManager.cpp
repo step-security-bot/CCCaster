@@ -3,6 +3,7 @@
 #include "ProcessManager.hpp"
 #include "Exceptions.hpp"
 #include "CharacterSelect.hpp"
+#include "ReplayCreator.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -1057,14 +1058,12 @@ void NetplayManager::exportInputs() {
     }
     repFile.close();
 
-    /*
     sprintf( namebuf2, "%s2.rep", ( char* ) AsmHacks::replayName );
     ReplayCreator::ReplayFile f;
     ReplayCreator r;
     r.load( &f, ( char* )AsmHacks::replayName );
-    r.fixReplay( &f, namebuf );
+    r.fixReplay( &f, namebuf, NULL );
     r.dump( f, namebuf2 );
-    */
 
     exported = true;
 }

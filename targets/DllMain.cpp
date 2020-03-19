@@ -733,7 +733,7 @@ struct DllMain
         if ( dataSocket && dataSocket->isConnected()
                 && ( ( netMan.getFrame() % ( 5 * 60 ) == 0 ) || ( netMan.getFrame() % 150 == 149 ) )
                 && netMan.getState().value >= NetplayState::CharaSelect && netMan.getState() != NetplayState::Loading
-             && netman.getState() != NetplayState::CharaIntro
+             && netMan.getState() != NetplayState::CharaIntro
              && netMan.getState() != NetplayState::Skippable && netMan.getState() != NetplayState::RetryMenu )
         {
             // Check for desyncs by periodically sending hashes
