@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "Logger.hpp"
 
 #define BUTTON_UP(BEFORE,AFTER) uint8_t (~((~BEFORE)|AFTER))
 #define BUTTON_DOWN(BEFORE,AFTER) uint8_t (~((~AFTER)|BEFORE))

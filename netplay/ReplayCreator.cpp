@@ -120,18 +120,24 @@ void ReplayCreator::load(ReplayCreator::ReplayFile* rf, char* fname) {
 }
 void ReplayCreator::fixReplay(ReplayCreator::ReplayFile* rf, char* fname, MoveData* prior) {
     //cout << "fix replay" << endl;
+    LOG( "asdf" );
     ifstream infile;
     infile.open(fname);
     string line;
     getline(infile,line);
     //cout << line << endl;
     int rounds = stoi(line);
+    LOG( "line: %s", line);
     //cout << "rounds " << rounds << endl;
+    LOG( "rounds: %d", rounds );
     for (int i = 0; i < rounds; ++i) {
         rf->rounds[i].p1Inputs.clear();
         rf->rounds[i].p2Inputs.clear();
         getline(infile,line);
+        LOG( "line: %s", line);
         int frames = stoi(line);
+        LOG( "round number: %d", i);
+        LOG( "frames: %d", frames );
         //cout << "round number  " << i << endl;
         //cout << "frames " << frames << endl;
 
@@ -170,13 +176,16 @@ void ReplayCreator::fixReplay(ReplayCreator::ReplayFile* rf, char* fname, MoveDa
             string p1Input;
             string p2Input;
             getline(infile,p1Input,' ');
+            //LOG( "p1Input: %s", p1Input);
             getline(infile,p2Input);
+            //LOG( "p2Input: %s", p2Input);
             frameInputs1.push_back( p1Input );
             frameInputs2.push_back( p2Input );
 
         }
         //cout << "endframeread" << endl;
         //cout << "p1 " <<  endl;
+        LOG( "writeInputs" );
         writeInputs( rf->rounds[i].p1Inputs,
                      frameInputs1,
                      NULL );
@@ -495,6 +504,7 @@ void ReplayCreator::writeInputs( vector<ReplayCreator::Input> &inputs,
                     //break;
                 }
                 copyToInput( &data, input);
+                LOG( "rawframe %d input ", loc );
                 if ( printing ) {
                     cout << "rawframe " << loc << " input " << inputs.size()<< endl;
                   printInput2(input);
