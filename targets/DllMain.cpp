@@ -1171,7 +1171,8 @@ struct DllMain
                 roundOverTimer = -1;
             }
         }
-        else if ( isOver && !netMan.config.mode.isReplay() )
+        else if ( isOver && !netMan.config.mode.isReplay() &&
+                  !netMan.config.mode.isTraining() )
         {
             netplayStateChanged ( NetplayState::Skippable );
         }
