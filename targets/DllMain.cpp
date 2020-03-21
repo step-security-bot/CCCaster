@@ -1018,7 +1018,8 @@ struct DllMain
 
         // Entering CharaSelect OR entering InGame
         if ( ( state == NetplayState::CharaSelect || state == NetplayState::InGame ||
-               state == NetplayState::CharaIntro )
+               state == NetplayState::CharaIntro
+               || state == NetplayState::Skippable )
              && !clientMode.isOffline() )
         {
             // Indicate we should sync the RngState now
