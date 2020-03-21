@@ -1017,7 +1017,6 @@ bool NetplayManager::isValidNext ( NetplayState next )
 void NetplayManager::exportInputs() {
     char buf[1000];
     char namebuf[1000];
-    char rngbuf[1000];
     char namebuf2[1000];
     char timebuf[200];
 
@@ -1042,19 +1041,6 @@ void NetplayManager::exportInputs() {
         }
     }
     repFile2.close();
-
-    sprintf( rngbuf, "ReplayVS/%sx%s_%s.rngstates",
-             getShortCharaName( *CC_P1_CHARACTER_ADDR ),
-             getShortCharaName( *CC_P2_CHARACTER_ADDR ),
-             timebuf );
-    ofstream repFile ( rngbuf, ios::out );
-    vector<int> w = getInGameIndexes();
-    repFile << w.size() << endl;
-    repFile << _roundRngStates.size() << endl;
-    for ( RngState* rng : _roundRngStates ) {
-        repFile << rng->dump() << endl;
-    }
-    repFile.close();
 
     sprintf( namebuf2, "%s2.rep", ( char* ) AsmHacks::replayName );
     ReplayCreator::ReplayFile f;
