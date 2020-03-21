@@ -1,3 +1,8 @@
+v3.1.001
+- Added replay support for rollback
+- Adjusted default deadzone to be .50
+- Fixed issue where inputs would be locked if training mode regen was disabled
+
 v3.0.021:
 - Added Replay mode to Offline Menu
 - Added match results to main menu
