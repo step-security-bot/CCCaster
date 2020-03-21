@@ -11,7 +11,6 @@
 #include <unordered_set>
 #include <ctime>
 #include <fstream>
-#include <ctime>
 
 using namespace std;
 
@@ -1021,6 +1020,7 @@ bool NetplayManager::isValidNext ( NetplayState next )
 void NetplayManager::exportInputs() {
     char buf[1000];
     char namebuf[1000];
+    char rngbuf[1000];
     char namebuf2[1000];
     char timebuf[200];
 
@@ -1046,11 +1046,11 @@ void NetplayManager::exportInputs() {
     }
     repFile2.close();
 
-    sprintf( namebuf, "ReplayVS/%sx%s_%s.rngstates",
+    sprintf( rngbuf, "ReplayVS/%sx%s_%s.rngstates",
              getShortCharaName( *CC_P1_CHARACTER_ADDR ),
              getShortCharaName( *CC_P2_CHARACTER_ADDR ),
              timebuf );
-    ofstream repFile ( namebuf, ios::out );
+    ofstream repFile ( rngbuf, ios::out );
     vector<int> w = getInGameIndexes();
     repFile << w.size() << endl;
     repFile << _roundRngStates.size() << endl;
@@ -1075,30 +1075,27 @@ void NetplayManager::exportResults()
     resFile.open( "results.csv", ios::out | ios::app );
     char buf[ 1000 + config.names[0].length() + config.names[1].length() ];
     char* moon[3] = { "C", "F", "H" };
+    std::time_t now = time( NULL );
     if ( _localPlayer == 1 ) {
-        sprintf( buf, "%s,%s,%s-%s,%d,%s,%s-%s,%d",
-                getISOTime(),
-                sanitizePlayerName(config.names[0]).c_str(),
-                moon[*CC_P1_MOON_SELECTOR_ADDR],
-                getShortCharaName(*CC_P1_CHARACTER_ADDR),
-                *CC_P1_WINS_ADDR,
-                sanitizePlayerName(config.names[1]).c_str(),
-                moon[*CC_P2_MOON_SELECTOR_ADDR],
-                getShortCharaName(*CC_P2_CHARACTER_ADDR),
-                *CC_P2_WINS_ADDR
-        );
+        sprintf( buf, "\"%s\",%s-%s,%d,\"%s\",%s-%s,%d,%d",
+                 config.names[0].c_str(), moon[*CC_P1_MOON_SELECTOR_ADDR],
+                 getShortCharaName(*CC_P1_CHARACTER_ADDR),
+                 *CC_P1_WINS_ADDR,
+                 config.names[1].c_str(), moon[*CC_P2_MOON_SELECTOR_ADDR],
+                 getShortCharaName(*CC_P2_CHARACTER_ADDR),
+                 *CC_P2_WINS_ADDR,
+                 now
+               );
     } else {
-        sprintf( buf, "%s,%s,%s-%s,%d,%s,%s-%s,%d",
-                getISOTime(),
-                sanitizePlayerName(config.names[1]).c_str(),
-                moon[*CC_P2_MOON_SELECTOR_ADDR],
-                getShortCharaName(*CC_P2_CHARACTER_ADDR),
-                *CC_P2_WINS_ADDR,
-                sanitizePlayerName(config.names[0]).c_str(),
-                moon[*CC_P1_MOON_SELECTOR_ADDR],
-                getShortCharaName(*CC_P1_CHARACTER_ADDR),
-                *CC_P1_WINS_ADDR
-        );
+        sprintf( buf, "\"%s\",%s-%s,%d,\"%s\",%s-%s,%d,%d",
+                 config.names[1].c_str(), moon[*CC_P2_MOON_SELECTOR_ADDR],
+                 getShortCharaName(*CC_P2_CHARACTER_ADDR),
+                 *CC_P2_WINS_ADDR,
+                 config.names[0].c_str(), moon[*CC_P1_MOON_SELECTOR_ADDR],
+                 getShortCharaName(*CC_P1_CHARACTER_ADDR),
+                 *CC_P1_WINS_ADDR,
+                 now
+               );
     }
     resFile << buf << endl;
     resFile.close();
@@ -1136,13 +1133,3 @@ void NetplayManager::findAndReplaceAll( string& data, string toSearch, string re
     }
 }
 
-string NetplayManager::getISOTime()
-{
-    int size = sizeof "yyyy-mm-ddThh:mm:ssZ";
-    time_t now;
-    time(&now);
-    char buf[size];
-    strftime(buf, size, "%FT%TZ", gmtime(&now));
-
-    return string(buf);
-}
