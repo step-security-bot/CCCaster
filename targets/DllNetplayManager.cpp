@@ -597,7 +597,8 @@ void NetplayManager::setState ( NetplayState state )
         {
             // The actual retry menu is opened at position *CC_MENU_STATE_COUNTER_ADDR + 1
             _retryMenuStateCounter = *CC_MENU_STATE_COUNTER_ADDR + 1;
-            exportResults();
+            if ( !config.mode.isSpectate() )
+                exportResults();
         }
 
         // Exiting RetryMenu
