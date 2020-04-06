@@ -1034,7 +1034,7 @@ void NetplayManager::exportInputs() {
     for ( int q : c ) {
         sprintf( buf, "%d\n", _inputs[0].getEndFrame( q ) );
         repFile2 << buf;
-        for ( int i = 0; i < _inputs[0].getEndFrame( q ); ++i ) {
+        for ( uint32_t i = 0; i < _inputs[0].getEndFrame( q ); ++i ) {
             sprintf( buf, "%04x %04x\n",
                      _inputs[0].get ( q, i ),
                      _inputs[1].get ( q, i ) );
@@ -1058,29 +1058,29 @@ void NetplayManager::exportResults()
     ofstream resFile;
     resFile.open( "results.csv", ios::out | ios::app );
     char buf[ 1000 + config.names[0].length() + config.names[1].length() ];
-    char* moon[3] = { "C", "F", "H" };
+    string moon[3] = { "C", "F", "H" };
     std::time_t now = time( NULL );
     string n1 = sanitizePlayerName( config.names[0] );
     string n2 = sanitizePlayerName( config.names[1] );
     if ( _localPlayer == 1 ) {
         sprintf( buf, "%s,%s-%s,%d,%s,%s-%s,%d,%d",
-                 n1.c_str(), moon[*CC_P1_MOON_SELECTOR_ADDR],
+                 n1.c_str(), moon[*CC_P1_MOON_SELECTOR_ADDR].c_str(),
                  getShortCharaName(*CC_P1_CHARACTER_ADDR),
                  *CC_P1_WINS_ADDR,
-                 n2.c_str(), moon[*CC_P2_MOON_SELECTOR_ADDR],
+                 n2.c_str(), moon[*CC_P2_MOON_SELECTOR_ADDR].c_str(),
                  getShortCharaName(*CC_P2_CHARACTER_ADDR),
                  *CC_P2_WINS_ADDR,
-                 now
+                 (int)now
                );
     } else {
         sprintf( buf, "%s,%s-%s,%d,%s,%s-%s,%d,%d",
-                 n2.c_str(), moon[*CC_P2_MOON_SELECTOR_ADDR],
+                 n2.c_str(), moon[*CC_P2_MOON_SELECTOR_ADDR].c_str(),
                  getShortCharaName(*CC_P2_CHARACTER_ADDR),
                  *CC_P2_WINS_ADDR,
-                 n1.c_str(), moon[*CC_P1_MOON_SELECTOR_ADDR],
+                 n1.c_str(), moon[*CC_P1_MOON_SELECTOR_ADDR].c_str(),
                  getShortCharaName(*CC_P1_CHARACTER_ADDR),
                  *CC_P1_WINS_ADDR,
-                 now
+                 (int)now
                );
     }
     resFile << buf << endl;
