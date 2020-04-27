@@ -551,6 +551,8 @@ void MainUi::settings()
         "Max allowed network delay",
         "Default rollback",
         "Held start button in versus",
+        "Automatic Replay Save",
+        "SOCD",
         "About",
     };
 
@@ -819,6 +821,46 @@ void MainUi::settings()
             }
 
             case 9:
+            {
+                _ui->pushInFront ( new ConsoleUi::Menu ( "Turn on automatic replay saving?",
+                                                         { "Yes", "No" }, "Cancel" ),
+                                   { 0, 0 }, true ); // Don't expand but DO clear top
+
+                _ui->top<ConsoleUi::Menu>()->setPosition ( ( _config.getInteger ( "autoReplaySave" ) + 1 ) % 2 );
+                _ui->popUntilUserInput();
+
+                if ( _ui->top()->resultInt >= 0 && _ui->top()->resultInt <= 1 )
+                    {
+                        _config.setInteger ( "autoReplaySave", ( _ui->top()->resultInt + 1 ) % 2 );
+                        saveConfig();
+                    }
+
+                _ui->pop();
+                break;
+            }
+
+            case 10:
+            {
+                _ui->pushInFront ( new ConsoleUi::Menu ( "Turn on SOCD?",
+                                                         { "Yes", "No" }, "Cancel" ),
+                                   { 0, 0 }, true ); // Don't expand but DO clear top
+
+                _ui->top<ConsoleUi::Menu>()->setPosition ( ( _config.getInteger ( "socd" ) + 1 ) % 2 );
+                _ui->popUntilUserInput();
+
+                if ( _ui->top()->resultInt >= 0 && _ui->top()->resultInt <= 1 )
+                    {
+                        _config.setInteger ( "socd", ( _ui->top()->resultInt + 1 ) % 2 );
+                        saveConfig();
+                    }
+
+                _ui->pop();
+                break;
+
+            }
+
+
+            case 11:
                 _ui->pushInFront ( new ConsoleUi::TextBox ( format ( "CCCaster %s%s\n\nRevision %s\n\nBuilt on %s\n\n"
                                    "Created by Madscientist\n\nPress any key to go back",
                                    LocalVersion.code,
@@ -947,6 +989,8 @@ void MainUi::initialize()
     _config.setInteger ( "maxRealDelay", 254 );
     _config.setInteger ( "defaultRollback", 4 );
     _config.setInteger ( "autoCheckUpdates", 1 );
+    _config.setInteger ( "autoReplaySave", 1 );
+    _config.setInteger ( "socd", 0 );
     _config.setDouble ( "heldStartDuration", 1.5 );
 
     // Cached UI state (defaults)
