@@ -999,7 +999,7 @@ bool NetplayManager::isValidNext ( NetplayState next )
         { NetplayState::Initial, { NetplayState::AutoCharaSelect, NetplayState::CharaSelect, NetplayState::ReplayMenu } },
         { NetplayState::AutoCharaSelect, { NetplayState::Loading } },
         { NetplayState::CharaSelect, { NetplayState::Loading } },
-        { NetplayState::Loading, { NetplayState::CharaIntro, NetplayState::InGame } },
+        { NetplayState::Loading, { NetplayState::Skippable, NetplayState::CharaIntro, NetplayState::InGame } },
         { NetplayState::CharaIntro, { NetplayState::InGame } },
         { NetplayState::Skippable, { NetplayState::InGame, NetplayState::RetryMenu } },
         { NetplayState::InGame, { NetplayState::Skippable, NetplayState::CharaSelect, NetplayState::ReplayMenu, NetplayState::RetryMenu } },

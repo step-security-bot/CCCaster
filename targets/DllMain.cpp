@@ -479,6 +479,7 @@ struct DllMain
 
                 if ( shouldSyncRngState && ( clientMode.isHost() || clientMode.isBroadcast() ) )
                 {
+                    LOG( "Syncing RNG @ Host" );
                     shouldSyncRngState = false;
 
                     MsgPtr msgRngState = procMan.getRngState ( netMan.getIndex() );
@@ -587,6 +588,7 @@ struct DllMain
         // Update the RngState if necessary
         if ( shouldSyncRngState )
         {
+            LOG ( "syncing RNG state" );
             shouldSyncRngState = false;
 
             // LOG ( "Randomizing RngState" );
@@ -901,6 +903,24 @@ struct DllMain
             *CC_SKIP_FRAMES_ADDR = 1;
         }
 
+        // Update facing flags with new frame
+        uint16_t p1Input = netMan.getRawInput( 1 );
+        uint16_t p2Input = netMan.getRawInput( 2 );
+
+        if ( *CC_P1_FACING_FLAG_ADDR ) {
+            p1Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+        } else {
+            p1Input &= ~ COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+        }
+        if ( *CC_P2_FACING_FLAG_ADDR ) {
+            p2Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+        } else {
+            p2Input &= ~COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+        }
+
+        netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
+        netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
+
         LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
         LOG_SYNC ( "roundOverTimer=%d; introState=%u; roundTimer=%u; realTimer=%u; hitsparks=%u; camera={ %d, %d }",
                    roundOverTimer, *CC_INTRO_STATE_ADDR, *CC_ROUND_TIMER_ADDR, *CC_REAL_TIMER_ADDR,
@@ -1023,6 +1043,7 @@ struct DllMain
              && !clientMode.isOffline() )
         {
             // Indicate we should sync the RngState now
+            LOG( "enabling RNG sync" );
             shouldSyncRngState = true;
         }
 
@@ -1354,6 +1375,7 @@ struct DllMain
                 return;
 
             case MsgType::RngState:
+                LOG( "Got RNG from remote" );
                 netMan.setRngState ( msg->getAs<RngState>() );
                 return;
 

@@ -497,11 +497,13 @@ void ReplayCreator::writeInputs( vector<ReplayCreator::Input> &inputs,
              data.up != data.lastUp
              ) {
             //int x = 0;
-                if ((data.lastButton & 16) &&
+                if ((data.lastButton == 16) &&
                     (data.button == data.lastButton ) &&
-                    (data.lastUp & 7) &&
+                    (data.lastUp == 7) &&
                     (data.direction == data.lastDirection)) {
-                    //break;
+                    data.duration += 1;
+                    loc++;
+                    continue;
                 }
                 copyToInput( &data, input);
                 LOG( "rawframe %d input ", loc );
@@ -527,6 +529,9 @@ void ReplayCreator::writeInputs( vector<ReplayCreator::Input> &inputs,
                         default:
                             break;
                     }
+                }
+                if ((data.lastButton & 16) && (data.lastUp == 7)) {
+                    data.up |= 7;
                 }
                 data.lastDirection = data.direction;
                 data.lastButton = data.button;

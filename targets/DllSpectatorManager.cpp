@@ -77,6 +77,7 @@ void SpectatorManager::pushSpectator ( Socket *socketPtr, const IpAddrPort& serv
             break;
 
         case NetplayState::Skippable:
+        case NetplayState::CharaIntro:
         case NetplayState::InGame:
         case NetplayState::RetryMenu:
             newSocket->send ( _netManPtr->getRngState ( spectator.pos.parts.index + ( isTraining ? 1 : 2 ) ) );
@@ -164,21 +165,14 @@ void SpectatorManager::frameStepSpectators()
         Spectator& spectator = it->second;
         const uint32_t oldIndex = spectator.pos.parts.index;
 
-        LOG ( "socket=%08x; spectator.pos=[%s]; preserveStartIndex=%u",
-              socket, spectator.pos, _netManPtr->preserveStartIndex );
+        LOG ( "socket=%08x; spectator.pos=[%s]; preserveStartIndex=%u; sentRng=%d; oldIndex=%d",
+              socket, spectator.pos, _netManPtr->preserveStartIndex, spectator.sentRngState, oldIndex );
 
         MsgPtr msgBothInputs = _netManPtr->getBothInputs ( spectator.pos );
 
         // Send inputs if available
         if ( msgBothInputs )
             socket->send ( msgBothInputs );
-
-        // Clear sent flags whenever the index changes
-        if ( spectator.pos.parts.index > oldIndex )
-        {
-            spectator.sentRngState = false;
-            spectator.sentRetryMenuIndex = false;
-        }
 
         MsgPtr msgRngState = _netManPtr->getRngState ( oldIndex );
 
@@ -187,6 +181,13 @@ void SpectatorManager::frameStepSpectators()
         {
             socket->send ( msgRngState );
             spectator.sentRngState = true;
+        }
+
+        // Clear sent flags whenever the index changes
+        if ( spectator.pos.parts.index > oldIndex )
+        {
+            spectator.sentRngState = false;
+            spectator.sentRetryMenuIndex = false;
         }
 
         MsgPtr msgMenuIndex = _netManPtr->getRetryMenuIndex ( oldIndex );
