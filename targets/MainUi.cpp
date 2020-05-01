@@ -361,6 +361,8 @@ void MainUi::controls()
             if ( controller.isJoystick() )
                 options.push_back ( format ( "Set joystick deadzone (%.2f)", controller.getDeadzone() ) );
 
+            options.push_back ( format ( "Set SOCD method: %s", controller.getSocd() ) );
+
             // Add instructions above menu
             _ui->pushRight ( new ConsoleUi::TextBox (
                                  controller.getName() + " mappings\n"
@@ -431,7 +433,8 @@ void MainUi::controls()
             }
 
             // Set joystick deadzone
-            if ( pos == ( int ) gameInputBits.size() + 2 )
+            if ( pos == ( int ) gameInputBits.size() + 2 &&
+                 controller.isJoystick() )
             {
                 _ui->pop();
                 _ui->pop();
@@ -461,6 +464,37 @@ void MainUi::controls()
                     }
 
                     controller.setDeadzone ( ret );
+                    break;
+                }
+
+                saveMappings ( controller );
+                _ui->pop();
+                continue;
+            }
+            // Set SOCD
+            if ( pos == ( int ) gameInputBits.size() + 2 ||
+                 pos == ( int ) gameInputBits.size() + 3 )
+            {
+                _ui->pop();
+                _ui->pop();
+
+                if ( controller.isJoystick() &&
+                     pos == ( int ) gameInputBits.size() + 2 )
+                    continue;
+                _ui->pushRight ( new ConsoleUi::Menu ( "SOCD settings", { "Default",
+                                                                          "L/R cancel",
+                                                                          "U/D cancel",
+                                                                          "L/R U/D cancel" },
+                        "Exit" ) );
+                _ui->top<ConsoleUi::Menu>()->setPosition ( controller.getSocdInt() );
+                for ( ;; )
+                {
+                    uint32_t ret = _ui->popUntilUserInput()->resultInt;
+
+                    if ( ret > 3 )
+                        break;
+
+                    controller.setSocd ( ret );
                     break;
                 }
 
@@ -552,7 +586,6 @@ void MainUi::settings()
         "Default rollback",
         "Held start button in versus",
         "Automatic Replay Save",
-        "SOCD",
         "About",
     };
 
@@ -839,28 +872,7 @@ void MainUi::settings()
                 break;
             }
 
-            case 10:
-            {
-                _ui->pushInFront ( new ConsoleUi::Menu ( "Turn on SOCD?",
-                                                         { "Yes", "No" }, "Cancel" ),
-                                   { 0, 0 }, true ); // Don't expand but DO clear top
-
-                _ui->top<ConsoleUi::Menu>()->setPosition ( ( _config.getInteger ( "socd" ) + 1 ) % 2 );
-                _ui->popUntilUserInput();
-
-                if ( _ui->top()->resultInt >= 0 && _ui->top()->resultInt <= 1 )
-                    {
-                        _config.setInteger ( "socd", ( _ui->top()->resultInt + 1 ) % 2 );
-                        saveConfig();
-                    }
-
-                _ui->pop();
-                break;
-
-            }
-
-
-            case 11:
+            case 12:
                 _ui->pushInFront ( new ConsoleUi::TextBox ( format ( "CCCaster %s%s\n\nRevision %s\n\nBuilt on %s\n\n"
                                    "Created by Madscientist\n\nPress any key to go back",
                                    LocalVersion.code,
@@ -990,7 +1002,6 @@ void MainUi::initialize()
     _config.setInteger ( "defaultRollback", 4 );
     _config.setInteger ( "autoCheckUpdates", 1 );
     _config.setInteger ( "autoReplaySave", 1 );
-    _config.setInteger ( "socd", 0 );
     _config.setDouble ( "heldStartDuration", 1.5 );
 
     // Cached UI state (defaults)

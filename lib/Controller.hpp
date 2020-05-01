@@ -54,7 +54,10 @@ struct KeyboardMappings : public SerializableSequence
     // Bit index -> key name
     std::string names[32];
 
-    PROTOCOL_MESSAGE_BOILERPLATE ( KeyboardMappings, name, codes, names )
+    // SOCD Mode: 0=Default, 1:L/R negate, 2:U/D negate, 3: both
+    uint32_t socd = 0;
+
+    PROTOCOL_MESSAGE_BOILERPLATE ( KeyboardMappings, name, codes, names, socd )
 };
 
 
@@ -99,7 +102,10 @@ struct JoystickMappings : public SerializableSequence
     // Axis deadzone range (0,32767)
     uint32_t deadzone = DEFAULT_DEADZONE;
 
-    PROTOCOL_MESSAGE_BOILERPLATE ( JoystickMappings, name, axes, hats, buttons, deadzone )
+    // SOCD Mode: 0=Default, 1:L/R negate, 2:U/D negate, 3: both
+    uint32_t socd = 0;
+
+    PROTOCOL_MESSAGE_BOILERPLATE ( JoystickMappings, name, axes, hats, buttons, deadzone, socd )
 };
 
 
@@ -231,6 +237,11 @@ public:
         _joystickMappings.deadzone = ( uint32_t ) clamped<float> ( deadzone * 32767, MIN_DEADZONE, MAX_DEADZONE );
         _joystickMappings.invalidate();
     }
+
+    // Get / set socd
+    std::string getSocd();
+    uint32_t getSocdInt() const;
+    void setSocd ( uint32_t value );
 
     // Get the controller state
     uint32_t getPrevState() const { return _prevState; }

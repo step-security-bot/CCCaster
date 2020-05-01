@@ -341,6 +341,7 @@ bool Controller::isUniqueName() const { return ( origNameCount[_origName] == 1 )
 Controller::Controller ( KeyboardEnum ) : _origName ( "Keyboard" )
 {
     _keyboardMappings.name = _origName;
+    _keyboardMappings.socd = 0;
     namesWithIndex.insert ( _keyboardMappings.name );
     origNameCount[_origName] = 1;
 
@@ -651,6 +652,9 @@ void Controller::doResetToDefaults()
     // Default deadzone
     _joystickMappings.deadzone = DEFAULT_DEADZONE;
 
+    // Default SOCD
+    _joystickMappings.socd = 0;
+
     _joystickMappings.invalidate();
 }
 
@@ -715,4 +719,38 @@ bool Controller::loadMappings ( const string& file )
     }
 
     return true;
+}
+
+string Controller::getSocd () {
+    uint32_t value = getSocdInt();
+    switch ( value )
+    {
+        case 0:
+            return "Default";
+        case 1:
+            return "L/R cancel";
+        case 2:
+            return "U/D cancel";
+        case 3:
+            return "L/R U/D cancel";
+    }
+}
+
+uint32_t Controller::getSocdInt () const {
+    uint32_t value = 0;
+    if ( isKeyboard() )
+        value = _keyboardMappings.socd;
+    else
+        value = _joystickMappings.socd;
+    return value;
+}
+
+void Controller::setSocd( uint32_t value ) {
+    if ( isKeyboard() ) {
+        _keyboardMappings.socd = value;
+        _keyboardMappings.invalidate();
+    } else {
+        _joystickMappings.socd = value;
+        _joystickMappings.invalidate();
+    }
 }

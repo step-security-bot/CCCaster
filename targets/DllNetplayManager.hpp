@@ -25,6 +25,9 @@ public:
     // The number of frames it takes to register a held start button input
     uint32_t heldStartDuration = 0;
 
+    // Automatically save replays
+    uint32_t autoReplaySave = false;
+
     // Indicate which player is the remote player
     void setRemotePlayer ( uint8_t player );
 

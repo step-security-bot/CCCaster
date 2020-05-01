@@ -1826,6 +1826,11 @@ struct DllMain
                     *CC_STAGE_ANIMATION_OFF_ADDR = 1;
                 }
 
+                if ( netMan.autoReplaySave )
+                {
+                    *CC_AUTO_REPLAY_SAVE_ADDR = 1;
+                }
+
                 LOG ( "SessionId '%s'", netMan.config.sessionId );
 
                 LOG ( "NetplayConfig: %s; flags={ %s }; delay=%d; rollback=%d; rollbackDelay=%d; winCount=%d; "

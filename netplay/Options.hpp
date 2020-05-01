@@ -24,7 +24,6 @@ ENUM ( Options,
        DefaultRollback,
        Fullscreen,
        AutoReplaySave,
-       SOCD,
        // Debug options
        Tests,
        Stdout,
