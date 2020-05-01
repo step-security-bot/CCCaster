@@ -70,7 +70,7 @@ bool getbase ( HANDLE hnd, DWORD *address, WORD *orig_code )
 }
 
 // Based on the phook code included with ReplayEx.
-bool hook ( const string& exe_path, const string& dll_path, bool high_priority )
+bool hook ( const string& exe_path, const string& dll_path, bool high_priority, bool framestep, const string& fsdll_path )
 {
     // Initialize process
     STARTUPINFO si;
@@ -163,6 +163,11 @@ bool hook ( const string& exe_path, const string& dll_path, bool high_priority )
     if ( ! hookDLL ( dll_path, &pi ) )
         return false;
 
+    if ( framestep ) {
+        if ( ! hookDLL ( fsdll_path, &pi ) )
+            return false;
+    }
+
     // ASM hack to skip the configuration window for MBAA
     static const char jmp1[] = { ( char ) 0xEB, ( char ) 0x0E };
     WriteProcessMemory ( pi.hProcess, ( void * ) 0x04A1D42, jmp1, sizeof ( jmp1 ), 0 );
@@ -187,7 +192,7 @@ int main ( int argc, char *argv[] )
     popup_errors = ( options.find ( "--popup_errors" ) != options.end() );
 
     // Create process and hook library.
-    if ( argc > 2 && hook ( argv[1], argv[2], options.find ( "--high" ) != options.end() ) )
+    if ( argc > 2 && hook ( argv[1], argv[2], options.find ( "--high" ) != options.end(), options.find ( "--framestep" ) != options.end(), argv[3] ) )
         return 0;
 
     return -1;

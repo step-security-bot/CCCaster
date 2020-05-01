@@ -123,7 +123,7 @@ void ProcessManager::timerExpired ( Timer *timer )
         return;
 }
 
-void ProcessManager::openGame ( bool highPriority )
+void ProcessManager::openGame ( bool highPriority, bool isTraining )
 {
     LOG ( "Opening pipe" );
 
@@ -159,6 +159,9 @@ void ProcessManager::openGame ( bool highPriority )
     stringArgs.push_back ( "\"" + path + "\"" );
     stringArgs.push_back ( "\"" + gameDir + MBAA_EXE + "\"" );
     stringArgs.push_back ( "\"" + appDir + HOOK_DLL + "\"" );
+    stringArgs.push_back ( "\"" + appDir + "framestep.dll" + "\"" );
+    if ( isTraining )
+        stringArgs.push_back ( "--framestep" );
     if ( highPriority )
         stringArgs.push_back ( "--high" );
 

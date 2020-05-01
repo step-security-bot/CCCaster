@@ -1156,8 +1156,16 @@ struct MainApp
                 serverCtrlSocket.reset();
             }
 
+            DWORD val = GetFileAttributes ( ( ProcessManager::appDir + "cccaster\framestep.dll" ).c_str() );
+
+            bool hasFramestep = true;
+            if ( val == INVALID_FILE_ATTRIBUTES )
+            {
+                hasFramestep = false;
+            }
+
             // Open the game and wait for callback to ipcConnected
-            procMan.openGame ( ui.getConfig().getInteger ( "highCpuPriority" ) );
+            procMan.openGame ( ui.getConfig().getInteger ( "highCpuPriority" ), clientMode.isTraining() && hasFramestep );
         }
         else
         {
