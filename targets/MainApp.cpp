@@ -1207,6 +1207,11 @@ struct MainApp
                           format ( "%u", uint32_t ( 60 * ui.getConfig().getDouble ( "heldStartDuration" ) ) ) );
         }
 
+        if ( ui.getConfig().getInteger ( "autoReplaySave" ) > 0 )
+        {
+            options.set ( Options::AutoReplaySave, 1 );
+        }
+
         if ( ! ProcessManager::getIsWindowed() )
         {
             ProcessManager::setIsWindowed ( true );

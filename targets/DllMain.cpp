@@ -1520,6 +1520,12 @@ struct DllMain
                 if ( options[Options::HeldStartDuration] )
                     netMan.heldStartDuration = lexical_cast<uint32_t> ( options.arg ( Options::HeldStartDuration ) );
 
+                if ( options[Options::AutoReplaySave] ) {
+                    netMan.autoReplaySave = true;
+                } else {
+                    netMan.autoReplaySave = false;
+                }
+
                 // This will log in the previous appDir folder it not the same
                 LOG ( "appDir='%s'", ProcessManager::appDir );
 
