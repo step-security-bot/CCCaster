@@ -1156,10 +1156,11 @@ struct MainApp
                 serverCtrlSocket.reset();
             }
 
-            DWORD val = GetFileAttributes ( ( ProcessManager::appDir + "cccaster\framestep.dll" ).c_str() );
+            DWORD val = GetFileAttributes ( ( ProcessManager::appDir + "framestep.dll" ).c_str() );
 
             bool hasFramestep = true;
-            if ( val == INVALID_FILE_ATTRIBUTES )
+            bool loadFramestep = ( GetAsyncKeyState ( VK_F8 ) & 0x1 ) == 1;
+            if ( val == INVALID_FILE_ATTRIBUTES || !loadFramestep )
             {
                 hasFramestep = false;
             }

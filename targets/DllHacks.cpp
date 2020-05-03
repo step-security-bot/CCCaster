@@ -202,8 +202,9 @@ void initializePostLoad()
     if ( status != MH_OK )
         LOG ( "Enable hook failed: %s", MH_StatusString ( status ) );
 
+    bool loadFramestep = ( GetAsyncKeyState ( VK_F8 ) & 0x1 ) == 1;
     // We can't hook DirectX calls on Wine (yet?).
-    if ( ProcessManager::isWine() )
+    if ( ProcessManager::isWine() || loadFramestep )
     {
         return;
     }
