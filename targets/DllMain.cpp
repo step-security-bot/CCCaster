@@ -575,6 +575,24 @@ struct DllMain
                 LOG_TO ( syncLog, "%s Rollback: target=[%s]; actual=[%s]",
                          before, netMan.getLastChangedFrame(), netMan.getIndexedFrame() );
 
+                // Fix facing flag
+                uint16_t p1Input = netMan.getRawInput( 1 );
+                uint16_t p2Input = netMan.getRawInput( 2 );
+
+                if ( *CC_P1_FACING_FLAG_ADDR ) {
+                    p1Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+                } else {
+                    p1Input &= ~ COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+                }
+                if ( *CC_P2_FACING_FLAG_ADDR ) {
+                    p2Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+                } else {
+                    p2Input &= ~COMBINE_INPUT ( 0, CC_PLAYER_FACING );
+                }
+
+                netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
+                netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
+
                 LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
 
                 netMan.clearLastChangedFrame();
