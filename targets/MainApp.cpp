@@ -1159,7 +1159,7 @@ struct MainApp
             DWORD val = GetFileAttributes ( ( ProcessManager::appDir + "framestep.dll" ).c_str() );
 
             bool hasFramestep = true;
-            bool loadFramestep = ( GetAsyncKeyState ( VK_F8 ) & 0x1 ) == 1;
+            bool loadFramestep = ( GetAsyncKeyState ( VK_F8 ) & 0x8000 ) == 0x8000;
             if ( val == INVALID_FILE_ATTRIBUTES || !loadFramestep )
             {
                 hasFramestep = false;
