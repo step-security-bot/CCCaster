@@ -733,6 +733,10 @@ string Controller::getSocd () {
             return "U/D cancel";
         case 3:
             return "L/R U/D cancel";
+        case 4:
+            return "Up bias";
+        case 5:
+            return "L/R cancel Up bias";
     }
 }
 

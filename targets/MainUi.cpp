@@ -484,14 +484,16 @@ void MainUi::controls()
                 _ui->pushRight ( new ConsoleUi::Menu ( "SOCD settings", { "Default",
                                                                           "L/R cancel",
                                                                           "U/D cancel",
-                                                                          "L/R U/D cancel" },
+                                                                          "L/R U/D cancel",
+                                                                          "U/D=U",
+                                                                          "L/R cancel U/D=U" },
                         "Exit" ) );
                 _ui->top<ConsoleUi::Menu>()->setPosition ( controller.getSocdInt() );
                 for ( ;; )
                 {
                     uint32_t ret = _ui->popUntilUserInput()->resultInt;
 
-                    if ( ret > 3 )
+                    if ( ret > 5 )
                         break;
 
                     controller.setSocd ( ret );

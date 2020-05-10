@@ -822,7 +822,7 @@ MsgPtr ControllerManager::loadMappings ( const string& file )
         msg = Protocol::decode ( &buffer[0], buffer.size(), consumed );
 
         if ( ! msg )
-            LOG ( "Failed to decode %u bytes", buffer.size() );
+            LOG ( "Failed to decode %u bytes from file %s", buffer.size(), file.c_str() );
         else if ( consumed != buffer.size() )
             LOG ( "Warning: consumed bytes %u != buffer size %u", consumed, buffer.size() );
     }

@@ -10,23 +10,22 @@ struct DllControllerUtils
     // Prioritize down and left for keyboard only.
     static uint16_t filterSimulDirState ( uint16_t state, uint32_t socdMode )
     {
-        if ( socdMode == 0 )
-        {
+        if ( socdMode & 2 ) {
+            if ( ( state & ( BIT_UP | BIT_DOWN ) ) == ( BIT_UP | BIT_DOWN ) )
+                state &= ~ ( BIT_UP | BIT_DOWN );
+        } else if ( socdMode & 4 ) {
+            if ( ( state & ( BIT_UP | BIT_DOWN ) ) == ( BIT_UP | BIT_DOWN ) )
+                state &= ~BIT_DOWN;
+        } else {
             if ( ( state & ( BIT_UP | BIT_DOWN ) ) == ( BIT_UP | BIT_DOWN ) )
                 state &= ~BIT_UP;
+        }
+        if ( socdMode & 1 ) {
+            if ( ( state & ( BIT_LEFT | BIT_RIGHT ) ) == ( BIT_LEFT | BIT_RIGHT ) )
+                state &= ~ ( BIT_LEFT | BIT_RIGHT );
+        } else {
             if ( ( state & ( BIT_LEFT | BIT_RIGHT ) ) == ( BIT_LEFT | BIT_RIGHT ) )
                 state &= ~BIT_RIGHT;
-        }
-        else
-        {
-            if ( socdMode & 2 ) {
-                if ( ( state & ( BIT_UP | BIT_DOWN ) ) == ( BIT_UP | BIT_DOWN ) )
-                    state &= ~ ( BIT_UP | BIT_DOWN );
-            }
-            if ( socdMode & 1 ) {
-                if ( ( state & ( BIT_LEFT | BIT_RIGHT ) ) == ( BIT_LEFT | BIT_RIGHT ) )
-                    state &= ~ ( BIT_LEFT | BIT_RIGHT );
-            }
         }
 
         return state;
