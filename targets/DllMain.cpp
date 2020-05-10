@@ -566,6 +566,7 @@ struct DllMain
             // Indicate we're re-running to the current frame
             fastFwdStopFrame = netMan.getIndexedFrame();
 
+            LOG_SYNC ( "rollbacking input: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
             // Reset the game state (this resets game state AND netMan state)
             if ( rollMan.loadState ( netMan.getLastChangedFrame(), netMan ) )
             {
@@ -575,6 +576,7 @@ struct DllMain
                 LOG_TO ( syncLog, "%s Rollback: target=[%s]; actual=[%s]",
                          before, netMan.getLastChangedFrame(), netMan.getIndexedFrame() );
 
+                LOG_SYNC ( "prefix input: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
                 // Fix facing flag
                 uint16_t p1Input = netMan.getRawInput( 1 );
                 uint16_t p2Input = netMan.getRawInput( 2 );
@@ -590,8 +592,10 @@ struct DllMain
                     p2Input &= ~COMBINE_INPUT ( 0, CC_PLAYER_FACING );
                 }
 
-                netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
-                netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
+                //netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
+                //netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
+                LOG_SYNC ( "postfix input: 0x%04x 0x%04x", p1Input, p2Input );
+                LOG_SYNC ( "iframe [%s]", netMan.getIndexedFrame() );
 
                 LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
 
@@ -921,6 +925,7 @@ struct DllMain
             *CC_SKIP_FRAMES_ADDR = 1;
         }
 
+        LOG_SYNC ( "prefix input: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
         // Update facing flags with new frame
         uint16_t p1Input = netMan.getRawInput( 1 );
         uint16_t p2Input = netMan.getRawInput( 2 );
@@ -935,9 +940,11 @@ struct DllMain
         } else {
             p2Input &= ~COMBINE_INPUT ( 0, CC_PLAYER_FACING );
         }
+        LOG_SYNC ( "postfix input: 0x%04x 0x%04x", p1Input, p2Input );
+        LOG_SYNC ( "iframe [%s]", netMan.getIndexedFrame() );
 
-        netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
-        netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
+        //netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
+        //netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
 
         LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
         LOG_SYNC ( "roundOverTimer=%d; introState=%u; roundTimer=%u; realTimer=%u; hitsparks=%u; camera={ %d, %d }",
