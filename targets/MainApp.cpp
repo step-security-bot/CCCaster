@@ -1166,7 +1166,8 @@ struct MainApp
             }
 
             // Open the game and wait for callback to ipcConnected
-            procMan.openGame ( ui.getConfig().getInteger ( "highCpuPriority" ), clientMode.isTraining() && hasFramestep );
+            procMan.openGame ( ui.getConfig().getInteger ( "highCpuPriority" ),
+                               ( clientMode.isTraining() || clientMode.isReplay() ) && hasFramestep );
         }
         else
         {
