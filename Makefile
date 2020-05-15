@@ -1,7 +1,7 @@
 VERSION = 3.1
-SUFFIX = .b7.001
+SUFFIX = .b9.001
 NAME = cccaster
-TAG = beta7
+TAG = beta9
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 ifneq ($(TAG),)
@@ -317,7 +317,7 @@ clean-lib:
 clean-common: clean-proto clean-res clean-lib
 	rm -rf tmp*
 	rm -f .depend_$(BRANCH) .include_$(BRANCH) *.exe *.zip tools/*.exe \
-$(filter-out $(FOLDER)/config.ini $(wildcard $(FOLDER)/*.mappings $(FOLDER)/*.log),$(wildcard $(FOLDER)/*))
+$(filter-out $(FOLDER)/bconfig.ini $(wildcard $(FOLDER)/*.mappings $(FOLDER)/*.log),$(wildcard $(FOLDER)/*))
 
 clean-debug: clean-common
 	rm -rf build_debug_$(BRANCH)

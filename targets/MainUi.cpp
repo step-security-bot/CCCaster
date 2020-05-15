@@ -21,7 +21,7 @@ using namespace std;
 #define SYSTEM_ALERT_PREFEX "System"
 
 // Main configuration file
-#define CONFIG_FILE FOLDER "config.ini"
+#define CONFIG_FILE FOLDER "bconfig.ini"
 
 // Path of the latest version file
 #define LATEST_VERSION_PATH "LatestVersion"

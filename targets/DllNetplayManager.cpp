@@ -702,6 +702,7 @@ void NetplayManager::assignInput ( uint8_t player, uint16_t input, uint32_t fram
 void NetplayManager::assignInput ( uint8_t player, uint16_t input, IndexedFrame _indexedFrame )
 {
     ASSERT ( player == 1 || player == 2 );
+    LOG( "startindex %d", _startIndex );
     ASSERT ( _indexedFrame.parts.index >= _startIndex );
 
     _inputs[player - 1].assign ( _indexedFrame.parts.index - _startIndex, _indexedFrame.parts.frame, input );
@@ -1117,5 +1118,25 @@ void NetplayManager::findAndReplaceAll( string& data, string toSearch, string re
         data.replace(pos, toSearch.size(), replaceStr);
         pos = data.find(toSearch, pos + replaceStr.size());
     }
+}
+
+void NetplayManager::insertRollbackInput( IndexedFrame frame, uint16_t p1Input, uint16_t p2Input )
+{
+    LOG ( "storing frame [%s]: 0x%04x 0x%04x", frame, p1Input, p2Input );
+    rollbackFixFrames.push_back( frame );
+    rollbackFixInputs1.push_back( p1Input );
+    rollbackFixInputs2.push_back( p2Input );
+}
+
+void NetplayManager::fixRollbackInput()
+{
+    for ( int x=0; x < rollbackFixFrames.size(); x++ ) {
+        LOG ( "assiging frame [%s]: 0x%04x 0x%04x", rollbackFixFrames[x], rollbackFixInputs1[x], rollbackFixInputs2[x] );
+        assignInput( 1, rollbackFixInputs1[x], rollbackFixFrames[x] );
+        assignInput( 2, rollbackFixInputs2[x], rollbackFixFrames[x] );
+    }
+    rollbackFixFrames.clear();
+    rollbackFixInputs1.clear();
+    rollbackFixInputs2.clear();
 }
 

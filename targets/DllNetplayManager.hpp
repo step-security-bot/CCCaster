@@ -136,6 +136,10 @@ public:
     // Check if the next state transition is valid
     bool isValidNext ( NetplayState state );
 
+    // Add current rollback input to inputmap
+    void insertRollbackInput( IndexedFrame frame, uint16_t p1Input, uint16_t p2Input );
+    void fixRollbackInput();
+
     friend class DllRollbackManager;
 
 private:
@@ -226,6 +230,10 @@ private:
     std::string sanitizePlayerName( std::string name );
     void findAndReplaceAll( std::string& data, std::string toSearch, std::string replaceStr );
     std::string getISOTime();
+
+    std::vector<IndexedFrame> rollbackFixFrames;
+    std::vector<uint16_t> rollbackFixInputs1;
+    std::vector<uint16_t> rollbackFixInputs2;
 };
 
 extern NetplayManager* netManPtr;
