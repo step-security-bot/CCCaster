@@ -576,6 +576,7 @@ struct DllMain
                 LOG_TO ( syncLog, "%s Rollback: target=[%s]; actual=[%s]",
                          before, netMan.getLastChangedFrame(), netMan.getIndexedFrame() );
 
+                /*
                 LOG_SYNC ( "prefix input: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
                 // Fix facing flag
                 uint16_t p1Input = netMan.getRawInput( 1 );
@@ -596,7 +597,8 @@ struct DllMain
                 //netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
                 LOG_SYNC ( "postfix input: 0x%04x 0x%04x", p1Input, p2Input );
                 LOG_SYNC ( "iframe [%s]", netMan.getIndexedFrame() );
-                netMan.insertRollbackInput( netMan.getIndexedFrame(), p1Input, p2Input );
+                //netMan.insertRollbackInput( netMan.getIndexedFrame(), p1Input, p2Input );
+                */
 
                 LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
 
@@ -926,6 +928,7 @@ struct DllMain
             *CC_SKIP_FRAMES_ADDR = 1;
         }
 
+        /*
         LOG_SYNC ( "prefix input: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
         // Update facing flags with new frame
         uint16_t p1Input = netMan.getRawInput( 1 );
@@ -944,9 +947,10 @@ struct DllMain
         LOG_SYNC ( "postfix input: 0x%04x 0x%04x", p1Input, p2Input );
         LOG_SYNC ( "iframe [%s]", netMan.getIndexedFrame() );
 
+        */
         //netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
         //netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
-        netMan.insertRollbackInput( netMan.getIndexedFrame(), p1Input, p2Input );
+        //netMan.insertRollbackInput( netMan.getIndexedFrame(), p1Input, p2Input );
 
         LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
         LOG_SYNC ( "roundOverTimer=%d; introState=%u; roundTimer=%u; realTimer=%u; hitsparks=%u; camera={ %d, %d }",
@@ -956,8 +960,8 @@ struct DllMain
         // LOG_SYNC ( "ReSFX 0x%X: CC_SFX_ARRAY=%u; sfxFilterArray=%u; sfxMuteArray=%u", SFX_NUM,
         //            CC_SFX_ARRAY_ADDR[SFX_NUM], AsmHacks::sfxFilterArray[SFX_NUM], AsmHacks::sfxMuteArray[SFX_NUM] );
         if ( ! *CC_SKIP_FRAMES_ADDR ) {
-            LOG_SYNC ( "finalize rollback inputs" );
-            netMan.fixRollbackInput();
+            LOG_SYNC ( "rollback inputs done" );
+            //netMan.fixRollbackInput();
         }
     }
 
