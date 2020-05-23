@@ -147,7 +147,7 @@ static void loadingStateColorCb2 ( uint32_t *singlePaletteData )
 
 extern "C" void saveReplayCb()
 {
-    netManPtr->exportInputs();
+    //netManPtr->exportInputs();
 }
 
 extern "C" void loadingStateColorCb()
