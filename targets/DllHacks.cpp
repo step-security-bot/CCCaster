@@ -49,8 +49,8 @@ void initializePreLoad()
     for ( const Asm& hack : muteSpecificSfx )
         WRITE_ASM_HACK ( hack );
 
-    for ( const Asm& hack : saveReplay )
-      WRITE_ASM_HACK ( hack );
+    //for ( const Asm& hack : saveReplay )
+    //  WRITE_ASM_HACK ( hack );
 
     WRITE_ASM_HACK ( multiWindow );
     WRITE_ASM_HACK ( detectAutoReplaySave );

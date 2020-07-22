@@ -110,6 +110,16 @@
 #define CC_GAME_MODE_IN_GAME        ( 1 )
 #define CC_GAME_MODE_RETRY          ( 5 )
 
+#define CC_GAME_STATE_ADDR          ( ( uint32_t * ) 0x74d598 ) // Intermediate game states, constants below
+
+// List of states modes relevant to netplay
+#define CC_GAME_STATE_CHARA_INTRO   ( 1 )
+#define CC_GAME_STATE_INTRO_SKIP    ( 101 )
+#define CC_GAME_STATE_INTRO_MID     ( 100 )
+#define CC_GAME_STATE_INTRO_DONE    ( 99 )
+#define CC_GAME_STATE_CINTRO_END    ( 12 )
+#define CC_GAME_STATE_PREGAME_DONE  ( 2 )
+
 // Character select data, can be assigned to directly at the character select screen
 #define CC_P1_SELECTOR_MODE_ADDR    ( ( uint32_t * ) 0x74D8EC )
 #define CC_P1_CHARA_SELECTOR_ADDR   ( ( uint32_t * ) 0x74D8F8 )

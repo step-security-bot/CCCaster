@@ -85,7 +85,7 @@ static Mutex deinitMutex;
 static void deinitialize();
 
 // Enum of variables to monitor
-ENUM ( Variable, WorldTime, GameMode, RoundStart,
+ENUM ( Variable, WorldTime, GameMode, GameState, RoundStart,
        MenuConfirmState, AutoReplaySave, GameStateCounter, CurrentMenuIndex );
 
 // Global stopping flag
@@ -1043,7 +1043,8 @@ struct DllMain
         }
 
         // Leaving Skippable
-        if ( netMan.getState() == NetplayState::Skippable )
+        if ( netMan.getState() == NetplayState::Skippable ||
+             netMan.getState() == NetplayState::CharaIntro )
         {
             // Reset state variables
             roundOverTimer = -1;
@@ -1072,9 +1073,9 @@ struct DllMain
         }
 
         // Entering CharaSelect OR entering InGame
-        if ( ( state == NetplayState::CharaSelect || state == NetplayState::InGame ||
-               state == NetplayState::CharaIntro
-               || state == NetplayState::Skippable )
+        if ( ( state == NetplayState::CharaSelect || state == NetplayState::InGame )// ||
+             //state == NetplayState::CharaIntro
+             //  || state == NetplayState::Skippable )
              && !clientMode.isOffline() )
         {
             // Indicate we should sync the RngState now
@@ -1176,6 +1177,19 @@ struct DllMain
         THROW_EXCEPTION ( "gameModeChanged(%u, %u)", ERROR_INVALID_GAME_MODE, previous, current );
     }
 
+    void gameStateChanged ( uint32_t previous, uint32_t current )
+    {
+        if ( current == CC_GAME_STATE_INTRO_DONE )
+        {
+            // Indicate we should sync the RngState now
+            LOG( "state change enabling RNG sync" );
+            shouldSyncRngState = true;
+            return;
+        }
+        LOG ( "gameStateChanged(%u, %u)", previous, current );
+        //THROW_EXCEPTION ( "gameModeChanged(%u, %u)", ERROR_INVALID_GAME_MODE, previous, current );
+    }
+
     void delayedStop ( const string& error )
     {
         if ( ! error.empty() )
@@ -1246,6 +1260,11 @@ struct DllMain
             case Variable::GameMode:
                 LOG ( "[%s] %s: previous=%u; current=%u", netMan.getIndexedFrame(), var, previous, current );
                 gameModeChanged ( previous, current );
+                break;
+
+            case Variable::GameState:
+                LOG ( "[%s] %s: previous=%u; current=%u", netMan.getIndexedFrame(), var, previous, current );
+                gameStateChanged ( previous, current );
                 break;
 
             case Variable::RoundStart:
@@ -1966,6 +1985,7 @@ struct DllMain
 
         ChangeMonitor::get().addRef ( this, Variable ( Variable::GameMode ), *CC_GAME_MODE_ADDR );
         ChangeMonitor::get().addRef ( this, Variable ( Variable::RoundStart ), AsmHacks::roundStartCounter );
+        ChangeMonitor::get().addRef ( this, Variable ( Variable::GameState ), *CC_GAME_STATE_ADDR );
         netManPtr = &netMan;
 
 #ifndef RELEASE

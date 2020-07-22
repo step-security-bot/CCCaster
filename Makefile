@@ -1,7 +1,7 @@
 VERSION = 3.1
-SUFFIX = .b11.001
+SUFFIX = .b12.001
 NAME = cccaster
-TAG = beta11
+TAG = beta12
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 ifneq ($(TAG),)
@@ -105,7 +105,7 @@ DEBUG_FLAGS = -ggdb3 -O0 -fno-inline -D_GLIBCXX_DEBUG -DDEBUG
 ifeq ($(OS),Windows_NT)
 	LOGGING_FLAGS = -s -Os -O2 -DLOGGING -DRELEASE
 else
-	LOGGING_FLAGS = -s -Os -O2 -DLOGGING
+	LOGGING_FLAGS = -s -Os -O2 -DLOGGING -DRELEASE
 endif
 RELEASE_FLAGS = -s -Os -Ofast -fno-rtti -DNDEBUG -DRELEASE -DDISABLE_LOGGING -DDISABLE_ASSERTS
 
