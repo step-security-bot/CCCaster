@@ -576,30 +576,6 @@ struct DllMain
                 LOG_TO ( syncLog, "%s Rollback: target=[%s]; actual=[%s]",
                          before, netMan.getLastChangedFrame(), netMan.getIndexedFrame() );
 
-                /*
-                LOG_SYNC ( "prefix input: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
-                // Fix facing flag
-                uint16_t p1Input = netMan.getRawInput( 1 );
-                uint16_t p2Input = netMan.getRawInput( 2 );
-
-                if ( *CC_P1_FACING_FLAG_ADDR ) {
-                    p1Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-                } else {
-                    p1Input &= ~ COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-                }
-                if ( *CC_P2_FACING_FLAG_ADDR ) {
-                    p2Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-                } else {
-                    p2Input &= ~COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-                }
-
-                //netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
-                //netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
-                LOG_SYNC ( "postfix input: 0x%04x 0x%04x", p1Input, p2Input );
-                LOG_SYNC ( "iframe [%s]", netMan.getIndexedFrame() );
-                //netMan.insertRollbackInput( netMan.getIndexedFrame(), p1Input, p2Input );
-                */
-
                 LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
 
                 netMan.clearLastChangedFrame();
@@ -928,30 +904,6 @@ struct DllMain
             *CC_SKIP_FRAMES_ADDR = 1;
         }
 
-        /*
-        LOG_SYNC ( "prefix input: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
-        // Update facing flags with new frame
-        uint16_t p1Input = netMan.getRawInput( 1 );
-        uint16_t p2Input = netMan.getRawInput( 2 );
-
-        if ( *CC_P1_FACING_FLAG_ADDR ) {
-            p1Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-        } else {
-            p1Input &= ~ COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-        }
-        if ( *CC_P2_FACING_FLAG_ADDR ) {
-            p2Input |= COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-        } else {
-            p2Input &= ~COMBINE_INPUT ( 0, CC_PLAYER_FACING );
-        }
-        LOG_SYNC ( "postfix input: 0x%04x 0x%04x", p1Input, p2Input );
-        LOG_SYNC ( "iframe [%s]", netMan.getIndexedFrame() );
-
-        */
-        //netMan.assignInput( 1, p1Input, netMan.getIndexedFrame() );
-        //netMan.assignInput( 2, p2Input, netMan.getIndexedFrame() );
-        //netMan.insertRollbackInput( netMan.getIndexedFrame(), p1Input, p2Input );
-
         LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
         LOG_SYNC ( "roundOverTimer=%d; introState=%u; roundTimer=%u; realTimer=%u; hitsparks=%u; camera={ %d, %d }",
                    roundOverTimer, *CC_INTRO_STATE_ADDR, *CC_ROUND_TIMER_ADDR, *CC_REAL_TIMER_ADDR,
@@ -961,7 +913,6 @@ struct DllMain
         //            CC_SFX_ARRAY_ADDR[SFX_NUM], AsmHacks::sfxFilterArray[SFX_NUM], AsmHacks::sfxMuteArray[SFX_NUM] );
         if ( ! *CC_SKIP_FRAMES_ADDR ) {
             LOG_SYNC ( "rollback inputs done" );
-            //netMan.fixRollbackInput();
         }
     }
 
@@ -1073,9 +1024,7 @@ struct DllMain
         }
 
         // Entering CharaSelect OR entering InGame
-        if ( ( state == NetplayState::CharaSelect || state == NetplayState::InGame )// ||
-             //state == NetplayState::CharaIntro
-             //  || state == NetplayState::Skippable )
+        if ( ( state == NetplayState::CharaSelect || state == NetplayState::InGame )
              && !clientMode.isOffline() )
         {
             // Indicate we should sync the RngState now
@@ -1187,7 +1136,6 @@ struct DllMain
             return;
         }
         LOG ( "gameStateChanged(%u, %u)", previous, current );
-        //THROW_EXCEPTION ( "gameModeChanged(%u, %u)", ERROR_INVALID_GAME_MODE, previous, current );
     }
 
     void delayedStop ( const string& error )
