@@ -1,7 +1,7 @@
 VERSION = 3.1
 SUFFIX = .001
 NAME = cccaster
-TAG =
+TAG = trial
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 ifneq ($(TAG),)
@@ -62,8 +62,8 @@ $(info VAR=$(UNAME))
 
 # OS specific tools / settings
 ifeq ($(OS),Windows_NT)
-	CHMOD_X = icacls $@ //grant Everyone:F
-	GRANT = icacls $@ //grant Everyone:F
+	CHMOD_X = icacls $@ /grant Everyone:F
+	GRANT = icacls $@ /grant Everyone:F
 	ASTYLE = 3rdparty/astyle.exe
 	OPENGL_HEADERS = /usr/mingw/i686-w64-mingw32/include/GL
 else
@@ -156,7 +156,7 @@ $(BINARY): $(addprefix $(BUILD_PREFIX)/,$(MAIN_OBJECTS)) res/icon.res
 	$(CHMOD_X)
 	@echo
 
-$(FOLDER)/$(DLL): $(addprefix $(BUILD_PREFIX)/,$(DLL_OBJECTS)) res/rollback.o | $(FOLDER)
+$(FOLDER)/$(DLL): $(addprefix $(BUILD_PREFIX)/,$(DLL_OBJECTS)) res/rollback.o targets/CallDraw.s | $(FOLDER)
 	$(CXX) -o $@ $(CC_FLAGS) -Wall -std=c++11 $^ -shared $(LD_FLAGS) -ld3dx9
 	@echo
 	$(STRIP) $@

@@ -164,6 +164,24 @@ extern "C" void loadingStateColorCb()
     loadingStateColorCb2 ( ptr );
 }
 
+extern "C" int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* addr, int spacing, int layer, char* out );
+/*
+      A ------- B
+      |         |
+      |         |
+      C --------D
+*/
+extern "C" int CallDrawRect ( int screenXAddr, int screenYAddr, int width, int height, int A, int B, int C, int D, int layer );
+extern "C" int CallDrawSprite ( int spriteWidth, int dxdevice, int texAddr, int screenXAddr, int screenYAddr, int spriteHeight, int texXAddr, int texYAddr, int texXSize, int texYSize, int flags, int unk, int layer );
+// ARGB
+extern "C" void callbackDrawTargets() {
+    char* test = "test";
+    char out[50];
+    //CallDrawText ( 0x80, 0xff, 20, 20, test, 0xff, 0xff, 0xcc, (void*)0x55DAA0 , 0, 0, out );
+    //CallDrawRect ( 30, 30, 200, 200, 0xFFFF0000, 0xFFFF0000,0xFFFF0000,0xFFFF0000, 0xcb );
+    //CallDrawSprite ( 180, 0, *(int*)0x74d5e8, 40, 40, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+}
+
 int Asm::write() const
 {
     backup.resize ( bytes.size() );

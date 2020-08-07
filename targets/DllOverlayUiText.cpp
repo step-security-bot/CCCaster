@@ -1,11 +1,13 @@
 #include "DllOverlayUi.hpp"
 #include "DllOverlayPrimitives.hpp"
 #include "DllHacks.hpp"
+#include "DllTrialManager.hpp"
 #include "ProcessManager.hpp"
 #include "Enum.hpp"
 
 #include <windows.h>
 #include <d3dx9.h>
+#include <iostream>
 
 using namespace std;
 using namespace DllOverlayUi;
@@ -22,6 +24,12 @@ using namespace DllOverlayUi;
 #define OVERLAY_TEXT_COLOR              D3DCOLOR_XRGB ( 255, 255, 255 )
 
 #define OVERLAY_DEBUG_COLOR             D3DCOLOR_XRGB ( 255, 0, 0 )
+
+#define OVERLAY_BUTTON_COLOR            D3DCOLOR_XRGB ( 0, 255, 0 )
+
+#define OVERLAY_BUTTON_DONE_COLOR       D3DCOLOR_XRGB ( 0, 0, 255 )
+
+#define OVERLAY_COMBO_BG_COLOR          D3DCOLOR_XRGB ( 68, 68, 68 )
 
 #define OVERLAY_TEXT_BORDER             ( 10 )
 
@@ -357,6 +365,57 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
 
 #endif // RELEASE
 
+    if ( ! TrialManager::comboTrialText.empty() && !TrialManager::hideText )
+    {
+
+        RECT rect;
+        rect.top = 70;
+        rect.left = 20;
+        rect.right = viewport.Width - 20;
+        rect.bottom = viewport.Height - 20;
+        wstring w = TrialManager::fullStrings[TrialManager::currentTrial];
+        TextCalcRectW( font, w, rect, DT_CENTER | DT_WORDBREAK, 0);
+        rect.left = 20;
+        rect.right = viewport.Width - 20;
+        DrawRectangle ( device, INLINE_RECT ( rect ), OVERLAY_COMBO_BG_COLOR );
+        int i = 0;
+        rect.left = 30;
+        for ( wstring text : TrialManager::comboTrialText ) {
+            TextCalcRectW( font, text, rect, DT_LEFT, 0);
+            D3DCOLOR color = ( TrialManager::comboTrialPosition > i ) ? OVERLAY_BUTTON_DONE_COLOR :
+              ( TrialManager::comboTrialPosition == i ) ? OVERLAY_DEBUG_COLOR : OVERLAY_BUTTON_COLOR;
+            DrawTextW ( font, text, rect, DT_WORDBREAK |
+                   ( TrialManager::comboTrialTextAlign == 0 ? DT_CENTER : ( TrialManager::comboTrialTextAlign < 0 ? DT_LEFT : DT_RIGHT ) ),
+                       color );
+            rect.left = rect.right;
+            if ( rect.left > ( viewport.Width - 70 ) ){
+                rect.left = 29;
+                rect.top = rect.bottom;
+            }
+        ++i;
+        }
+
+        int debugTextAlign = 1;
+        RECT rect2;
+        rect2.top = rect2.left = 0;
+        rect2.right = viewport.Width;
+        rect2.bottom = viewport.Height;
+        DrawText ( font, TrialManager::dtext, rect2, DT_WORDBREAK |
+                   ( debugTextAlign == 0 ? DT_CENTER : ( debugTextAlign < 0 ? DT_LEFT : DT_RIGHT ) ),
+                   OVERLAY_DEBUG_COLOR );
+        RECT rect3;
+        rect3.top = 50;
+        rect3.left = 30;
+        rect3.right = viewport.Width;
+        rect3.bottom= viewport.Height;
+
+        TextCalcRectW( font, TrialManager::comboName, rect3, DT_LEFT | DT_WORDBREAK, 0);
+        rect3.left = 20;
+        rect3.right = viewport.Width - 20;
+        DrawRectangle ( device, INLINE_RECT ( rect3 ), OVERLAY_COMBO_BG_COLOR );
+        DrawTextW ( font, TrialManager::comboName, rect3, DT_WORDBREAK | DT_LEFT,
+                    OVERLAY_DEBUG_COLOR );
+    }
     if ( state == State::Disabled )
         return;
 

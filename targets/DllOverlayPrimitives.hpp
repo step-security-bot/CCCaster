@@ -62,3 +62,42 @@ static inline int DrawText ( ID3DXFont *font, const std::string& text, RECT& rec
                             flags | DT_NOCLIP,                  // text formatting
                             color );                            // text color
 }
+
+static inline int DrawTextW ( ID3DXFont *font, const std::wstring& text, RECT& rect, int flags, const D3DCOLOR& color )
+{
+    if ( ! font )
+        return 0;
+
+    return font->DrawTextW ( 0,                                  // text as a ID3DXSprite object
+                            &text[0],                           // text buffer
+                            text.size(),                        // number of characters, -1 if null-terminated
+                            &rect,                              // text bounding RECT
+                            flags | DT_NOCLIP,                  // text formatting
+                            color );                            // text color
+}
+
+static inline int TextCalcRect ( ID3DXFont *font, const std::string& text, RECT& rect, int flags, const D3DCOLOR& color )
+{
+  if ( ! font )
+    return 0;
+  return font->DrawText ( 0,
+                          &text[0],                           // text buffer
+                          text.size(),
+                          &rect,
+                          DT_CALCRECT | flags,
+                          0 );
+}
+
+static inline int TextCalcRectW ( ID3DXFont *font, const std::wstring& text, RECT& rect, int flags, const D3DCOLOR& color )
+{
+    if ( ! font )
+        return 0;
+    return font->DrawTextW ( 0,
+                            &text[0],                           // text buffer
+                            text.size(),
+                            &rect,
+                            DT_CALCRECT | flags,
+                            0 );
+}
+
+//extern "C" int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* addr, int spacing, int unk, char* out );

@@ -737,6 +737,8 @@ string Controller::getSocd () {
             return "Up bias";
         case 5:
             return "L/R cancel Up bias";
+        default:
+            return "Default";
     }
 }
 

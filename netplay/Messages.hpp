@@ -33,7 +33,7 @@ struct ClientMode : public SerializableSequence
 {
     ENUM_BOILERPLATE ( ClientMode, Host, Client, SpectateNetplay, SpectateBroadcast, Broadcast, Offline )
 
-    enum { Training = 0x01, GameStarted = 0x02, UdpTunnel = 0x04, IsWine = 0x08, VersusCPU = 0x10, Replay = 0x20 };
+    enum { Training = 0x01, GameStarted = 0x02, UdpTunnel = 0x04, IsWine = 0x08, VersusCPU = 0x10, Replay = 0x20, Trial = 0x40 };
 
     uint8_t flags = 0;
 
@@ -59,6 +59,7 @@ struct ClientMode : public SerializableSequence
     bool isVersusCPU() const { return ( flags & VersusCPU ) && !isTraining(); }
     bool isTraining() const { return ( flags & Training ); }
     bool isReplay() const { return ( flags & Replay ); }
+    bool isTrial() const { return ( flags & Trial ); }
     bool isGameStarted() const { return ( flags & GameStarted ); }
     bool isUdpTunnel() const { return ( flags & UdpTunnel ); }
     bool isWine() const { return ( flags & IsWine ); }

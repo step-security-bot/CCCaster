@@ -4,6 +4,7 @@
 #include "Exceptions.hpp"
 #include "CharacterSelect.hpp"
 #include "ReplayCreator.hpp"
+#include "DllTrialManager.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -141,6 +142,7 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
     // If the pause menu is up
     if ( *CC_PAUSE_FLAG_ADDR )
     {
+        TrialManager::hideText = true;
         AsmHacks::menuConfirmState = 2;
 
         // Don't allow hitting Confirm until 3f after we have stopped moving the cursor. This is a work around
@@ -157,6 +159,7 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
               && *CC_DUMMY_STATUS_ADDR != CC_DUMMY_STATUS_DUMMY
               && *CC_DUMMY_STATUS_ADDR != CC_DUMMY_STATUS_RECORD )
     {
+        TrialManager::hideText = false;
         // Training mode enhancements when not paused
         if ( _trainingResetState == -1 && ( input & COMBINE_INPUT ( 0, CC_BUTTON_FN2 ) ) )  // Initial reset input
         {
@@ -219,6 +222,7 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
             }
 
             ++_trainingResetState;
+            TrialManager::comboTrialPosition = 0;
 
             input |= COMBINE_INPUT ( 0, CC_BUTTON_FN2 );
         }

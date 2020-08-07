@@ -33,6 +33,10 @@
 
 #define INLINE_NOP_THREE_TIMES { 0x90, 0x90, 0x90 }
 
+#define INLINE_NOP_FIVE_TIMES { 0x90, 0x90, 0x90, 0x90, 0x90 }
+
+#define INLINE_NOP_SIX_TIMES { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }
+
 #define INLINE_NOP_SEVEN_TIMES { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }
 
 
@@ -460,6 +464,42 @@ static const AsmList hijackLoadingStateColors =
         0x90,                                                                           // nop
                                                                                         // AFTER:
     } },
+};
+
+// Don't render Game UI
+static const AsmList disableHealthBars =
+{
+    { ( void * ) 0x425235, INLINE_NOP_SEVEN_TIMES }, // renderCharaIcon->nop
+    { ( void * ) 0x42523c, INLINE_NOP_SEVEN_TIMES }, // renderMoon->nop
+    { ( void * ) 0x425253, INLINE_NOP_FIVE_TIMES },  // renderTimer->nop
+    { ( void * ) 0x425226, INLINE_NOP_SIX_TIMES }, // renderGuardBar->nop
+    //{ ( void * ) 0x42522C, INLINE_NOP_SIX_TIMES },
+    { ( void * ) 0x425232, { 0x83, 0xC4, 0x04 } },
+    { ( void * ) 0x424E03, { 0xE9, 0x1E, 0x04, 0x00, 0x00, 0x90 } }, // jmp 00425226
+    //{ ( void * ) 0x424E03, { 0xE9, 0x4B, 0x04, 0x00, 0x00, 0x90 } }, // jmp 00425253
+};
+
+extern "C" void callbackDrawTargets();
+
+static const AsmList addExtraDraws =
+{
+    { ( void * ) 0x424E09, {
+        0xE8, INLINE_DWORD ( ( ( char * ) &callbackDrawTargets ) - 0x424E09 - 5 ),       // call charaSelectColorCb
+        0x90
+    } },
+    /*{ ( void * ) 0x424E0F, { 0xE9, 0x50, 0x04, 0x00, 0x00 } }, // jmp 00424E09
+    { ( void * ) 0x424E09, {
+                             0x90,0x90,0x90,0x90,0x90,
+                              0x90
+    } },
+    */
+    { ( void * ) 0x424E0F, {
+        0x5F, 0x5E, 0x5D, 0x5B,                                // pop edi, esi, ebp, ebx
+        0x8B, 0xE5,                                            // mov esp, ebp
+        0x5D, 0x90, 0x90, 0x90,                                // pop ebp
+        0xE9, 0x41, 0x04, 0x00, 0x00                           // jmp 0x42525F (RETURN)
+    } },
+    { ( void * ) 0x425258, { 0xE9, 0xAC, 0xFB, 0xFF, 0xFF } }, // jmp 00424E09
 };
 
 } // namespace AsmHacks

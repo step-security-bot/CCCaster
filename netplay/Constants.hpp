@@ -62,6 +62,7 @@
 #define CC_SKIPPABLE_FLAG_ADDR      ( ( uint32_t * ) 0x74D99C ) // Flag that indicates a skippable state when in-game
 #define CC_ALIVE_FLAG_ADDR          ( ( uint8_t * )  0x76E650 ) // Flag that indicates the game is alive
 #define CC_REPLAY_CREATED_ADDR      ( ( uint32_t * ) 0x774C30 ) // Flag that indicates whether a replay file has been written
+#define CC_D3DX9_OBJ_ADDR           ( ( uint32_t * ) 0x76E7D4 ) // The address for the IDirect3DDevice9
 
 // Some menu state counter, incremented for each open menu, decremented when menu closes
 #define CC_MENU_STATE_COUNTER_ADDR  ( ( uint32_t * ) 0x767440 )
@@ -175,6 +176,8 @@
 #define CC_P1_Y_ACCELERATION_ADDR   ( ( int16_t * )  0x555256 )
 #define CC_P1_SPRITE_ANGLE_ADDR     ( ( uint32_t * ) 0x555430 )
 #define CC_P1_FACING_FLAG_ADDR      ( ( uint8_t * )  0x555444 ) // 0 facing left, 1 facing right
+#define CC_P1_COMBO_OFFSET_ADDR     ( ( uint8_t * )  0x557E59) // Index into combo structure array
+#define CC_P1_COMBO_HIT_BASE_ADDR   ( ( uint32_t * ) 0x557E5C) // Base for combo strucure array
 
 #define CC_P2_ENABLED_FLAG_ADDR     ( ( uint8_t * )  ( ( ( char * ) CC_P1_ENABLED_FLAG_ADDR  ) + CC_PLR_STRUCT_SIZE ) )
 #define CC_P2_SEQUENCE_ADDR         ( ( uint32_t * ) ( ( ( char * ) CC_P1_SEQUENCE_ADDR      ) + CC_PLR_STRUCT_SIZE ) )

@@ -16,6 +16,7 @@
 #include "DllFrameRate.hpp"
 #include "ReplayManager.hpp"
 #include "DllRollbackManager.hpp"
+#include "DllTrialManager.hpp"
 
 #include <windows.h>
 
@@ -105,6 +106,9 @@ struct DllMain
 
     // DllRollbackManager instance
     DllRollbackManager rollMan;
+
+    // DllTrialManager instance
+    DllTrialManager trialMan;
 
     // If remote has loaded up to character select
     bool remoteCharaSelectLoaded = false;
@@ -878,6 +882,9 @@ struct DllMain
             return;
         }
 #endif // NOT DISABLE_LOGGING
+        if ( netMan.config.mode.isTrial() && netMan.isInGame() ) {
+            trialMan.frameStepTrial();
+        }
     }
 
     void frameStepRerun()
@@ -1014,6 +1021,9 @@ struct DllMain
         {
             if ( netMan.getRollback() )
                 rollMan.allocateStates();
+            if ( netMan.config.mode.isTrial() ) {
+                trialMan.loadTrialFile();
+            }
         }
 
         // Leaving InGame
@@ -1021,6 +1031,10 @@ struct DllMain
         {
             if ( netMan.getRollback() )
                 rollMan.deallocateStates();
+            if ( netMan.config.mode.isTrial() ) {
+                trialMan.initialized = false;
+                trialMan.clear();
+            }
         }
 
         // Entering CharaSelect OR entering InGame
@@ -1652,9 +1666,15 @@ struct DllMain
                 clientMode = msg->getAs<ClientMode>();
                 clientMode.flags |= ClientMode::GameStarted;
 
-                if ( clientMode.isTraining() )
+                if ( clientMode.isTraining() ) {
                     WRITE_ASM_HACK ( AsmHacks::forceGotoTraining );
-                else if ( clientMode.isVersusCPU() )
+                    if ( clientMode.isTrial() ) {
+                        for ( const AsmHacks::Asm& hack : AsmHacks::disableHealthBars )
+                            WRITE_ASM_HACK ( hack );
+                        for ( const AsmHacks::Asm& hack : AsmHacks::addExtraDraws )
+                            WRITE_ASM_HACK ( hack );
+                    }
+                } else if ( clientMode.isVersusCPU() )
                     WRITE_ASM_HACK ( AsmHacks::forceGotoVersusCPU );
                 else if ( clientMode.isReplay() )
                     WRITE_ASM_HACK ( AsmHacks::forceGotoReplay );

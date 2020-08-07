@@ -269,14 +269,14 @@ bool MainUi::gameMode ( bool below )
 
 bool MainUi::offlineGameMode()
 {
-    _ui->pushRight ( new ConsoleUi::Menu ( "Mode", { "Training", "Versus", "Versus CPU", "Tournament", "Replay" }, "Cancel" ) );
+    _ui->pushRight ( new ConsoleUi::Menu ( "Mode", { "Training", "Versus", "Versus CPU", "Tournament", "Replay", "Trial" }, "Cancel" ) );
     _ui->top<ConsoleUi::Menu>()->setPosition ( _config.getInteger ( "lastOfflineMenuPosition" ) - 1 );
 
     int mode = _ui->popUntilUserInput ( true )->resultInt; // Clear other messages since we're starting the game now
 
     _ui->pop();
 
-    if ( mode < 0 || mode > 4 )
+    if ( mode < 0 || mode > 5 )
         return false;
 
     _config.setInteger ( "lastOfflineMenuPosition", mode + 1 );
@@ -292,6 +292,8 @@ bool MainUi::offlineGameMode()
         _netplayConfig.tournament = true;
     else if ( mode == 4 )
       initialConfig.mode.flags = ClientMode::Replay;
+    else if ( mode == 5 )
+      initialConfig.mode.flags = ClientMode::Training | ClientMode::Trial;
     else
         return false;
 
