@@ -134,7 +134,8 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
             || ( ! *CC_PAUSE_FLAG_ADDR
                  && config.mode.isVersus()
                  && heldStartDuration
-                 && ! heldButtonInHistory ( player, CC_BUTTON_START, 0, heldStartDuration ) ) )
+                 && ! heldButtonInHistory ( player, CC_BUTTON_START, 0, heldStartDuration ) )
+	    && ( !config.mode.isReplay() ) )
     {
         input &= ~ COMBINE_INPUT ( 0, CC_BUTTON_START );
     }
@@ -151,7 +152,7 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
             input &= ~ COMBINE_INPUT ( 0, CC_BUTTON_A | CC_BUTTON_CONFIRM );
 
         // Disable returning to main menu; 16 and 6 are the menu positions for training and versus mode respectively
-        if ( AsmHacks::currentMenuIndex == ( config.mode.isTraining() ? 16 : 6 ) )
+        if ( AsmHacks::currentMenuIndex == ( config.mode.isTraining() ? 16 : ( config.mode.isReplay() ? 11 : 6 ) ) )
             input &= ~ COMBINE_INPUT ( 0, CC_BUTTON_A | CC_BUTTON_CONFIRM );
 
     }
