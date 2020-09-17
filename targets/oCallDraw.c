@@ -13,6 +13,7 @@ extern "C" {
     void (*drawtext) (int, char*, int, int, int, void*, int, int, int) = (void(*)(int, char*, int, int, int, void*, int, int, int)) 0x41d340;
     void (*drawsprite) (int, int, int, int, int, int, int, int, int, int, int, int) = (void(*)(int, int, int, int, int, int, int, int, int, int, int, int)) 0x415580;
     void (*drawrect) (int, int, int, int, int, int, int, int, int) = (void(*)(int, int, int, int, int, int, int, int, int)) 0x415450;
+    int (*createTexFromFileInMemory) (int, char*, int, int) = (int(*)(int, char*, int, int)) 0x4bd2d0;
 
     int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* addr, int spacing, int unk, char* out ) {
         (*drawtext)( yAddr, text, textShade, textAlpha, textShade2, addr, height, spacing, unk );
@@ -27,5 +28,9 @@ extern "C" {
     int CallDrawRect ( int screenXAddr, int screenYAddr, int width, int height, int A, int B, int C, int D, int layer ) {
         (*drawrect)( screenXAddr, screenYAddr, width, height, A, B, C, D, layer );
         return 1;
+    }
+
+    int loadTextureFromMemory( char* imgbuf1, int img1size, char* imgbuf2, int img2size, int param4 ) {
+        return (*createTexFromFileInMemory)( img1size, imgbuf2, img2size, param4 );
     }
 }

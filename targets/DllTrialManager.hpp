@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 
+#include <d3dx9.h>
+
 using namespace std;
 
 namespace TrialManager {
@@ -22,6 +24,10 @@ extern int comboTrialPosition;
 extern int currentTrial;
 
 extern bool hideText;
+    
+extern LPDIRECT3DTEXTURE9 trialTextures;
+
+extern int trialTextures2;
 } // namespace TrialManager
 
 class DllTrialManager

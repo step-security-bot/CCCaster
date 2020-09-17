@@ -479,12 +479,12 @@ static const AsmList disableHealthBars =
     //{ ( void * ) 0x424E03, { 0xE9, 0x4B, 0x04, 0x00, 0x00, 0x90 } }, // jmp 00425253
 };
 
-extern "C" void callbackDrawTargets();
+extern "C" void addExtraDrawCallsCb();
 
 static const AsmList addExtraDraws =
 {
     { ( void * ) 0x424E09, {
-        0xE8, INLINE_DWORD ( ( ( char * ) &callbackDrawTargets ) - 0x424E09 - 5 ),       // call charaSelectColorCb
+        0xE8, INLINE_DWORD ( ( ( char * ) &addExtraDrawCallsCb ) - 0x424E09 - 5 ),       // call charaSelectColorCb
         0x90
     } },
     /*{ ( void * ) 0x424E0F, { 0xE9, 0x50, 0x04, 0x00, 0x00 } }, // jmp 00424E09
@@ -501,5 +501,20 @@ static const AsmList addExtraDraws =
     } },
     { ( void * ) 0x425258, { 0xE9, 0xAC, 0xFB, 0xFF, 0xFF } }, // jmp 00424E09
 };
+
+extern "C" void addExtraTexturesCb();
+
+static const AsmList addExtraTextures =
+{
+     /*{ ( void * ) 0x41c0f1, {
+         0xE8, INLINE_DWORD ( ( ( char * ) &callbackExtraTextures ) - 0x41c0f1 - 5 ),       // call addExtraTexturesCb
+         0x8B, 0x8C, 0x24, 0x1C, 0x01, 0x00, 0x00
+         } },*/
+    { ( void * ) 0x41BE38, {
+         0xE8, INLINE_DWORD ( ( ( char * ) &addExtraTexturesCb ) - 0x41BE38 - 5 ),       // call addExtraTexturesCb
+         0xC3
+    } },
+};
+
 
 } // namespace AsmHacks

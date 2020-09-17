@@ -13,6 +13,10 @@ _drawsprite:
 	.align 4
 _drawrect:
 	.long	4281424
+  .globl	_createTexFromFileInMemory
+	.align 4
+_createTexFromFileInMemory:
+	.long	4969168
 	.text
 	.globl	_CallDrawText
 	.def	_CallDrawText;	.scl	2;	.type	32;	.endef
@@ -143,4 +147,33 @@ LFB17:
 	ret
 	.cfi_endproc
 LFE17:
+	.globl	_loadTextureFromMemory
+	.def	_loadTextureFromMemory;	.scl	2;	.type	32;	.endef
+_loadTextureFromMemory:
+LFB18:
+	.cfi_startproc
+	pushl	%ebp
+	.cfi_def_cfa_offset 8
+	.cfi_offset 5, -8
+	movl	%esp, %ebp
+	.cfi_def_cfa_register 5
+	subl	$24, %esp
+	movl	_createTexFromFileInMemory, %eax
+	movl	24(%ebp), %edx
+	movl	%edx, 12(%esp)
+	movl	20(%ebp), %edx
+	movl	%edx, 8(%esp)
+	movl	16(%ebp), %edx
+	movl	%edx, 4(%esp)
+	movl	12(%ebp), %edx
+	movl	%edx, (%esp)
+	movl  %eax, %edx
+	movl  8(%ebp), %eax
+	call	*%edx
+	leave
+	.cfi_restore 5
+	.cfi_def_cfa 4, 4
+	ret
+	.cfi_endproc
+LFE18:
 	.ident	"GCC: (i686-win32-dwarf-rev0, Built by MinGW-W64 project) 8.1.0"

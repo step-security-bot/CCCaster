@@ -21,6 +21,8 @@ int comboTrialLength = 0;
 int comboTrialPosition = 0;
 int currentTrial = 0;
 bool hideText = false;
+LPDIRECT3DTEXTURE9 trialTextures = NULL;
+int trialTextures2 = 0;
 } // namespace TrialManager
 using namespace std;
 
@@ -37,10 +39,12 @@ void DllTrialManager::frameStepTrial()
     //comboSeq = {{ 4, 1, 2, 3, -1 }};
 
     char buf[1000];
-    sprintf(buf, "cDrop=%d, cStart=%d, ehitC=%d, rhitc=%d,cCombo=%d, p2cseq=%d, currSeq=%d, exSeq=%d",
+    sprintf(buf, "temp1=%d, temp=%d, ehitC=%d, rhitc=%d,cCombo=%d, p2cseq=%d, currSeq=%d, exSeq=%d",
             //offaddrp=%d, offAddr=0x%08X,
-            comboDrop,
-            comboStart,
+            //comboDrop,
+            //cStartcomboStart,
+            (int)TrialManager::trialTextures,
+            (int)&TrialManager::trialTextures,
             currentHitcount,
             getHitcount(),
             TrialManager::currentTrial,

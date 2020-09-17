@@ -8,6 +8,9 @@
 #include <windows.h>
 #include <d3dx9.h>
 #include <iostream>
+#include <fstream>
+#include <vector>
+#include <iterator>
 
 using namespace std;
 using namespace DllOverlayUi;
@@ -65,7 +68,6 @@ static array<bool, 2> shouldDrawSelector { false, false };
 static ID3DXFont *font = 0;
 
 static IDirect3DVertexBuffer9 *background = 0;
-
 
 namespace DllOverlayUi
 {
@@ -367,7 +369,19 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
 
     if ( ! TrialManager::comboTrialText.empty() && !TrialManager::hideText )
     {
-
+        /*
+        if ( TrialManager::trialTextures == NULL ) {
+            char* filename = "arrow.png";
+            char* filename2 = "tutorial00.bmp";
+            ifstream input( filename, ios::binary );
+            vector<char> buffer( istreambuf_iterator<char>(input), {} );
+            int imgsize = buffer.size();
+            char* rawimg = &buffer[0];
+            int (*loadTextureFromMemory) (int, char*, int, int) = (int(*)(int, char*, int, int)) 0x4bd2d0;
+            D3DXCreateTextureFromFile( device, filename, &TrialManager::trialTextures );
+            TrialManager::trialTextures2 = loadTextureFromMemory(0, rawimg, imgsize, 0);
+        }
+        */
         RECT rect;
         rect.top = 70;
         rect.left = 20;
