@@ -168,6 +168,7 @@ extern "C" void loadingStateColorCb()
 
     loadingStateColorCb2 ( ptr );
 }
+extern "C" void (*drawInputs) () = (void(*)()) 0x479460;
 
 extern "C" int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* addr, int spacing, int layer, char* out );
 /*
@@ -188,6 +189,7 @@ extern "C" void addExtraDrawCallsCb() {
     //CallDrawText ( 0x80, 0xff, 20, 20, test, 0xff, 0xff, 0xcc, (void*)0x55DAA0 , 0, 0, out );
     //CallDrawRect ( 30, 30, 200, 200, 0xFFFF0000, 0xFFFF0000,0xFFFF0000,0xFFFF0000, 0xcb );
     //CallDrawSprite ( 180, 0, *(int*)0x74d5e8, 40, 40, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    //CallDrawSprite ( 180, 0, *(int*)0x74d5e8, 40, 40, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
     //CallDrawSprite ( 180, 0, (int)&tmp, 40, 40, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
     //CallDrawSprite ( 180, 0, (int) *(int*)TrialManager::trialTextures2, 20, 20, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
     //CallDrawSprite ( 67, 0, (int) TrialManager::trialTextures2, 20, 20, 32, 4, 2, 67, 32, 0xFFFFFFFF, 0, 0x2cb );
@@ -196,6 +198,13 @@ extern "C" void addExtraDrawCallsCb() {
     //CallDrawSprite ( 25, 0, *(int*)0x74d5e8, 38, 24, 25, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
     //CallDrawSprite ( 25, 0, *(int*)0x74d5e8, 38+67-3, 24, 25, 0x19*2, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
     //CallDrawSprite ( 25, 0, *(int*)0x74d5e7, 38+67-26, 24, 25, 0x19*2, 0, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+
+    //inputDisplay
+    //*(int*) 0x5585f8 = 0x1;
+    //drawInputs();
+    //*(int*) 0x55df0f = 0x1;
+    //drawInputs();
+    //*(int*) 0x55df0f = 0x0;
 }
 
 extern "C" int loadTextureFromMemory( char* imgbuf1, int img1size, char* imgbuf2, int img2size, int param4 );
