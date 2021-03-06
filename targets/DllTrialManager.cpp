@@ -23,6 +23,7 @@ int currentTrial = 0;
 bool hideText = false;
 LPDIRECT3DTEXTURE9 trialTextures = NULL;
 int trialTextures2 = 0;
+int trialTextures3 = 0;
 } // namespace TrialManager
 using namespace std;
 
@@ -162,7 +163,11 @@ void DllTrialManager::loadTrialFile()
             TrialManager::fullStrings.push_back( nfullstring );
         }
         initialized = true;
+        tmp2 = 300;
     }
+    FILE* file = fopen ("coords.txt", "r");
+    fscanf (file, "%d %d %d %d %d %d", &i1, &i2, &i3, &i4, &i5, &i6);
+    fclose( file );
     //cout << TrialManager::fullStrings[0];
 }
 
@@ -183,6 +188,24 @@ void DllTrialManager::loadCombo( int comboId )
 int DllTrialManager::getHitcount()
 {
     return *(uint32_t*)((*CC_P1_COMBO_OFFSET_ADDR * 0x2C) / 4 + CC_P1_COMBO_HIT_BASE_ADDR );
+}
+
+extern "C" int CallDrawSprite ( int spriteWidth, int dxdevice, int texAddr, int screenXAddr, int screenYAddr, int spriteHeight, int texXAddr, int texYAddr, int texXSize, int texYSize, int flags, int unk, int layer );
+
+void DllTrialManager::render()
+{
+    if ( tmp2 < 0 ) tmp2 = 300;
+    tmp2 -= 2;
+    CallDrawSprite ( 25, 0, *(int*)0x74d5e8, tmp2, 24, 25, 0, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    CallDrawSprite ( 25, 0, *(int*)0x74d5e8, tmp2+15, 24+25, 25, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    CallDrawSprite ( 25, 0, *(int*)0x74d5e8, tmp2+40, 24+50, 25, 0x19*2, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    //CallDrawSprite ( 25, 0, *(int*)0x74d5e8, 50, 24, 25, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    //CallDrawSprite ( 25, 0, (int)TrialManager::trialTextures3, 50, 24, 25, 0, 0, 9, 9, 0xFFFFFFFF, 0, 0x2cb );
+    //CallDrawSprite ( 67, 0, (int) TrialManager::trialTextures2, 20+67-15, 20, 32, 4, 34, 67, 32, 0xFFFFFFFF, 0, 0x2cb );
+    //CallDrawSprite ( 67, 0, (int) TrialManager::trialTextures3, 20+67-15, 20, 64, 4, 34, 67, 64, 0xFFFFFFFF, 0, 0x2cb );
+    CallDrawSprite ( i1, 0, (int) TrialManager::trialTextures3, i3, i4, i2, i5, i6, i1, i2, 0xFFFFFFFF, 0, 0x2cb );
+    CallDrawSprite ( i1, 0, (int) TrialManager::trialTextures3, i3, i4+25, i2, i5, i6, i1, i2, 0xFFFFFFFF, 0, 0x2cb );
+    CallDrawSprite ( i1, 0, (int) TrialManager::trialTextures3, i3, i4+50, i2, i5, i6, i1, i2, 0xFFFFFFFF, 0, 0x2cb );
 }
 
 void DllTrialManager::clear()

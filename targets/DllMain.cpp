@@ -2179,4 +2179,9 @@ extern "C" void callback()
     }
 }
 
+extern "C" void renderCallback()
+{
+    mainApp->trialMan.render();
+}
+
 } // namespace AsmHacks

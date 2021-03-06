@@ -28,6 +28,7 @@ extern bool hideText;
 extern LPDIRECT3DTEXTURE9 trialTextures;
 
 extern int trialTextures2;
+extern int trialTextures3;
 } // namespace TrialManager
 
 class DllTrialManager
@@ -37,6 +38,7 @@ public:
     void frameStepTrial();
     void loadTrialFile();
     void clear();
+    void render();
     void loadCombo( int comboId );
 
     bool initialized = false;
@@ -57,4 +59,11 @@ private:
 
     int getHitcount();
 
+    int tmp2;
+    int i1;
+    int i2;
+    int i3;
+    int i4;
+    int i5;
+    int i6;
 };
