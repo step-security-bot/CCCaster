@@ -168,7 +168,7 @@ extern "C" void loadingStateColorCb()
 
     loadingStateColorCb2 ( ptr );
 }
-extern "C" void (*drawInputs) () = (void(*)()) 0x479460;
+extern "C" void (*drawInputHistory) () = (void(*)()) 0x479460;
 
 extern "C" int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* addr, int spacing, int layer, char* out );
 /*
@@ -183,27 +183,13 @@ extern "C" int CallDrawSprite ( int spriteWidth, int dxdevice, int texAddr, int 
 extern "C" void renderCallback();
 // ARGB
 extern "C" void addExtraDrawCallsCb() {
-    char* test = "test";
-    char out[50];
-    int* tmp= (int*)&TrialManager::trialTextures;
-    //CallDrawText ( 0x80, 0xff, 20, 20, test, 0xff, 0xff, 0xcc, (void*)0x55DAA0 , 0, 0, out );
-    //CallDrawRect ( 30, 30, 200, 200, 0xFFFF0000, 0xFFFF0000,0xFFFF0000,0xFFFF0000, 0xcb );
-    //CallDrawSprite ( 180, 0, *(int*)0x74d5e8, 40, 40, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 180, 0, *(int*)0x74d5e8, 40, 40, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 180, 0, (int)&tmp, 40, 40, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 180, 0, (int) *(int*)TrialManager::trialTextures2, 20, 20, 180, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 67, 0, (int) TrialManager::trialTextures2, 20, 20, 32, 4, 2, 67, 32, 0xFFFFFFFF, 0, 0x2cb );
-    //CallDrawSprite ( 67, 0, (int) TrialManager::trialTextures2, 20+67-15, 20, 32, 4, 34, 67, 32, 0xFFFFFFFF, 0, 0x2cb );
     renderCallback();
-    //CallDrawSprite ( 25, 0, *(int*)0x74d5e8, 38, 24, 25, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 25, 0, *(int*)0x74d5e8, 38+67-3, 24, 25, 0x19*2, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 25, 0, *(int*)0x74d5e7, 38+67-26, 24, 25, 0x19*2, 0, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
 
     //inputDisplay
     //*(int*) 0x5585f8 = 0x1;
-    //drawInputs();
+    //drawInputHistory();
     //*(int*) 0x55df0f = 0x1;
-    //drawInputs();
+    //drawInputHistory();
     //*(int*) 0x55df0f = 0x0;
 }
 
@@ -215,7 +201,7 @@ extern "C" void addExtraTexturesCb() {
     IDirect3DDevice9* device = (IDirect3DDevice9*) CC_D3DX9_OBJ_ADDR;
         char* filename = ".//arrows.png";
         char* filename2 = ".//tutorial00.bmp";
-        char* filename3 = ".//inputs.png";
+        char* filename3 = ".//inputs2.png";
         ifstream input( filename, ios::binary );
         vector<char> buffer( istreambuf_iterator<char>(input), {} );
         int imgsize = buffer.size();

@@ -349,7 +349,6 @@ void invalidateOverlayText()
     }
 }
 
-//extern "C" void (*drawInputs) () = (void(*)()) 0x479460;
 void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport )
 {
 #ifndef RELEASE
@@ -368,7 +367,6 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
 
 #endif // RELEASE
 
-    //drawInputs();
     if ( ! TrialManager::comboTrialText.empty() && !TrialManager::hideText )
     {
         /*
