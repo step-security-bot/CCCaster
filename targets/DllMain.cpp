@@ -827,6 +827,10 @@ struct DllMain
             }
         }
 
+        // Handle Trial changes
+        if ( netMan.config.mode.isTrial() && netMan.isInGame() ) {
+            trialMan.frameStepTrial();
+        }
         // if ( netMan.getIndex() == 1802 && netMan.getFrame() == 460 )
         // {
         //     if ( *CC_P1_HEALTH_ADDR != 11400 || *CC_P1_METER_ADDR != 0
@@ -851,7 +855,6 @@ struct DllMain
         // Cleared last played and muted sound effects
         memset ( AsmHacks::sfxFilterArray, 0, CC_SFX_ARRAY_LEN );
         memset ( AsmHacks::sfxMuteArray, 0, CC_SFX_ARRAY_LEN );
-
 #ifndef DISABLE_LOGGING
         MsgPtr msgRngState = procMan.getRngState ( 0 );
         ASSERT ( msgRngState.get() != 0 );
@@ -882,9 +885,6 @@ struct DllMain
             return;
         }
 #endif // NOT DISABLE_LOGGING
-        if ( netMan.config.mode.isTrial() && netMan.isInGame() ) {
-            trialMan.frameStepTrial();
-        }
     }
 
     void frameStepRerun()

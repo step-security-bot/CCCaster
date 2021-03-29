@@ -221,6 +221,13 @@
 // Allows for multiple instances of melty
 #define MULTIPLE_MELTY              ( ( char * )     0x40D25A )
 
+// Addresses for sprite textures
+#define BUTTON_SPRITE_TEX           ( 0x74d5e8 )
+// Addresses for DrawText fonts
+#define FONT0                       ( 0x55D680 )
+#define FONT1                       ( 0x55D260 )
+#define FONT2                       ( 0x55DAA0 )
+
 union IndexedFrame
 {
     struct { uint32_t frame, index; } parts;
