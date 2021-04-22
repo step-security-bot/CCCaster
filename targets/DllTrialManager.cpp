@@ -1,6 +1,7 @@
 #include "Constants.hpp"
 #include "DllTrialManager.hpp"
 #include "DllTrialManager.hpp"
+#include "DllNetplayManager.hpp"
 #include "CharacterSelect.hpp"
 
 #include <fstream>
@@ -27,12 +28,16 @@ int trialTextures3 = 0;
 } // namespace TrialManager
 using namespace std;
 
+extern NetplayManager* netManPtr;
+
 void DllTrialManager::frameStepTrial()
 {
+    //tmp2 += 1;
+    //tmp2 %= 300;
     if ( !initialized )
         return;
 
-    //TrialManager::comboTrialText = { "5A >", "2A >", "5B >", "5C" };
+    //TrialManager::comboTrialText = { L"5A >", L"2A >", L"5B >", L"5C" };
     TrialManager::comboTrialText = comboText[TrialManager::currentTrial];
     TrialManager::comboName = comboNames[TrialManager::currentTrial];
     TrialManager::comboTrialLength = 4;
@@ -40,12 +45,13 @@ void DllTrialManager::frameStepTrial()
     //comboSeq = {{ 4, 1, 2, 3, -1 }};
 
     char buf[1000];
-    sprintf(buf, "temp1=%d, temp=%d, ehitC=%d, rhitc=%d,cCombo=%d, p2cseq=%d, currSeq=%d, exSeq=%d",
+    sprintf(buf, "temp1=%d, temp=%d, ehitC=%d, rhitc=%02d,cCombo=%02d, p2cseq=%03d, currSeq=%03d, exSeq=%02d",
             //offaddrp=%d, offAddr=0x%08X,
             //comboDrop,
             //cStartcomboStart,
-            (int)TrialManager::trialTextures,
-            (int)&TrialManager::trialTextures,
+            //(int)TrialManager::trialTextures,
+            //(int)&TrialManager::trialTextures,
+            0,0,
             currentHitcount,
             getHitcount(),
             TrialManager::currentTrial,
@@ -55,6 +61,7 @@ void DllTrialManager::frameStepTrial()
             *CC_P1_SEQUENCE_ADDR,
             comboSeq[TrialManager::currentTrial][TrialManager::comboTrialPosition]);
     TrialManager::dtext = buf;
+    cout << TrialManager::dtext << endl;
     if ( !comboDrop ) {
         if ( *CC_P1_SEQUENCE_ADDR == comboSeq[TrialManager::currentTrial][0] &&
              *CC_P2_SEQUENCE_ADDR != 0 && !comboStart ) {
@@ -163,7 +170,6 @@ void DllTrialManager::loadTrialFile()
             TrialManager::fullStrings.push_back( nfullstring );
         }
         initialized = true;
-        tmp2 = 300;
     }
     FILE* file = fopen ("coords.txt", "r");
     fscanf (file, "%d %d %d %d %d %d", &i1, &i2, &i3, &i4, &i5, &i6);
@@ -192,20 +198,316 @@ int DllTrialManager::getHitcount()
 
 extern "C" int CallDrawSprite ( int spriteWidth, int dxdevice, int texAddr, int screenXAddr, int screenYAddr, int spriteHeight, int texXAddr, int texYAddr, int texXSize, int texYSize, int flags, int unk, int layer );
 
+extern "C" int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* font, int spacing, int unk, char* out );
+
+extern "C" int CallDrawRect ( int screenXAddr, int screenYAddr, int width, int height, int A, int B, int C, int D, int layer );
+
+void DllTrialManager::drawButton( int buttonId, int screenX, int screenY, int width, int height )
+{
+    // Buttons:
+    // 0: A 1: B 2: C 3:D
+    CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*buttonId, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+}
+
+void DllTrialManager::drawArrow( int direction, int screenX, int screenY, int width, int height )
+{
+    CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*direction, 0, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+}
+
+void DllTrialManager::drawText( string text, int screenX, int screenY, int width, int height )
+{
+    vector<char> ctext(text.begin(), text.end());
+    ctext.push_back(0);
+
+    CallDrawText ( width, height, screenX, screenY, &ctext[0], 0xff, 0xff, 0xcc,
+                   (void*) FONT2,
+                   0, 0, 0 );
+}
+void DllTrialManager::drawShadowButton( int buttonId, int screenX, int screenY, int width, int height )
+{
+    // Buttons:
+    // 0=A 1=B 2=C 3=D
+    CallDrawSprite ( width, 0, (int) TrialManager::trialTextures3, screenX, screenY, height, 0x19*buttonId, 125, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+}
+
+void DllTrialManager::drawShadowArrow( int direction, int screenX, int screenY, int width, int height )
+{
+    CallDrawSprite ( width, 0, (int) TrialManager::trialTextures3, screenX, screenY, height, 0x19*direction, 100, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+}
+
+int DllTrialManager::drawComboBacking( MovePosition position, MoveStatus status, int screenX, int screenY, int width, int height )
+{
+    // Type: 0=Full, 1=Start, 2=End
+    // Status: 0=Next, 1=Current, 3=Completed, 4=Fail Point
+    int texStartX = 4;
+    int centerTexWidth = 33;
+    int texStartY = 2;
+    int yoffset = status*32;
+    int centerStartX = 18;
+    int endStartX = 52;
+    int nextX = screenX;
+    bool drawStart = true;
+    bool drawEnd = true;
+    switch ( position ) {
+        case Middle:
+            break;
+        case Start:
+            drawStart = false;
+            break;
+        case Ending:
+            drawEnd = false;
+            break;
+        default:
+            break;
+    }
+    if ( drawStart ) {
+        CallDrawSprite ( 15, 0, (int) TrialManager::trialTextures2, screenX, screenY, height, texStartX, texStartY+yoffset, 15, 32, 0xFFFFFFFF, 0, 0x2cb );
+        screenX +=15;
+        nextX += 15;
+    }
+    CallDrawSprite ( width, 0, (int) TrialManager::trialTextures2, screenX, screenY, height, centerStartX, texStartY+yoffset, centerTexWidth, 32, 0xFFFFFFFF, 0, 0x1cc );
+    nextX += width;
+    if ( drawEnd ) {
+        CallDrawSprite ( 18, 0, (int) TrialManager::trialTextures2, screenX+width, screenY, height, endStartX, texStartY+yoffset, 18, 32, 0xFFFFFFFF, 0, 0x2cb );
+        nextX += 4;
+    }
+    return nextX ;
+}
+void DllTrialManager::drawInputs()
+{
+    int width = 640;
+    int left = width / 2 - 12 - 25;
+    int top = 480 - 50;
+    uint16_t rawinput = netManPtr->getRawInput( 1 );
+    uint16_t dir = 0xF & rawinput;
+    int leftmod = 0;
+    int topmod = 0;
+    for ( uint16_t i=1; i < 10; ++i ){
+        if ( dir == i ) {
+            drawArrow( i, left+leftmod, top-topmod );
+        } else {
+            drawShadowArrow( i, left+leftmod, top-topmod );
+        }
+        leftmod = ( leftmod + 25 ) % 75;
+        if ( i % 3 == 0)
+            topmod = ( topmod + 25 );
+    }
+    uint16_t buttons = rawinput >> 4;
+    if ( buttons & CC_BUTTON_A ) {
+        drawButton( 0, left, top + 25 );
+    } else {
+        drawShadowButton( 0, left, top + 25 );
+    }
+    if ( buttons & CC_BUTTON_B ) {
+        drawButton( 1, left+25, top + 25 );
+    } else {
+        drawShadowButton( 1, left+25, top + 25 );
+    }
+    if ( buttons & CC_BUTTON_C ) {
+        drawButton( 2, left+50, top + 25 );
+    } else {
+        drawShadowButton( 2, left+50, top + 25 );
+    }
+    if ( buttons & CC_BUTTON_D ) {
+        drawButton( 3, left+75, top + 25 );
+    } else {
+        drawShadowButton( 3, left+75, top + 25 );
+    }
+}
+
+vector<Move> DllTrialManager::tokenizeText( vector<wstring> text )
+{
+    wstring dirs = L"12346789";
+    wstring buttons = L"ABCD";
+    wstring brackets = L"[]{}";
+    vector<Move> moves;
+    for( unsigned int j = 0; j < text.size(); ++j ) {
+        wstring move = text[j];
+        vector<Token> tokens;
+        unsigned int i = 0;
+        while( i < move.length() ) {
+            wchar_t curMove = move[i];
+            if ( curMove == L'd' ) {
+                tokens.push_back( Token{ "d.", Symbol, 2 } );
+                i++;
+            } else if ( curMove == L'j' ) {
+                tokens.push_back( Token{ "j.", Symbol, 2 } );
+                i++;
+            } else if ( curMove == L't' ) {
+                tokens.push_back( Token{ "tk.", Symbol, 3 } );
+                i += 2;
+            } else if ( dirs.find( curMove ) != wstring::npos ) {
+                tokens.push_back( Token{ string( 1, curMove ), Direction, 1 } );
+            } else if ( buttons.find( curMove ) != wstring::npos ) {
+                if ( i+1 < move.length() && move[i+1] == L'T' ) {
+                    tokens.push_back( Token{ "AT", String, 2 } );
+                    i++;
+                } else if ( i+1 < move.length() && move[i+1] == L'd' ) {
+                    tokens.push_back( Token{ "Add.", Symbol, 4 } );
+                    i += 3;
+                } else {
+                    tokens.push_back( Token{ string( 1, curMove ), Button, 1 } );
+                }
+            } else if ( curMove == L'(' ) {
+                string textFrag;
+                int len = 2;
+                while( move[i] != L')' ){
+                    textFrag += move[i];
+                    i++;
+                    len++;
+                }
+                textFrag += L')';
+                i++;
+                tokens.push_back( Token{ textFrag, String, len } );
+            } else if ( brackets.find( curMove ) != wstring::npos ) {
+                tokens.push_back( Token{ string( 1, curMove ), String, 1 } );
+            }
+            i++;
+        }
+        MovePosition pos;
+        if ( j == 0 ) {
+            pos = Start;
+        } else if ( j == text.size() - 1 ) {
+            pos = Ending;
+        } else {
+            pos = Middle;
+        }
+        moves.push_back( Move{ tokens, pos } );
+    }
+    return moves;
+}
+
+int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
+{
+    int loffset = i1;
+    if ( move.position != Start ) {
+        loffset += 15;
+    }
+    int yoffset = i2;
+    int ytextoffset = i2;
+    int roffset = i3;
+    int currX = x + loffset;
+    int nextX = x + loffset;
+    int moveWidth = 0;
+    for( Token token : move.text ) {
+        if ( token.type == Button ) {
+            nextX += 25;
+            if ( nextX > 630){
+                y += 25;
+                currX = x + loffset;
+            }
+            int buttonId = token.text[0] - L'A';
+            drawButton( buttonId, currX, y+yoffset );
+            currX += 25;
+            moveWidth += 25;
+        } else if ( token.type == Direction ) {
+            int buttonId = token.text[0] - L'0';
+            drawArrow( buttonId, currX, y+yoffset );
+            currX += 25;
+            moveWidth += 25;
+        } else if ( token.type == String ) {
+            drawText( token.text, currX, y+ytextoffset );
+            currX += 24*token.text.length();
+            moveWidth += 24*token.text.length();
+        } else if ( token.type == Symbol ) {
+            if ( token.text[ 0 ] == 'd' ) {
+                drawText( "d", currX, y+ytextoffset );
+                drawText( ".", currX + 15, y+ytextoffset );
+                currX += 35;
+                moveWidth += 35;
+            } else if ( token.text[ 0 ] == 'j' ) {
+                drawText( "j", currX, y+ytextoffset );
+                drawText( ".", currX + 10, y+ytextoffset );
+                currX += 30;
+                moveWidth += 30;
+            } else if ( token.text[ 0 ] == 'A' ) {
+                drawText( "A", currX, y+ytextoffset );
+                currX += 20;
+                moveWidth += 20;
+                drawText( "d", currX, y+ytextoffset );
+                currX += 16;
+                moveWidth += 16;
+                drawText( "d", currX, y+ytextoffset );
+                currX += 14;
+                moveWidth += 14;
+                drawText( ".", currX, y+ytextoffset );
+                currX += 17;
+                moveWidth += 17;
+            } else if ( token.text[ 0 ] == 't' ) {
+                drawText( "t", currX, y+ytextoffset );
+                currX += 15;
+                moveWidth += 15;
+                drawText( "k", currX, y+ytextoffset );
+                currX += 11;
+                moveWidth += 11;
+                drawText( ".", currX, y+ytextoffset );
+                currX += 15;
+                moveWidth += 15;
+            }
+        }
+    }
+    x = drawComboBacking( move.position, color, x, y, moveWidth+roffset );
+    return x;
+}
+
+void DllTrialManager::drawCombo()
+{
+    drawComboBacking( Middle,Next,20+67-15,20,67,50);
+    drawComboBacking( Start,Current,20+67-15,70,67,50);
+    drawComboBacking( Ending,Done,20+67-15,120,67,50);
+    drawComboBacking( Start,Done,20+67-15,170,67,50);
+    drawComboBacking( Middle,Done,20+67-15+67+4,170,67,50);
+    drawComboBacking( Ending,Failed,20+67-15+(67+4)*2+15,170,500,50);
+    char* test = "j.[B]";
+
+    /*
+    CallDrawText ( i1, i2, i3, i4, test, 0xff, 0xff, 0xcc,
+                   (void*) FONT2,
+                   0, 0, 0 );
+    */
+    int x = i4;
+    int newx = i4;
+    int y = i5;
+    int loffset = 0;
+    int yoffset = 0;
+    int roffset = 10;
+    int currentMove = 0;
+    int currentFail = 3;
+    MoveStatus color;
+
+    vector<wstring> comboTrialText = { L"5A", L"2A", L"5B", L"AT",
+        L"tk.236B", L"Add.A", L"j.B", L"[B]"};
+    //    L"(delay)j.5B(hold)"};
+    vector<Move> moveList = tokenizeText( comboTrialText );
+
+    for( int i = 0; i < moveList.size(); ++i ) {
+        if ( i == currentFail ) {
+            color = Failed;
+        } else if ( i < currentMove ) {
+            color = Done;
+        } else if ( i == currentMove ) {
+            color = Current;
+        } else {
+            color = Next;
+        }
+        Move move = moveList[i];
+
+        newx = drawMove( move, color, x+loffset, y+yoffset );
+        if ( newx < x ) {
+            y += 25;
+        }
+        x = newx;
+    }
+}
+
+void DllTrialManager::drawiidx(){
+    
+}
 void DllTrialManager::render()
 {
-    if ( tmp2 < 0 ) tmp2 = 300;
-    tmp2 -= 2;
-    CallDrawSprite ( 25, 0, *(int*)0x74d5e8, tmp2, 24, 25, 0, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    CallDrawSprite ( 25, 0, *(int*)0x74d5e8, tmp2+15, 24+25, 25, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    CallDrawSprite ( 25, 0, *(int*)0x74d5e8, tmp2+40, 24+50, 25, 0x19*2, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 25, 0, *(int*)0x74d5e8, 50, 24, 25, 0x19, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
-    //CallDrawSprite ( 25, 0, (int)TrialManager::trialTextures3, 50, 24, 25, 0, 0, 9, 9, 0xFFFFFFFF, 0, 0x2cb );
-    //CallDrawSprite ( 67, 0, (int) TrialManager::trialTextures2, 20+67-15, 20, 32, 4, 34, 67, 32, 0xFFFFFFFF, 0, 0x2cb );
-    //CallDrawSprite ( 67, 0, (int) TrialManager::trialTextures3, 20+67-15, 20, 64, 4, 34, 67, 64, 0xFFFFFFFF, 0, 0x2cb );
-    CallDrawSprite ( i1, 0, (int) TrialManager::trialTextures3, i3, i4, i2, i5, i6, i1, i2, 0xFFFFFFFF, 0, 0x2cb );
-    CallDrawSprite ( i1, 0, (int) TrialManager::trialTextures3, i3, i4+25, i2, i5, i6, i1, i2, 0xFFFFFFFF, 0, 0x2cb );
-    CallDrawSprite ( i1, 0, (int) TrialManager::trialTextures3, i3, i4+50, i2, i5, i6, i1, i2, 0xFFFFFFFF, 0, 0x2cb );
+    drawInputs();
+    drawCombo();
+    drawiidx();
 }
 
 void DllTrialManager::clear()

@@ -24,12 +24,43 @@ extern int comboTrialPosition;
 extern int currentTrial;
 
 extern bool hideText;
-    
+
 extern LPDIRECT3DTEXTURE9 trialTextures;
 
 extern int trialTextures2;
 extern int trialTextures3;
 } // namespace TrialManager
+
+enum MovePosition {
+    Start,
+    Middle,
+    Ending
+};
+
+enum MoveStatus {
+    Next,
+    Current,
+    Done,
+    Failed
+};
+
+enum TokenTypes {
+    String,
+    Direction,
+    Button,
+    Symbol
+};
+
+struct Token {
+    string text;
+    TokenTypes type;
+    int length;
+};
+
+struct Move {
+    vector<Token> text;
+    MovePosition position;
+};
 
 class DllTrialManager
 {
@@ -39,7 +70,18 @@ public:
     void loadTrialFile();
     void clear();
     void render();
+    void drawButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
+    void drawArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
+    void drawText( string text, int screenX, int screenY, int width=24, int height=24 );
+    void drawShadowButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
+    void drawShadowArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
+    void drawInputs();
+    void drawiidx();
+    int drawComboBacking( MovePosition position, MoveStatus status, int screenX, int screenY, int width, int height=32 );
+    void drawCombo();
     void loadCombo( int comboId );
+    int drawMove( Move move, MoveStatus color, int x, int y );
+    vector<Move> tokenizeText( vector<wstring> text );
 
     bool initialized = false;
 
@@ -59,7 +101,7 @@ private:
 
     int getHitcount();
 
-    int tmp2;
+    int tmp2 = 0;
     int i1;
     int i2;
     int i3;
