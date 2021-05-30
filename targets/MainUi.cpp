@@ -109,6 +109,61 @@ void MainUi::netplay ( RunFuncPtr run )
     _ui->pop();
 }
 
+void MainUi::server ( RunFuncPtr run )
+{
+    _ui->pushRight ( new ConsoleUi::Menu ( "Mode", { "Matchmaking", "Lobby" }, "Cancel" ) );
+    //_ui->top<ConsoleUi::Menu>()->setPosition ( _config.getInteger ( "lastOfflineMenuPosition" ) - 1 );
+
+
+    for ( ;; )
+    {
+        int mode = _ui->popUntilUserInput ( true )->resultInt; // Clear other messages since we're starting the game now
+        if ( mode < 0 || mode >= 2 )
+          break;
+
+        switch ( mode )
+        {
+            case 0:
+                break;
+            case 1:
+                break;
+            default:
+                break;
+        }
+        /*
+        if ( _address.addr.empty() )
+        {
+            _config.setInteger ( "lastUsedPort", _address.port );
+            saveConfig();
+
+            if ( ! gameMode ( true ) ) // Show below
+                continue;
+
+            initialConfig.mode.value = ClientMode::Host;
+        }
+        else
+        {
+            initialConfig.mode.value = ClientMode::Client;
+        }
+
+        _netplayConfig.clear();
+
+        RUN ( _address, initialConfig );
+
+        _ui->popNonUserInput();
+
+        if ( ! sessionError.empty() )
+        {
+            _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
+            sessionError.clear();
+        }
+        */
+    }
+
+    _ui->pop();
+    //_ui->popNonUserInput(); maybe
+}
+
 void MainUi::spectate ( RunFuncPtr run )
 {
     ConsoleUi::Prompt *menu = new ConsoleUi::Prompt ( ConsoleUi::Prompt::String,
@@ -1125,6 +1180,7 @@ void MainUi::main ( RunFuncPtr run )
             "Settings",
             ( _upToDate || !isOnline() ) ? "Changes" : "Update",
             "Results",
+            "A",
         };
 
         _ui->pushRight ( new ConsoleUi::Menu ( uiTitle, options, "Quit" ) );
@@ -1215,6 +1271,10 @@ void MainUi::main ( RunFuncPtr run )
 
             case 7:
                 results();
+                break;
+
+            case 8:
+                server( run );
                 break;
             default:
                 break;

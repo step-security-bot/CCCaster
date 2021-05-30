@@ -85,6 +85,7 @@ private:
     bool _upToDate = false;
 
     void netplay ( RunFuncPtr run );
+    void server ( RunFuncPtr run );
     void spectate ( RunFuncPtr run );
     void broadcast ( RunFuncPtr run );
     void offline ( RunFuncPtr run );
