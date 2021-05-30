@@ -646,6 +646,10 @@ struct DllMain
             }
         }
 
+        // Handle Trial changes
+        if ( netMan.config.mode.isTrial() && netMan.isInGame() ) {
+            trialMan.frameStepTrial();
+        }
         // LOG_SYNC ( "SFX 0x%X: CC_SFX_ARRAY=%u; sfxFilterArray=%u; sfxMuteArray=%u", SFX_NUM,
         //            CC_SFX_ARRAY_ADDR[SFX_NUM], AsmHacks::sfxFilterArray[SFX_NUM], AsmHacks::sfxMuteArray[SFX_NUM] );
 
@@ -827,10 +831,6 @@ struct DllMain
             }
         }
 
-        // Handle Trial changes
-        if ( netMan.config.mode.isTrial() && netMan.isInGame() ) {
-            trialMan.frameStepTrial();
-        }
         // if ( netMan.getIndex() == 1802 && netMan.getFrame() == 460 )
         // {
         //     if ( *CC_P1_HEALTH_ADDR != 11400 || *CC_P1_METER_ADDR != 0
