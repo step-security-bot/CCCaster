@@ -4,6 +4,7 @@
 #include "Exceptions.hpp"
 
 #include <windows.h>
+#include <mmsystem.h>
 
 using namespace std;
 
@@ -118,6 +119,7 @@ public:
 
         MSG msg;
 
+        timeBeginPeriod ( 1 ); // for select, see comment in SocketManager
         for ( ;; )
         {
             { LOCK ( mutex ); if ( ! running ) break; }
@@ -133,7 +135,7 @@ public:
 
             Sleep ( 1 );
         }
-
+        timeEndPeriod ( 1 ); // for select, see comment in SocketManager
         UnhookWindowsHookEx ( keyboardHook );
 
         LOG ( "Keyboard unhooked" );
