@@ -78,10 +78,14 @@ void DllTrialManager::frameStepTrial()
         }
         if ( *CC_P2_SEQUENCE_ADDR == 0 ) {
             comboDrop = true;
+            comboDropPos = TrialManager::comboTrialPosition;
             comboStart = false;
             currentHitcount = 0;
             //    TrialManager::comboTrialPosition = -1;
         }
+    } else if ( *CC_P1_SEQUENCE_ADDR == 0 &&
+                *CC_P2_SEQUENCE_ADDR == 0 ) {
+        TrialManager::comboTrialPosition = 0;
     } else if ( *CC_P1_SEQUENCE_ADDR ==  comboSeq[TrialManager::currentTrial][0] &&
                 *CC_P2_SEQUENCE_ADDR != 0 ) {
         TrialManager::comboTrialPosition = 1;
@@ -152,9 +156,9 @@ void DllTrialManager::loadTrialFile()
             vector<int> ncomboHit;
             wstring nfullstring;
             for ( int j = 0; j < numInputs; ++j ) {
-                getline( trialFile, str);
-                if ( j != numInputs - 1 )
-                    str.append( " >");
+                getline( trialFile, str );
+                //if ( j != numInputs - 1 )
+                //    str.append( " >");
                 wstring tstr = tmp( str );
                 ncomboText.push_back( tstr );
                 nfullstring.append( tstr );
@@ -171,6 +175,7 @@ void DllTrialManager::loadTrialFile()
         }
         initialized = true;
     }
+    //*CC_SHOW_ATTACK_DISPLAY = 1;
     FILE* file = fopen ("coords.txt", "r");
     fscanf (file, "%d %d %d %d %d %d", &i1, &i2, &i3, &i4, &i5, &i6);
     fclose( file );
@@ -219,10 +224,46 @@ void DllTrialManager::drawText( string text, int screenX, int screenY, int width
     vector<char> ctext(text.begin(), text.end());
     ctext.push_back(0);
 
-    CallDrawText ( width, height, screenX, screenY, &ctext[0], 0xff, 0xff, 0xcc,
+    CallDrawText ( width, height, screenX, screenY, &ctext[0],
+                   0xff, // alpha
+                   0xff, // shade
+                   0xff, // also alpha?
                    (void*) FONT2,
                    0, 0, 0 );
 }
+
+void DllTrialManager::drawTextWithBorder( string text, int screenX, int screenY, int width, int height )
+{
+    vector<char> ctext(text.begin(), text.end());
+    ctext.push_back(0);
+
+    CallDrawText ( width, height, screenX-1, screenY, &ctext[0],
+                   0xff, // alpha
+                   0x0, // shade
+                   0xff, // also alpha?
+                   (void*) FONT2,
+                   0, 0, 0 );
+    CallDrawText ( width, height, screenX+1, screenY, &ctext[0],
+                   0xff, // alpha
+                   0x0, // shade
+                   0xff, // also alpha?
+                   (void*) FONT2,
+                   0, 0, 0 );
+    CallDrawText ( width, height, screenX, screenY-1, &ctext[0],
+                   0xff, // alpha
+                   0x0, // shade
+                   0xff, // also alpha?
+                   (void*) FONT2,
+                   0, 0, 0 );
+    CallDrawText ( width, height, screenX, screenY+1, &ctext[0],
+                   0xff, // alpha
+                   0x0, // shade
+                   0xff, // also alpha?
+                   (void*) FONT2,
+                   0, 0, 0 );
+
+}
+
 void DllTrialManager::drawShadowButton( int buttonId, int screenX, int screenY, int width, int height )
 {
     // Buttons:
@@ -295,16 +336,19 @@ void DllTrialManager::drawInputs()
     uint16_t buttons = rawinput >> 4;
     if ( buttons & CC_BUTTON_A ) {
         drawButton( 0, left, top + 25 );
+        drawSolidRect( 2, 0, 25, boxHeight - 32, red );
     } else {
         drawShadowButton( 0, left, top + 25 );
     }
     if ( buttons & CC_BUTTON_B ) {
         drawButton( 1, left+25, top + 25 );
+        drawSolidRect( 29, 0, 25, boxHeight - 32, red );
     } else {
         drawShadowButton( 1, left+25, top + 25 );
     }
     if ( buttons & CC_BUTTON_C ) {
         drawButton( 2, left+50, top + 25 );
+        drawSolidRect( 56, 0, 25, boxHeight - 32, red );
     } else {
         drawShadowButton( 2, left+50, top + 25 );
     }
@@ -478,15 +522,21 @@ void DllTrialManager::drawCombo()
     vector<wstring> comboTrialText = { L"5A", L"2A", L"5B", L"AT",
         L"tk.236B", L"Add.A", L"j.B", L"[B]"};
     //    L"(delay)j.5B(hold)"};
+    if ( !TrialManager::comboTrialText.empty() ) {
+        //if ( initialized ) {
+        comboTrialText = TrialManager::comboTrialText;
+        currentMove = TrialManager::comboTrialPosition;
+        currentFail = comboDropPos;
+    }
     vector<Move> moveList = tokenizeText( comboTrialText );
 
     for( int i = 0; i < moveList.size(); ++i ) {
-        if ( i == currentFail ) {
-            color = Failed;
-        } else if ( i < currentMove ) {
+        if ( i < currentMove ) {
             color = Done;
         } else if ( i == currentMove ) {
             color = Current;
+        } else if ( i == currentFail ) {
+            color = Failed;
         } else {
             color = Next;
         }
@@ -500,14 +550,120 @@ void DllTrialManager::drawCombo()
     }
 }
 
+void DllTrialManager::drawSolidRect( int x, int y, int width, int height, ARGB color, int layer ){
+    int colorValue = ( color.alpha << 24 ) + ( color.red << 16 ) +
+        ( color.green << 8 ) + ( color.blue );
+    CallDrawRect( x, y, width, height, colorValue, colorValue, colorValue, colorValue, layer );
+    //CallDrawRect( 0, 0, 100,480, 0xffffffff, 0xff0000ff, 0xff00, colorValue, 0x2cb );
+}
 void DllTrialManager::drawiidx(){
-    
+    if (tmp2 > boxHeight + 10 ) {
+        tmp2=-20;
+    }
+    tmp2+=3;
+    drawSolidRect( 0, boxHeight - 32, boxWidth, 5, red );
+    drawSolidRect( 0, 0, boxWidth, boxHeight, ARGB{ 0xaa, 0x0, 0x0, 0x0 } );
+    drawSolidRect( 0, boxHeight - 27, boxWidth, 2, white );
+    drawSolidRect( 0, boxHeight, boxWidth, 2, white );
+    drawSolidRect( 0, 0, 2, boxHeight, white );
+    drawButton( 0, 2, boxHeight - 25 );
+    drawSolidRect( 27, 0, 2, boxHeight, white );
+    drawButton( 1, 29, boxHeight - 25 );
+    drawSolidRect( 54, 0, 2, boxHeight, white );
+    drawButton( 2, 56, boxHeight - 25 );
+    drawSolidRect( 81, 0, 2, boxHeight, white );
+
+    drawSolidRect( 2, tmp2, 25, 2, white, 0x2cc );
+    drawSolidRect( 29, tmp2-10, 25, 2, white, 0x2cc );
+    drawSolidRect( 56, tmp2-20, 25, 2, white, 0x2cc );
+}
+
+void DllTrialManager::drawAttackDisplay()
+{
+    string test = "MAX TEST";
+    string testVal = "50";
+    int leftX = 0x1a4;
+    int rightX = leftX + 200;
+    int y = 0xe8;
+    //drawText(test, leftX, y, 0xa, 0xe );
+    //drawText(test, leftX, y, 0xa, 0xe );
+    //drawTextWithBorder(test, leftX, y, 0xa, 0xe );
+    //drawText(testVal, rightX-0xa*2, y, 0xa, 0xe );
+
+    int currentMeter = *CC_P1_METER_ADDR;
+    if ( *CC_P2_SEQUENCE_ADDR != 0 ) {
+        if ( currentMeter > lastSeenMeter ) {
+            meterGained = currentMeter - lastSeenMeter;
+            totalMeterGained += meterGained;
+        }
+        showTotalMeterGained = totalMeterGained;
+        lastSeenMeter = currentMeter;
+    } else {
+        lastSeenMeter = currentMeter;
+        totalMeterGained = 0;
+    }
+    string meter = "METER GAIN";
+    string gained = "";
+    y += 14;
+    char buf[10];
+    sprintf(buf, "%d.%02d", meterGained/100, meterGained%100 );
+    gained = string(buf);
+    drawText(meter, leftX, y, 0xa, 0xe );
+    drawTextWithBorder(meter, leftX, y, 0xa, 0xe );
+    drawText(gained, rightX-0xa*gained.length(), y, 0xa, 0xe );
+    drawTextWithBorder(gained, rightX-0xa*gained.length(), y, 0xa, 0xe );
+    y+=14;
+    string total = "TOTAL METER GAIN";
+    sprintf(buf, "%d.%02d", showTotalMeterGained/100, showTotalMeterGained%100 );
+    string totalgained = string(buf);
+    drawText(total, leftX, y, 0xa, 0xe );
+    drawTextWithBorder(total, leftX, y, 0xa, 0xe );
+    drawText(totalgained, rightX-0xa*totalgained.length(), y, 0xa, 0xe );
+    drawTextWithBorder(totalgained, rightX-0xa*totalgained.length(), y, 0xa, 0xe );
+    y+=14;
+    ifstream file( "trainingentries.txt");
+    char buf2[40];
+    if ( file ) {
+        string label;
+        string value;
+        string type;
+        getline( file, label );
+        int numEntries = stoi( label );
+        for ( auto i=0; i<numEntries; ++i ) {
+            getline( file, label );
+            getline( file, value );
+            getline( file, type );
+            int val = stoi(value, nullptr, 16);
+            if ( type == "float" ) {
+                sprintf(buf2, "%f", *(float*)val);
+            } else if ( type == "int" ) {
+                sprintf(buf2, "%d", *(int*)val);
+            }
+            //sprintf(buf2, "%d", *val);
+            string formatValue = string(buf2);
+            drawAttackDisplayRow( label, formatValue, y );
+            y+= 14;
+        }
+    }
+}
+void DllTrialManager::drawAttackDisplayRow( string label, string value, int y )
+{
+    int leftX = 0x1a4;
+    int rightX = leftX + 200;
+    drawText(label, leftX, y, 0xa, 0xe );
+    drawTextWithBorder(label, leftX, y, 0xa, 0xe );
+    drawText(value, rightX-0xa*value.length(), y, 0xa, 0xe );
+    drawTextWithBorder(value, rightX-0xa*value.length(), y, 0xa, 0xe );
+
 }
 void DllTrialManager::render()
 {
-    drawInputs();
-    drawCombo();
-    drawiidx();
+    if ( *CC_SHOW_ATTACK_DISPLAY ) {
+        drawAttackDisplay();
+    }
+    //drawInputs();
+    //drawCombo();
+    //drawiidx();
 }
 
 void DllTrialManager::clear()

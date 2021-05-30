@@ -51,10 +51,17 @@ enum TokenTypes {
     Symbol
 };
 
+struct ARGB {
+    uint8_t alpha;
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+};
+
 struct Token {
     string text;
     TokenTypes type;
-    int length;
+    int width;
 };
 
 struct Move {
@@ -73,10 +80,14 @@ public:
     void drawButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawText( string text, int screenX, int screenY, int width=24, int height=24 );
+    void drawTextWithBorder( string text, int screenX, int screenY, int width=24, int height=24 );
     void drawShadowButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawShadowArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawInputs();
+    void drawSolidRect( int x, int y, int width, int height, ARGB color, int layer=0x2cb );
     void drawiidx();
+    void drawAttackDisplay();
+    void drawAttackDisplayRow( string label, string value, int y );
     int drawComboBacking( MovePosition position, MoveStatus status, int screenX, int screenY, int width, int height=32 );
     void drawCombo();
     void loadCombo( int comboId );
@@ -89,6 +100,7 @@ private:
 
     bool comboDrop = false;
     bool comboStart = false;
+    int comboDropPos = -1;
 
     int currentHitcount = 0;
 
@@ -108,4 +120,16 @@ private:
     int i4;
     int i5;
     int i6;
+    ARGB white = ARGB{ 0xff, 0xff, 0xff, 0xff };
+    ARGB red = ARGB{ 0xff, 0xff, 0x0, 0x0 };
+    int boxHeight = 380;
+    int boxWidth = 83;
+
+    int meterCountFrames = 50;
+    int meterCountFramesCounter = 0;
+    int lastSeenMeter = 0;
+    int meterGained = 0;
+    int totalMeterGained = 0;
+    int showTotalMeterGained = 0;
+
 };

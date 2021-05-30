@@ -228,6 +228,10 @@
 #define FONT1                       ( 0x55D260 )
 #define FONT2                       ( 0x55DAA0 )
 
+// Display Flags
+#define CC_SHOW_ATTACK_DISPLAY      ( ( int * )      0x5595B8 )
+#define CC_SHOW_INPUT_DISPLAY       ( ( int * )      0x5585F8 )
+
 union IndexedFrame
 {
     struct { uint32_t frame, index; } parts;
