@@ -931,7 +931,7 @@ void MainUi::settings()
                 break;
             }
 
-            case 12:
+            case 10:
                 _ui->pushInFront ( new ConsoleUi::TextBox ( format ( "CCCaster %s%s\n\nRevision %s\n\nBuilt on %s\n\n"
                                    "Created by Madscientist\n\nPress any key to go back",
                                    LocalVersion.code,
