@@ -176,6 +176,8 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
                 _trainingResetType = 0;
 
             input |= COMBINE_INPUT ( 0, CC_BUTTON_FN2 );
+            TrialManager::comboTrialPosition = 0;
+            *CC_P1_COMBO_GUARD_ADDR = 50;
         }
         else if ( ( _trainingResetState == -2 || _trainingResetState >= 0 )
                   && ! ( input & COMBINE_INPUT ( 0, CC_BUTTON_FN2 ) ) )                     // Completed reset
@@ -223,7 +225,6 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
             }
 
             ++_trainingResetState;
-            TrialManager::comboTrialPosition = 0;
 
             input |= COMBINE_INPUT ( 0, CC_BUTTON_FN2 );
         }

@@ -135,6 +135,9 @@
 #define CC_P2_COLOR_SELECTOR_ADDR   ( ( uint32_t * ) 0x74D928 )
 #define CC_P2_RANDOM_COLOR_ADDR     ( ( uint8_t * ) ( ( * ( uint32_t * ) 0x74D808 ) + 1 * 0x1DC + 0x2C + 0x0C ) )
 
+// Character ? Data
+#define CC_P1_COMBO_GUARD_ADDR      ( ( uint32_t * ) 0x76E708 )
+
 // Complete RngState
 #define CC_RNG_STATE0_ADDR          ( ( uint32_t * ) 0x563778 )
 #define CC_RNG_STATE1_ADDR          ( ( uint32_t * ) 0x56377C )
