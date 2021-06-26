@@ -125,6 +125,11 @@ void ConsoleUi::Menu::setPosition ( int position )
     menu.SelectedItem ( position );
 }
 
+int ConsoleUi::Menu::getPosition()
+{
+    return menu.SelectedValue();
+}
+
 void ConsoleUi::Menu::setEscape ( bool enabled )
 {
     menu.EnableEscape ( enabled );
@@ -189,6 +194,10 @@ void ConsoleUi::Menu::initialize()
     menu.Scrollable ( true );
 }
 
+void ConsoleUi::Menu::setTimeout( int timeout )
+{
+    menu.setTimeout( timeout );
+}
 void ConsoleUi::Menu::show()
 {
     LOG ( "title='%s'; pos=%s; size=%s", title, _pos, _size );

@@ -100,8 +100,10 @@ public:
         Menu ( const std::vector<std::string>& items, const std::string& lastItem = "" );
 
         void setPosition ( int position );
+        int getPosition ();
         void setEscape ( bool enabled );
         void setDelete ( int enabled );
+        void setTimeout ( int timeout );
 
         void overlayCurrentPosition ( const std::string& text, bool selected = false );
 
