@@ -50,10 +50,12 @@ struct Main
 
 struct AutoManager
 {
-    AutoManager()
+    bool doDeinit;
+
+    AutoManager( int id = 0 )
     {
-        TimerManager::get().initialize();
-        SocketManager::get().initialize();
+        TimerManager::get( id ).initialize();
+        SocketManager::get( id ).initialize();
     }
 
     template<typename T>
@@ -74,7 +76,10 @@ struct AutoManager
     ~AutoManager()
     {
         KeyboardManager::get().unhook();
-        SocketManager::get().deinitialize();
-        TimerManager::get().deinitialize();
+        // TODO: Figure out a cleaner way of doing this
+        if ( doDeinit ) {
+            SocketManager::get().deinitialize();
+            TimerManager::get().deinitialize();
+        }
     }
 };
