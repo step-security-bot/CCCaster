@@ -341,6 +341,9 @@ public:
     //  Returns: true if successful
     BOOL SelectedItem(int position);
 
+    void setTimeout( DWORD _timeout );
+
+    DWORD timeout = 0;
 private:
     unsigned m_maxToShow;   // The number of items that can be displayed at one time.
     Iterator m_menuAnchor;  // The current/last menu anchor item.

@@ -22,6 +22,8 @@
 // along with JLib.  If not, see <http://www.gnu.org/licenses/>.
 #include "ConsoleMenu.h"
 #include "ConsoleCore.h"
+#include <time.h>
+
 using namespace std;
 
 ConsoleMenu::ConsoleMenu(COORD origin, ConsoleFormat format
@@ -309,6 +311,7 @@ ScrollingMenu::ScrollingMenu(const ScrollingMenu& rhs)
     ,m_maxToShow(rhs.m_maxToShow)
     ,m_menuAnchor(m_items.end())
 {
+    timeout = 0;
 }
 
 unsigned ScrollingMenu::MaxToShow() const
@@ -354,6 +357,10 @@ DWORD ScrollingMenu::Show()
     }
 
     bool selected = false;
+    time_t start_time;
+    time_t now;
+    start_time = time(NULL);
+    double seconds;
     do
     {
         cursorOffset = Origin();
@@ -385,6 +392,20 @@ DWORD ScrollingMenu::Show()
             return 0;
         }
         pCore->SaveScreen(menuBuffer,bufferSize,bufferOrigin);
+        int c;
+        while (1) {
+            if ( kbhit() )
+                break;
+            if ( timeout < 0 ) {
+                return 0;
+            }
+            if ( timeout != 0 ) {
+                now = time(NULL);
+                seconds = difftime(now, start_time);
+                if ( seconds >= timeout )
+                    return MENUTIMEOUT;
+            }
+        }
         switch(int c = _getch())
         {
         case UP_KEY:
@@ -480,6 +501,11 @@ DWORD ScrollingMenu::Show()
         }
     }
     while(TRUE);
+}
+
+void ScrollingMenu::setTimeout( DWORD _timeout )
+{
+    timeout = _timeout;
 }
 
 ConsoleMenuItem ScrollingMenu::SelectedItem()

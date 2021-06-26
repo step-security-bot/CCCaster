@@ -10,6 +10,7 @@ extern int MAXSCREENY;
 #define BADMENU             (60000)
 #define USERESC             (60001)
 #define USERDELETE          (60002)
+#define MENUTIMEOUT         (60003)
 #define UP_KEY              (72)
 #define DOWN_KEY            (80)
 #define LEFT_KEY            (75)
