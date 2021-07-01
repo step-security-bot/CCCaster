@@ -126,7 +126,7 @@ void EventManager::start()
 
     LOG ( "Finished event loop" );
 
-    stop();
+    //stop();
 }
 
 void EventManager::stop()

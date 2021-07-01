@@ -52,10 +52,10 @@ struct AutoManager
 {
     bool doDeinit;
 
-    AutoManager( int id = 0 )
+    AutoManager()
     {
-        TimerManager::get( id ).initialize();
-        SocketManager::get( id ).initialize();
+        TimerManager::get().initialize();
+        SocketManager::get().initialize();
     }
 
     template<typename T>

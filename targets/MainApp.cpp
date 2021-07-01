@@ -121,6 +121,10 @@ struct MainApp
 
     bool rollbackChanged = false;
 
+    bool startedEventManager = false;
+
+    bool connected = true;
+
     /* Connect protocol
 
         1 - Connect / accept ctrlSocket
@@ -188,6 +192,8 @@ struct MainApp
     {
         AutoManager _ ( this, MainUi::getConsoleWindow(), { VK_ESCAPE } );
 
+        _.doDeinit = !EventManager::get().isRunning();
+
         if ( clientMode.isHost() )
         {
             externalIpAddress.start();
@@ -195,10 +201,19 @@ struct MainApp
         }
         else
         {
-            if ( options[Options::Tunnel] )
-                ui.display ( format ( "Trying %s (UDP tunnel)", address ) );
-            else
-                ui.display ( format ( "Trying %s", address ) );
+            if ( options[Options::Tunnel] ) {
+                if ( ui.isServer() ) {
+                    ui.display ( format ( "Trying connection (UDP tunnel)" ) );
+                } else {
+                    ui.display ( format ( "Trying %s (UDP tunnel)", address ) );
+                }
+            } else {
+                if ( ui.isServer() ) {
+                    ui.display ( format ( "Trying connection" ) );
+                } else {
+                    ui.display ( format ( "Trying %s", address ) );
+                }
+            }
         }
 
         if ( clientMode.isHost() )
@@ -218,18 +233,30 @@ struct MainApp
             stopTimer->start ( DEFAULT_PENDING_TIMEOUT );
         }
 
-        EventManager::get().start();
+        if ( EventManager::get().isRunning() ) {
+            while ( connected ) {
+                Sleep( 1 );
+            }
+        } else {
+            startedEventManager = true;
+            EventManager::get().start();
+        }
     }
 
     void startSpectate()
     {
         AutoManager _ ( this, MainUi::getConsoleWindow(), { VK_ESCAPE } );
 
-        ui.display ( format ( "Trying %s", address ) );
+        if ( ui.isServer() ) {
+            ui.display ( format ( "Trying connection" ) );
+        } else {
+            ui.display ( format ( "Trying %s", address ) );
+        }
 
         ctrlSocket = SmartSocket::connectTCP ( this, address, options[Options::Tunnel] );
         LOG ( "ctrlSocket=%08x", ctrlSocket.get() );
 
+        startedEventManager = true;
         EventManager::get().start();
     }
 
@@ -243,6 +270,7 @@ struct MainApp
         // Open the game immediately
         startGame();
 
+        startedEventManager = true;
         EventManager::get().start();
     }
 
@@ -251,8 +279,18 @@ struct MainApp
         if ( ! error.empty() )
             lastError = error;
 
-        EventManager::get().stop();
+        if ( startedEventManager ) {
+            LOG( "stopping event manager" );
+            EventManager::get().stop();
+        }
 
+        ctrlSocket.reset();
+        dataSocket.reset();
+        serverDataSocket.reset();
+        serverCtrlSocket.reset();
+        stopTimer.reset();
+        startTimer.reset();
+        connected = false;
         LOCK ( uiMutex );
         uiCondVar.signal();
     }
@@ -360,8 +398,13 @@ struct MainApp
 
             this->initialConfig.remoteName = initialConfig.localName;
 
-            if ( this->initialConfig.remoteName.empty() )
-                this->initialConfig.remoteName = ctrlSocket->address.addr;
+            if ( this->initialConfig.remoteName.empty() ) {
+                if ( ui.isServer() ) {
+                    this->initialConfig.remoteName = "Anonymous";
+                } else {
+                    this->initialConfig.remoteName = ctrlSocket->address.addr;
+                }
+            }
 
             this->initialConfig.invalidate();
 
@@ -559,7 +602,7 @@ struct MainApp
         LOCK ( uiMutex );
         uiCondVar.wait ( uiMutex );
 
-        if ( ! EventManager::get().isRunning() )
+        if ( ! EventManager::get().isRunning() || !connected )
             return;
 
         switch ( clientMode.value )
@@ -1049,7 +1092,11 @@ struct MainApp
         if ( smartSocket != ctrlSocket.get() )
             return;
 
-        ui.display ( format ( "Trying %s (UDP tunnel)", address ) );
+        if ( ui.isServer() ) {
+            ui.display ( format ( "Trying connection (UDP tunnel)" ) );
+        } else {
+            ui.display ( format ( "Trying %s (UDP tunnel)", address ) );
+        }
     }
 
     // ProcessManager callbacks
@@ -1333,14 +1380,20 @@ private:
         }
         else
         {
-            setClipboard ( format ( "%s:%u", externalIpAddress.address, port ) );
-
-            ui.display ( format ( "%s at %s:%u%s\n(Address copied to clipboard)",
-                                  ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
-                                  externalIpAddress.address,
-                                  port,
-                                  ( clientMode.isTraining() ? " (training mode)" : "" ) ) );
+            if ( ui.isServer() ) {
+                ui.display ( format ( "%s at server%s\n",
+                                      ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
+                                      ( clientMode.isTraining() ? " (training mode)" : "" ) ) );
+            } else {
+                setClipboard ( format ( "%s:%u", externalIpAddress.address, port ) );
+                ui.display ( format ( "%s at %s:%u%s\n(Address copied to clipboard)",
+                                    ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
+                                    externalIpAddress.address,
+                                    port,
+                                    ( clientMode.isTraining() ? " (training mode)" : "" ) ) );
+            }
         }
+        ui.hostReady();
     }
 
     // Reset hosting state

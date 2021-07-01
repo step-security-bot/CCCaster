@@ -6,6 +6,8 @@
 #include "ControllerManager.hpp"
 #include "KeyValueStore.hpp"
 #include "MainUpdater.hpp"
+#include "Lobby.hpp"
+#include "MatchmakingManager.hpp"
 
 #include <string>
 #include <memory>
@@ -28,6 +30,8 @@ class MainUi
     : private Controller::Owner
     , private ControllerManager::Owner
     , private MainUpdater::Owner
+    , private Lobby::Owner
+    , private MatchmakingManager::Owner
 {
 public:
 
@@ -37,6 +41,8 @@ public:
 
     std::string sessionError;
 
+    std::vector<std::string> lobbyText;
+    std::vector<std::string> lobbyIps;
 
     MainUi();
 
@@ -66,9 +72,16 @@ public:
 
     static std::string formatStats ( const PingStats& pingStats );
 
+    bool isServer() { return serverMode; }
+    void hostReady();
+
 private:
 
     std::shared_ptr<ConsoleUi> _ui;
+
+    std::shared_ptr<Lobby> _lobby;
+
+    std::shared_ptr<MatchmakingManager> _mmm;
 
     MainUpdater _updater;
 
@@ -84,8 +97,12 @@ private:
 
     bool _upToDate = false;
 
+    bool serverMode = false;
+
     void netplay ( RunFuncPtr run );
     void server ( RunFuncPtr run );
+    void lobby ( RunFuncPtr run );
+    void matchmaking ( RunFuncPtr run );
     void spectate ( RunFuncPtr run );
     void broadcast ( RunFuncPtr run );
     void offline ( RunFuncPtr run );
@@ -126,4 +143,12 @@ private:
     void fetchFailed ( MainUpdater *updater, const MainUpdater::Type& type ) override;
 
     void fetchProgress ( MainUpdater *updater, const MainUpdater::Type& type, double progress ) override;
+
+    void connectionFailed ( Lobby *lobby );
+    void unlock ( Lobby *lobby );
+
+    void connectionFailed( MatchmakingManager* lobby );
+    void setAddr( MatchmakingManager* lobby, std::string addr );
+    void setMode( MatchmakingManager* lobby, std::string mode );
+    void unlock( MatchmakingManager* lobby );
 };

@@ -8,6 +8,7 @@
 #include "StringUtils.hpp"
 #include "NetplayStates.hpp"
 
+#include <algorithm>
 #include <mmsystem.h>
 #include <wininet.h>
 
@@ -43,6 +44,9 @@ static const string uiTitle = "CCCaster " + LocalVersion.majorMinor();
 
 static ConsoleUi::Menu *mainMenu = 0;
 
+static Mutex uiMutex;
+
+static CondVar uiCondVar;
 
 MainUi::MainUi() : _updater ( this )
 {
@@ -111,57 +115,182 @@ void MainUi::netplay ( RunFuncPtr run )
 
 void MainUi::server ( RunFuncPtr run )
 {
-    _ui->pushRight ( new ConsoleUi::Menu ( "Mode", { "Matchmaking", "Lobby" }, "Cancel" ) );
-    //_ui->top<ConsoleUi::Menu>()->setPosition ( _config.getInteger ( "lastOfflineMenuPosition" ) - 1 );
-
-
+    serverMode = true;
+    _ui->pushRight ( new ConsoleUi::Menu ( "Mode", { "Lobby", "Matchmaking" }, "Cancel" ) );
     for ( ;; )
     {
-        int mode = _ui->popUntilUserInput ( true )->resultInt; // Clear other messages since we're starting the game now
+        int mode = _ui->popUntilUserInput ( false )->resultInt;
+        LOG( "mode %d", mode );
         if ( mode < 0 || mode >= 2 )
-          break;
-
+            break;
         switch ( mode )
         {
-            case 0:
-                break;
-            case 1:
-                break;
-            default:
-                break;
+        case 0:
+            lobby( run );
+            if ( ! sessionError.empty() ) {
+                _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
+                sessionError.clear();
+            }
+            break;
+        case 1:
+            matchmaking( run );
+            if ( ! sessionError.empty() ) {
+                _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
+                sessionError.clear();
+            }
+            break;
+        default:
+            break;
         }
-        /*
-        if ( _address.addr.empty() )
-        {
-            _config.setInteger ( "lastUsedPort", _address.port );
-            saveConfig();
+    }
+    _ui->pop();
+    serverMode = false;
+}
 
-            if ( ! gameMode ( true ) ) // Show below
-                continue;
+void MainUi::lobby( RunFuncPtr run )
+{
+    _lobby.reset( new Lobby( this ) );
+    ifstream infile;
+    infile.open( "lobby_list.txt" );
+    string line;
+    getline( infile, line );
+    LOG( line );
+    _lobby->_address = line;
+    AutoManager _;
 
-            initialConfig.mode.value = ClientMode::Host;
+    _lobby->start();
+
+    display ( "Connecting to server..." );
+    LOCK ( uiMutex );
+    uiCondVar.wait ( uiMutex );
+    _ui->pop();
+    if ( ! EventManager::get().isRunning() ) {
+        sessionError = "Failed to connect";
+        return;
+    }
+    lobbyText =_lobby->getMenu();
+    lobbyIps =_lobby->getIps();
+    ConsoleUi::Element* menu = new ConsoleUi::Menu ( "Lobby", lobbyText, "Exit" );
+
+    _ui->pushInFront ( menu );
+    _ui->clearRight();
+    _ui->top<ConsoleUi::Menu>()->setTimeout ( 5 );
+    int numEntries;
+    bool addressSelected = false;
+    string lobbyBase = "Lobby";
+    string lobbyDisplay = lobbyBase;
+    for ( ;; )
+    {
+        if ( ! _lobby->isRunning() || ! EventManager::get().isRunning() ) {
+            LOG( "Lobby stopped"  );
+            sessionError = "Disconnected!";
+            break;
         }
-        else
-        {
+        // Update ui
+        _lobby->entryMutex.lock();
+        lobbyText =_lobby->getMenu();
+        numEntries =_lobby->numEntries;
+        lobbyIps =_lobby->getIps();
+        _lobby->entryMutex.unlock();
+        int oldPos = _ui->top<ConsoleUi::Menu>()->getPosition();
+        _ui->pop();
+        _ui->pushInFront ( new ConsoleUi::Menu ( lobbyDisplay,
+                                                 lobbyText,
+                                                 "Exit"
+                                                 ) );
+        _ui->top<ConsoleUi::Menu>()->setPosition ( oldPos );
+        _ui->top<ConsoleUi::Menu>()->setTimeout ( 5 );
+        int mode = _ui->popUntilUserInput ( false )->resultInt; // Clear other messages since we're starting the game now
+        if ( mode == MENUTIMEOUT ) {
+            LOG( "menutimeout" );
+            continue;
+        }
+        if ( mode < 0 || mode >= 20 ) {
+            break;
+        } else if ( mode >= numEntries  ) {
+            //Hosting
+            _address = "46318";
+            string name = _config.getString ( "displayName" );
+            _lobby->host( name, _address );
+            uiCondVar.wait ( uiMutex );
+            if ( _lobby->hostSuccess ) {
+                initialConfig.mode.value = ClientMode::Host;
+                addressSelected = true;
+                RUN ( _address, initialConfig );
+                _ui->popNonUserInput();
+                _lobby->unhost();
+                if ( ! sessionError.empty() ) {
+                    lobbyDisplay = lobbyBase + " - " + sessionError;
+                    sessionError.clear();
+                }
+            } else {
+                lobbyDisplay = lobbyBase + " - Lobby Full";
+            }
+        } else {
+            //Connecting
             initialConfig.mode.value = ClientMode::Client;
+            _netplayConfig.clear();
+            _address = lobbyIps[ mode ];
+            addressSelected = true;
+            RUN ( _address, initialConfig );
+            _ui->popNonUserInput();
+            if ( ! sessionError.empty() ) {
+                lobbyDisplay = lobbyBase + " - " + sessionError;
+                sessionError.clear();
+            }
         }
+    }
+    EventManager::get().stop();
+    if ( !addressSelected ) {
+        display ( "Disconnecting from server..." );
+    }
+    //LOCK ( uiMutex );
+    uiCondVar.wait ( uiMutex );
+    _ui->pop();
+    if ( !addressSelected ) {
+        _ui->pop();
+    }
+}
 
-        _netplayConfig.clear();
+void MainUi::matchmaking( RunFuncPtr run )
+{
+    ifstream infile;
+    infile.open( "lobby_list.txt" );
+    string address;
+    getline( infile, address );
+    string region = _config.getString ( "matchmakingRegion" );
+    _mmm.reset( new MatchmakingManager( this, address, region ) );
+    AutoManager _ ( _mmm.get(), getConsoleWindow() );
 
-        RUN ( _address, initialConfig );
+    _mmm->start();
 
-        _ui->popNonUserInput();
-
-        if ( ! sessionError.empty() )
-        {
-            _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
-            sessionError.clear();
-        }
-        */
+    display ( "Connecting to server..." );
+    LOCK ( uiMutex );
+    uiCondVar.wait ( uiMutex );
+    _ui->pop();
+    if ( ! EventManager::get().isRunning() ) {
+        sessionError = "Failed to connect";
+        return;
+    }
+    display ( "Waiting for opponent..." );
+    uiCondVar.wait ( uiMutex );
+    _ui->pop();
+    if ( ! EventManager::get().isRunning() ) {
+        sessionError = "Disconnected";
+        return;
     }
 
-    _ui->pop();
-    //_ui->popNonUserInput(); maybe
+    if ( initialConfig.mode.value == ClientMode::Client ) {
+        _netplayConfig.clear();
+        RUN ( _address, initialConfig );
+        _ui->popNonUserInput();
+    } else {
+        _netplayConfig.clear();
+        _address = "46318";
+        RUN ( _address, initialConfig );
+        _ui->popNonUserInput();
+    }
+    EventManager::get().stop();
 }
 
 void MainUi::spectate ( RunFuncPtr run )
@@ -645,6 +774,7 @@ void MainUi::settings()
         "Default rollback",
         "Held start button in versus",
         "Automatic Replay Save",
+        "Matchmaking Region",
         "About",
     };
 
@@ -922,16 +1052,48 @@ void MainUi::settings()
                 _ui->popUntilUserInput();
 
                 if ( _ui->top()->resultInt >= 0 && _ui->top()->resultInt <= 1 )
-                    {
-                        _config.setInteger ( "autoReplaySave", ( _ui->top()->resultInt + 1 ) % 2 );
-                        saveConfig();
-                    }
+                {
+                    _config.setInteger ( "autoReplaySave", ( _ui->top()->resultInt + 1 ) % 2 );
+                    saveConfig();
+                }
 
                 _ui->pop();
                 break;
             }
 
             case 10:
+            {
+                vector<string> regions = { "NA West", "NA East", "SA", "EU", "Middle East", "Asia", "OCE" };
+                _ui->pushInFront ( new ConsoleUi::Menu ( "Set Matchmaking Region",
+                                                         regions, "Cancel" ),
+                                   { 0, 0 }, true ); // Don't expand but DO clear top
+
+                string configRegion = _config.getString ( "matchmakingRegion" );
+                bool found = false;
+                int regionPos = 0;
+                for ( string region : regions ) {
+                    if ( region == configRegion ) {
+                        found = true;
+                        break;
+                    }
+                    regionPos++;
+                }
+                if ( !found )
+                    regionPos = 0;
+                _ui->top<ConsoleUi::Menu>()->setPosition ( regionPos );
+                _ui->popUntilUserInput();
+
+                if ( _ui->top()->resultInt >= 0 && _ui->top()->resultInt < regions.size() )
+                {
+                    _config.setString ( "matchmakingRegion", regions[ _ui->top()->resultInt ] );
+                    saveConfig();
+                }
+
+                _ui->pop();
+                break;
+            }
+
+            case 11:
                 _ui->pushInFront ( new ConsoleUi::TextBox ( format ( "CCCaster %s%s\n\nRevision %s\n\nBuilt on %s\n\n"
                                    "Created by Madscientist\n\nPress any key to go back",
                                    LocalVersion.code,
@@ -1061,6 +1223,7 @@ void MainUi::initialize()
     _config.setInteger ( "defaultRollback", 4 );
     _config.setInteger ( "autoCheckUpdates", 1 );
     _config.setInteger ( "autoReplaySave", 1 );
+    _config.setString ( "matchmakingRegion", "NA West" );
     _config.setDouble ( "heldStartDuration", 1.5 );
 
     // Cached UI state (defaults)
@@ -1175,12 +1338,12 @@ void MainUi::main ( RunFuncPtr run )
             "Netplay",
             "Spectate",
             "Broadcast",
+            "Server",
             "Offline",
             "Controls",
             "Settings",
             ( _upToDate || !isOnline() ) ? "Changes" : "Update",
             "Results",
-            "A",
         };
 
         _ui->pushRight ( new ConsoleUi::Menu ( uiTitle, options, "Quit" ) );
@@ -1230,7 +1393,7 @@ void MainUi::main ( RunFuncPtr run )
 
         _ui->clearRight();
 
-        if ( mainSelection >= 0 && mainSelection <= 3 )
+        if ( mainSelection >= 0 && mainSelection <= 4 )
         {
             _config.setInteger ( "lastMainMenuPosition", mainSelection + 1 );
             saveConfig();
@@ -1255,27 +1418,27 @@ void MainUi::main ( RunFuncPtr run )
                 break;
 
             case 4:
-                controls();
+                server( run );
                 break;
 
             case 5:
-                settings();
+                controls();
                 break;
 
             case 6:
+                settings();
+
+            case 7:
                 if ( _upToDate )
                     openChangeLog();
                 else
                     update();
                 break;
 
-            case 7:
+            case 8:
                 results();
                 break;
 
-            case 8:
-                server( run );
-                break;
             default:
                 break;
         }
@@ -1675,4 +1838,59 @@ void MainUi::fetchProgress ( MainUpdater *updater, const MainUpdater::Type& type
     const ConsoleUi::ProgressBar *bar = _ui->top<ConsoleUi::ProgressBar>();
 
     bar->update ( bar->length * progress );
+}
+
+void MainUi::connectionFailed ( Lobby *lobby )
+{
+    LOG( "mainUI Lobby Connection Failed" );
+    EventManager::get().stop();
+    if ( !_lobby->connectionSuccess )
+        unlock( lobby );
+}
+
+void MainUi::unlock ( Lobby *lobby )
+{
+    LOG( "mainUI lobby unlock" );
+    LOCK ( uiMutex );
+    uiCondVar.signal();
+}
+
+void MainUi::connectionFailed ( MatchmakingManager *mmm )
+{
+    LOG( "mainUI mmm Connection Failed" );
+    EventManager::get().stop();
+    if ( !_lobby->connectionSuccess ) {
+        LOCK ( uiMutex );
+        uiCondVar.signal();
+    }
+}
+
+void MainUi::unlock ( MatchmakingManager *mmm )
+{
+    LOG( "mainUI mmm unlock" );
+    LOCK ( uiMutex );
+    uiCondVar.signal();
+}
+
+
+void MainUi::setAddr ( MatchmakingManager *mmm, string addr )
+{
+    _address = addr;
+}
+
+
+void MainUi::setMode ( MatchmakingManager *mmm, string mode )
+{
+    if ( mode == "Host" )
+        initialConfig.mode.value = ClientMode::Host;
+    else
+        initialConfig.mode.value = ClientMode::Client;
+}
+
+void MainUi::hostReady(){
+    if ( _mmm ) {
+        Mutex host = _mmm->hostMutex;
+        LOCK( host );
+        _mmm->hostCondVar.signal();
+    }
 }
