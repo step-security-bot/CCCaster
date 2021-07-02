@@ -1414,11 +1414,11 @@ void MainUi::main ( RunFuncPtr run )
                 break;
 
             case 3:
-                offline ( run );
+                server( run );
                 break;
 
             case 4:
-                server( run );
+                offline ( run );
                 break;
 
             case 5:
