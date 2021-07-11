@@ -151,7 +151,7 @@ void MainUi::lobby( RunFuncPtr run )
 {
     _lobby.reset( new Lobby( this ) );
     ifstream infile;
-    infile.open( "lobby_list.txt" );
+    infile.open( LOBBY_LIST );
     string line;
     getline( infile, line );
     LOG( line );
@@ -255,7 +255,7 @@ void MainUi::lobby( RunFuncPtr run )
 void MainUi::matchmaking( RunFuncPtr run )
 {
     ifstream infile;
-    infile.open( "lobby_list.txt" );
+    infile.open( LOBBY_LIST );
     string address;
     getline( infile, address );
     string region = _config.getString ( "matchmakingRegion" );

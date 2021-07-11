@@ -91,6 +91,14 @@ static bool initDirsAndSanityCheck ( bool checkGameExe = true )
         success = false;
     }
 
+    val = GetFileAttributes ( LOBBY_LIST );
+
+    if ( val == INVALID_FILE_ATTRIBUTES )
+    {
+        lastError += "\nMissing " LOBBY_LIST "!";
+        success = false;
+    }
+
     if ( opt[Options::GameDir] && opt[Options::GameDir].arg )
     {
         ProcessManager::gameDir = opt[Options::GameDir].arg;
