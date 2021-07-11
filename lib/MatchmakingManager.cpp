@@ -54,11 +54,11 @@ void MatchmakingManager::connect()
 void MatchmakingManager::socketConnected ( Socket *socket )
 {
     ASSERT ( serversocket.get() == socket );
-    const string request = format ( "MMSTART," + region );
+    const string request = format ( "MMSTART," + region + "|" + "46318" );
     LOG ( "Sending request:\n%s", request );
 
-    _timer.reset ( new Timer ( this ) );
-    _timer->start ( 3000 );
+    //_timer.reset ( new Timer ( this ) );
+    //_timer->start ( 3000 );
 
     if ( ! serversocket->send ( &request[0], request.size() ) ) {
         LOG ( "Failed to send request!" );
@@ -78,7 +78,7 @@ void MatchmakingManager::socketDisconnected ( Socket *socket )
     ASSERT ( serversocket.get() == socket );
 
     serversocket.reset();
-    _timer.reset();
+    //_timer.reset();
 }
 
 void MatchmakingManager::socketRead ( Socket *socket, const char *bytes, size_t len, const IpAddrPort& address )
@@ -93,9 +93,22 @@ void MatchmakingManager::socketRead ( Socket *socket, const char *bytes, size_t 
 
     vector<string> rawdata = split( data, "\x1f" );
     string reqType = rawdata[0];
-    if ( reqType == "CLIENT" ) {
+    if ( reqType == "PINGTEST" ) {
+        const string request = format ( "5" );
+        LOG ( "Sending request:\n%s", request );
+
+        //_timer.reset ( new Timer ( this ) );
+        //_timer->start ( 3000 );
+
+        if ( ! serversocket->send ( &request[0], request.size() ) ) {
+            LOG ( "Failed to send request!" );
+
+            if ( owner )
+                owner->connectionFailed ( this );
+        }
+    } else if ( reqType == "CLIENT" ) {
         if ( owner ) {
-            _timer.reset();
+            //_timer.reset();
             owner->setMode( this, "Client" );
             owner->setAddr( this, rawdata[1] );
             owner->unlock( this );
@@ -104,27 +117,36 @@ void MatchmakingManager::socketRead ( Socket *socket, const char *bytes, size_t 
         if ( owner ) {
             owner->setMode( this, "Host" );
             owner->unlock( this );
-            LOCK( hostMutex );
-            hostCondVar.wait ( hostMutex );
-            const string request = format ( "46318" );
-            LOG ( "Sending request:\n%s", request );
-
-            _timer.reset ( new Timer ( this ) );
-            _timer->start ( 3000 );
-
-            if ( ! serversocket->send ( &request[0], request.size() ) ) {
-                LOG ( "Failed to send request!" );
-
-                if ( owner )
-                    owner->connectionFailed ( this );
-            }
         }
+    } else {
+        ASSERT_IMPOSSIBLE;
+    }
+
+    if ( owner && !matchSuccess ) {
+        matchSuccess = true;
+    }
+}
+
+void MatchmakingManager::sendHostReady ()
+{
+    const string request = format ( "SUCCESS" );
+    LOG ( "Sending request:\n%s", request );
+
+    //_timer.reset ( new Timer ( this ) );
+    //_timer->start ( 3000 );
+
+    if ( ! serversocket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
     }
 }
 
 // Timer callback
 void MatchmakingManager::timerExpired ( Timer *timer )
 {
+    /*
     LOG( "Timer Expired Callback" );
     ASSERT ( _timer.get() == timer );
 
@@ -135,11 +157,13 @@ void MatchmakingManager::timerExpired ( Timer *timer )
         owner->connectionFailed ( this );
 
     return;
+    */
 }
 
 // KeyboardManager callback
 void MatchmakingManager::keyboardEvent ( uint32_t vkCode, uint32_t scanCode, bool isExtended, bool isDown )
 {
+    LOG( "Matchmaking manager keyboard event" );
     if ( vkCode == VK_ESCAPE )
         stop();
 }

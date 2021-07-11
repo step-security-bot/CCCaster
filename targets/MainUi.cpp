@@ -272,6 +272,7 @@ void MainUi::matchmaking( RunFuncPtr run )
         sessionError = "Failed to connect";
         return;
     }
+
     display ( "Waiting for opponent..." );
     uiCondVar.wait ( uiMutex );
     _ui->pop();
@@ -284,12 +285,15 @@ void MainUi::matchmaking( RunFuncPtr run )
         _netplayConfig.clear();
         RUN ( _address, initialConfig );
         _ui->popNonUserInput();
-    } else {
+    } else if ( initialConfig.mode.value == ClientMode::Host ) {
         _netplayConfig.clear();
         _address = "46318";
         RUN ( _address, initialConfig );
         _ui->popNonUserInput();
+    } else {
+        sessionError = "Session Closed";
     }
+
     EventManager::get().stop();
 }
 
@@ -1427,6 +1431,7 @@ void MainUi::main ( RunFuncPtr run )
 
             case 6:
                 settings();
+                break;
 
             case 7:
                 if ( _upToDate )
@@ -1859,8 +1864,11 @@ void MainUi::connectionFailed ( MatchmakingManager *mmm )
 {
     LOG( "mainUI mmm Connection Failed" );
     EventManager::get().stop();
-    if ( !_lobby->connectionSuccess ) {
-        LOCK ( uiMutex );
+    LOCK ( uiMutex );
+    if ( !mmm->connectionSuccess ) {
+        uiCondVar.signal();
+    }
+    if ( !mmm->matchSuccess ) {
         uiCondVar.signal();
     }
 }
@@ -1889,8 +1897,9 @@ void MainUi::setMode ( MatchmakingManager *mmm, string mode )
 
 void MainUi::hostReady(){
     if ( _mmm ) {
-        Mutex host = _mmm->hostMutex;
-        LOCK( host );
-        _mmm->hostCondVar.signal();
+        //Mutex host = _mmm->hostMutex;
+        //LOCK( host );
+        //_mmm->hostCondVar.signal();
+        _mmm->sendHostReady();
     }
 }

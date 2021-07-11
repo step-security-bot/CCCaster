@@ -123,6 +123,8 @@ struct MainApp
 
     bool startedEventManager = false;
 
+    bool kbCancel = false;
+
     bool connected = true;
 
     /* Connect protocol
@@ -279,6 +281,8 @@ struct MainApp
         if ( ! error.empty() )
             lastError = error;
 
+        LOG( "stop@mainapp " );
+        LOG( kbCancel );
         if ( startedEventManager ) {
             LOG( "stopping event manager" );
             EventManager::get().stop();
@@ -1238,8 +1242,12 @@ struct MainApp
     // KeyboardManager callback
     void keyboardEvent ( uint32_t vkCode, uint32_t scanCode, bool isExtended, bool isDown ) override
     {
-        if ( vkCode == VK_ESCAPE )
+        LOG( "KeyboardEvent in MainApp" );
+        if ( vkCode == VK_ESCAPE ) {
+            LOG("Escape");
+            kbCancel = true;
             stop();
+        }
     }
 
     // Constructor

@@ -32,9 +32,12 @@ public:
     void connect();
     void disconnect();
 
+    void sendHostReady();
+
     uint64_t timeout;
     IpAddrPort _address;
     bool connectionSuccess;
+    bool matchSuccess;
 
     Mutex hostMutex;
     CondVar hostCondVar;
