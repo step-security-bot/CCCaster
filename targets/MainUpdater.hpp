@@ -16,6 +16,10 @@ public:
 
     ENUM ( Type, Version, ChangeLog, Archive );
 
+    ENUM(Channel, Stable, Dev);
+
+    ENUM(Temporal, Latest, Previous);
+
     struct Owner
     {
         virtual void fetchCompleted ( MainUpdater *updater, const Type& type ) = 0;
@@ -35,9 +39,18 @@ public:
 
     bool extractArchive() const;
 
+    std::string getVersionFilePath() const;
+
+    void setChannel(const Channel& channel) { _channel = channel; }
+    void setTemporal(const Temporal& temporal) { _temporal = temporal; }
+
+    std::string getChannelName() const;
+    std::string getTemporalName() const;
+    std::string getTargetDescName() const;
+
     Type getType() const { return _type; }
 
-    const Version& getLatestVersion() const { return _latestVersion; }
+    const Version& getTargetVersion() const { return _targetVersion; }
 
 private:
 
@@ -49,7 +62,11 @@ private:
 
     uint32_t _currentServerIdx = 0;
 
-    Version _latestVersion;
+    Channel _channel;
+
+    Temporal _temporal;
+
+    Version _targetVersion;
 
     std::string _downloadDir;
 

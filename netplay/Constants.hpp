@@ -135,7 +135,7 @@
 #define CC_P2_COLOR_SELECTOR_ADDR   ( ( uint32_t * ) 0x74D928 )
 #define CC_P2_RANDOM_COLOR_ADDR     ( ( uint8_t * ) ( ( * ( uint32_t * ) 0x74D808 ) + 1 * 0x1DC + 0x2C + 0x0C ) )
 
-// Character ? Data
+// Training mode data
 #define CC_P1_COMBO_GUARD_ADDR      ( ( uint32_t * ) 0x76E708 )
 
 // Complete RngState
@@ -213,6 +213,9 @@
 #define CC_SFX_ARRAY_ADDR           ( ( uint8_t * )  0x76E008 )
 #define CC_SFX_ARRAY_LEN            ( 1500 )
 #define DX_MUTED_VOLUME             ( 0xFFFFD8F0u )
+
+// Pointer to the end of the table of replay round structs
+#define CC_REPROUND_TBL_ENDPTR_ADDR ((void*)0x77BF9C)
 
 // Number of frames in the initial movement only phase
 #define CC_PRE_GAME_INTRO_FRAMES    ( 224 )

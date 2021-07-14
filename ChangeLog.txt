@@ -1,7 +1,23 @@
 v3.1.001
-- Added replay support for rollback
-- Adjusted default deadzone to be .50
+- Fixed RNG issues in replays with rollback enabled
 - Fixed issue where inputs would be locked if training mode regen was disabled
+- Added Trial mode
+- Added Matchmaking support
+- Added Lobby support
+
+v3.0.023:
+- Possible fix for slowdown on Windows 10 version 2004 and onwards.
+- Combo guard state now resets on FN2 reset in training mode.
+- Fixed a bug that caused online training to crash if rollback was above 0.
+- Added an option to disable the rollback replay fix.
+- Updater changes:
+  Added an option to revert to previous version after updating.
+  Added separate stable and development update types.
+
+v3.0.022:
+- Enabled replay saving with rollback.
+- Fixed problems with separate P1/P2 input delay.
+- Reduced default analog deadzone to 0.5.
 
 v3.0.021:
 - Added Replay mode to Offline Menu
