@@ -114,12 +114,14 @@ void MainUi::server ( RunFuncPtr run )
 {
     serverMode = true;
     _ui->pushRight ( new ConsoleUi::Menu ( "Mode", { "Lobby", "Matchmaking" }, "Cancel" ) );
+    _ui->top<ConsoleUi::Menu>()->setPosition ( _config.getInteger ( "lastServerMenuPosition" ) - 1 );
     for ( ;; )
     {
         int mode = _ui->popUntilUserInput ( false )->resultInt;
         LOG( "mode %d", mode );
         if ( mode < 0 || mode >= 2 )
             break;
+        _config.setInteger ( "lastServerMenuPosition", mode + 1 );
         switch ( mode )
         {
         case 0:
@@ -1231,6 +1233,7 @@ void MainUi::initialize()
     // Cached UI state (defaults)
     _config.setInteger ( "lastUsedPort", -1 );
     _config.setInteger ( "lastMainMenuPosition", -1 );
+    _config.setInteger ( "lastServerMenuPosition", -1 );
     _config.setInteger ( "lastOfflineMenuPosition", -1 );
 
     // Load and save main config (this creates the config file on the first time)
