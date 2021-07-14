@@ -195,6 +195,8 @@ $(FOLDER):
 res/rollback.bin: tools/$(GENERATOR)
 ifeq ($(UNAME),Darwin)
 	wine tools/$(GENERATOR) $@
+else ifeq ($(UNAME),Linux)
+	wine tools/$(GENERATOR) $@
 else
 	tools/$(GENERATOR) $@
 endif
