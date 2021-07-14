@@ -1673,6 +1673,7 @@ struct DllMain
                             WRITE_ASM_HACK ( hack );
                         for ( const AsmHacks::Asm& hack : AsmHacks::addExtraDraws )
                             WRITE_ASM_HACK ( hack );
+                        isTrial = true;
                     }
                 } else if ( clientMode.isVersusCPU() )
                     WRITE_ASM_HACK ( AsmHacks::forceGotoVersusCPU );

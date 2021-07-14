@@ -55,6 +55,10 @@ ENUM ( State, Disabled, Disabling, Enabled, Enabling );
 
 static State state = State::Disabled;
 
+ENUM ( Mode, None, Trial, Mapping );
+
+static Mode mode = Mode::None;
+
 static int height = 0, oldHeight = 0, newHeight = 0;
 
 static int initialTimeout = 0, messageTimeout = 0;
@@ -189,6 +193,31 @@ bool isToggling()
     return ( state == State::Enabling || state == State::Disabling );
 }
 
+bool isTrial()
+{
+    if ( ProcessManager::isWine() )
+        return false;
+
+    return mode == Mode::Trial;
+}
+
+bool isMapping()
+{
+    if ( ProcessManager::isWine() )
+        return false;
+
+    return mode == Mode::Mapping;
+}
+
+void setTrial()
+{
+    mode = Mode::Trial;
+}
+
+void setMapping()
+{
+    mode = Mode::Mapping;
+}
 
 void showMessage ( const string& newText, int timeout )
 {

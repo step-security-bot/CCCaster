@@ -10,6 +10,7 @@
 using namespace std;
 
 
+#define VK_TOGGLE_TRIAL_MENU ( VK_F3 )
 #define VK_TOGGLE_OVERLAY ( VK_F4 )
 #define VK_ENABLE_FRAMESTEP ( VK_F5 )
 
@@ -49,6 +50,7 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
 
     Lock lock ( ControllerManager::get().mutex );
 
+    bool toggleTrialMenu = false;
     bool toggleOverlay = false;
 
     // // Automatically show overlay when a controller is attached during chara select
@@ -61,6 +63,10 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     // }
 
     // Toggle with a keyboard hotkey
+    if ( KeyboardState::isPressed ( VK_TOGGLE_TRIAL_MENU ) )
+    {
+        toggleTrialMenu = true;
+    }
     if ( KeyboardState::isPressed ( VK_TOGGLE_OVERLAY ) )
     {
         toggleOverlay = true;
@@ -101,6 +107,14 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
             }
         }
 
+        // Toggle with 3 held joystick buttons + any direction during trial mode
+        if ( *CC_GAME_MODE_ADDR == CC_GAME_MODE_IN_GAME
+             && numJoystickButtonsDown ( controller ) >= 3
+             && !controller->getJoystickState().isNeutral()
+             && isTrial )
+        {
+            toggleTrialMenu = true;
+        }
         // Toggle with 3 held joystick buttons + any direction during chara select
         if ( *CC_GAME_MODE_ADDR == CC_GAME_MODE_CHARA_SELECT
                 && numJoystickButtonsDown ( controller ) >= 3
@@ -114,6 +128,43 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     if ( DllOverlayUi::isShowingMessage() )
     {
         DllOverlayUi::updateMessage();
+    }
+    else if ( toggleTrialMenu && !ProcessManager::isWine() )
+    {
+        toggleTrialMenu = false;
+
+        if ( ! DllOverlayUi::isEnabled() )
+        {
+            // Refresh the list of joysticks if we're enabling the overlay
+            ControllerManager::get().refreshJoysticks();
+
+            // Enable keyboard events, this effectively eats all keyboard inputs for the window
+            KeyboardManager::get().keyboardWindow = DllHacks::windowHandle;
+            KeyboardManager::get().matchedKeys.clear();
+            KeyboardManager::get().ignoredKeys.clear();
+            KeyboardManager::get().hook ( this, true );
+
+            // Disable Escape to exit
+            AsmHacks::enableEscapeToExit = false;
+
+            // Enable overlay
+            DllOverlayUi::setTrial();
+            DllOverlayUi::enable();
+        }
+        else if ( DllOverlayUi::isTrial() )
+        {
+            _overlayPositions[0] = 0;
+            _overlayPositions[1] = 0;
+
+            // Disable keyboard events, since we use GetKeyState for regular controller inputs
+            KeyboardManager::get().unhook();
+
+            // Re-enable Escape to exit
+            AsmHacks::enableEscapeToExit = true;
+
+            // Disable overlay
+            DllOverlayUi::disable();
+        }
     }
     else if ( toggleOverlay && !ProcessManager::isWine() )
     {
@@ -134,9 +185,10 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
             AsmHacks::enableEscapeToExit = false;
 
             // Enable overlay
+            DllOverlayUi::setMapping();
             DllOverlayUi::enable();
         }
-        else
+        else if ( DllOverlayUi::isMapping() )
         {
             // Cancel all mapping if we're disabling the overlay
             if ( _playerControllers[0] )
@@ -189,6 +241,24 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
         return;
     }
 
+    if ( DllOverlayUi::isTrial() )
+    {
+        handleTrialMenuOverlay();
+    }
+    else if ( DllOverlayUi::isMapping() )
+    {
+        handleMappingOverlay();
+    }
+}
+
+void DllControllerManager::handleTrialMenuOverlay()
+{
+    array<string, 3> text;
+    text[0] = "Trial Menu\n";
+    DllOverlayUi::updateText ( text );
+}
+void DllControllerManager::handleMappingOverlay()
+{
     // Check all controllers
     for ( Controller *controller : _allControllers )
     {

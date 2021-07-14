@@ -93,10 +93,11 @@ void DllTrialManager::frameStepTrial()
         comboStart = true;
         currentHitcount = getHitcount();
     }
+    /*
     if ( ( GetAsyncKeyState ( VK_F3 ) & 0x1 ) == 1 ) {
         loadCombo( TrialManager::currentTrial + 1 );
     }
-
+    */
     if ( ( GetAsyncKeyState ( VK_F2 ) & 0x1 ) == 1 ) {
         loadCombo( TrialManager::currentTrial - 1 );
     }

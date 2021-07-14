@@ -24,6 +24,9 @@ public:
     // Single player setting
     bool isSinglePlayer = false;
 
+    // In trial mode
+    bool isTrial = false;
+
     // Initialize all controllers with the given mappings
     void initControllers ( const ControllerMappings& mappings );
 
@@ -59,4 +62,8 @@ private:
     std::array<bool, 2> _finishedMapping = {{ false, false }};
 
     bool _controllerAttached = false;
+
+    void handleTrialMenuOverlay();
+    void handleMappingOverlay();
+
 };

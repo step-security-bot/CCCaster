@@ -21,6 +21,14 @@ void toggle();
 
 bool isEnabled();
 
+bool isTrial();
+
+bool isMapping();
+
+void setTrial();
+
+void setMapping();
+
 bool isToggling();
 
 void updateText();
