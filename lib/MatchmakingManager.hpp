@@ -38,6 +38,7 @@ public:
     IpAddrPort _address;
     bool connectionSuccess;
     bool matchSuccess;
+    bool ignoreKb;
 
     Mutex hostMutex;
     CondVar hostCondVar;

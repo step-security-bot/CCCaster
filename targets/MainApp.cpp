@@ -198,7 +198,9 @@ struct MainApp
 
         if ( clientMode.isHost() )
         {
-            externalIpAddress.start();
+            if ( !ui.isServer() ) {
+                externalIpAddress.start();
+            }
             updateStatusMessage();
         }
         else
@@ -237,7 +239,7 @@ struct MainApp
 
         if ( EventManager::get().isRunning() ) {
             while ( connected ) {
-                Sleep( 1 );
+                Sleep( 100 );
             }
         } else {
             startedEventManager = true;
@@ -604,7 +606,9 @@ struct MainApp
     {
         // This runs a different thread waiting for user confirmation
         LOCK ( uiMutex );
+        LOG( "lockUserMutex");
         uiCondVar.wait ( uiMutex );
+        LOG( "unlockUserMutex");
 
         if ( ! EventManager::get().isRunning() || !connected )
             return;
@@ -1243,7 +1247,7 @@ struct MainApp
     void keyboardEvent ( uint32_t vkCode, uint32_t scanCode, bool isExtended, bool isDown ) override
     {
         LOG( "KeyboardEvent in MainApp" );
-        if ( vkCode == VK_ESCAPE ) {
+        if ( vkCode == VK_ESCAPE && !kbCancel ) {
             LOG("Escape");
             kbCancel = true;
             stop();
@@ -1375,9 +1379,11 @@ private:
             return;
 
         const uint16_t port = ( clientMode.isBroadcast() ? netplayConfig.broadcastPort : address.port );
-
-        if ( externalIpAddress.address.empty() || externalIpAddress.address == ExternalIpAddress::Unknown )
-        {
+        if ( ui.isServer() ) {
+            ui.display ( format ( "%s at server%s\n",
+                                  ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
+                                  ( clientMode.isTraining() ? " (training mode)" : "" ) ) );
+        } else if ( externalIpAddress.address.empty() || externalIpAddress.address == ExternalIpAddress::Unknown ) {
             ui.display ( format ( "%s on port %u%s\n",
                                   ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
                                   port,
@@ -1388,18 +1394,12 @@ private:
         }
         else
         {
-            if ( ui.isServer() ) {
-                ui.display ( format ( "%s at server%s\n",
-                                      ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
-                                      ( clientMode.isTraining() ? " (training mode)" : "" ) ) );
-            } else {
-                setClipboard ( format ( "%s:%u", externalIpAddress.address, port ) );
-                ui.display ( format ( "%s at %s:%u%s\n(Address copied to clipboard)",
-                                    ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
-                                    externalIpAddress.address,
-                                    port,
-                                    ( clientMode.isTraining() ? " (training mode)" : "" ) ) );
-            }
+            setClipboard ( format ( "%s:%u", externalIpAddress.address, port ) );
+            ui.display ( format ( "%s at %s:%u%s\n(Address copied to clipboard)",
+                                  ( clientMode.isBroadcast() ? "Broadcasting" : "Hosting" ),
+                                  externalIpAddress.address,
+                                  port,
+                                  ( clientMode.isTraining() ? " (training mode)" : "" ) ) );
         }
         ui.hostReady();
     }

@@ -45,6 +45,18 @@ static Mutex uiMutex;
 
 static CondVar uiCondVar;
 
+static vector<IpAddrPort> loadServers() {
+    std::ifstream infile(LOBBY_LIST);
+    std::string str;
+    vector<IpAddrPort> servers;
+    while (std::getline(infile, str)) {
+        servers.push_back(str);
+    }
+    return servers;
+}
+
+static const vector<IpAddrPort> serverList = loadServers();
+
 MainUi::MainUi() : _updater ( this )
 {
 }
@@ -115,32 +127,37 @@ void MainUi::server ( RunFuncPtr run )
     serverMode = true;
     _ui->pushRight ( new ConsoleUi::Menu ( "Mode", { "Lobby", "Matchmaking" }, "Cancel" ) );
     _ui->top<ConsoleUi::Menu>()->setPosition ( _config.getInteger ( "lastServerMenuPosition" ) - 1 );
-    for ( ;; )
-    {
-        int mode = _ui->popUntilUserInput ( false )->resultInt;
-        LOG( "mode %d", mode );
-        if ( mode < 0 || mode >= 2 )
-            break;
-        _config.setInteger ( "lastServerMenuPosition", mode + 1 );
-        switch ( mode )
+    try {
+        for ( ;; )
         {
-        case 0:
-            lobby( run );
-            if ( ! sessionError.empty() ) {
-                _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
-                sessionError.clear();
+            int mode = _ui->popUntilUserInput ( false )->resultInt;
+            LOG( "mode %d", mode );
+            if ( mode < 0 || mode >= 2 )
+                break;
+            _config.setInteger ( "lastServerMenuPosition", mode + 1 );
+            switch ( mode )
+            {
+            case 0:
+                lobby( run );
+                if ( ! sessionError.empty() ) {
+                    _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
+                    sessionError.clear();
+                }
+                break;
+            case 1:
+                matchmaking( run );
+                if ( ! sessionError.empty() ) {
+                    _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
+                    sessionError.clear();
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        case 1:
-            matchmaking( run );
-            if ( ! sessionError.empty() ) {
-                _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
-                sessionError.clear();
-            }
-            break;
-        default:
-            break;
         }
+    } catch (std::exception& e) {
+        LOG("Exception");
+        LOG(e.what());
     }
     _ui->pop();
     serverMode = false;
@@ -150,11 +167,7 @@ void MainUi::lobby( RunFuncPtr run )
 {
     _lobby.reset( new Lobby( this ) );
     ifstream infile;
-    infile.open( LOBBY_LIST );
-    string line;
-    getline( infile, line );
-    LOG( line );
-    _lobby->_address = line;
+    _lobby->_address = *serverList.cbegin();
     AutoManager _;
 
     _lobby->start();
@@ -186,11 +199,13 @@ void MainUi::lobby( RunFuncPtr run )
             break;
         }
         // Update ui
+        LOG("Getting lobby mutex");
         _lobby->entryMutex.lock();
         lobbyText =_lobby->getMenu();
         numEntries =_lobby->numEntries;
         lobbyIps =_lobby->getIps();
         _lobby->entryMutex.unlock();
+        LOG("releasing lobby mutex");
         int oldPos = _ui->top<ConsoleUi::Menu>()->getPosition();
         _ui->pop();
         _ui->pushInFront ( new ConsoleUi::Menu ( lobbyDisplay,
@@ -208,16 +223,25 @@ void MainUi::lobby( RunFuncPtr run )
             break;
         } else if ( mode >= numEntries  ) {
             //Hosting
+            LOG( "Hosting" );
             _address = "46318";
             string name = _config.getString ( "displayName" );
-            _lobby->host( name, _address );
+            try {
+                _lobby->host( name, _address );
+            } catch (std::exception& e) {
+                LOG( e.what() );
+            }
             uiCondVar.wait ( uiMutex );
             if ( _lobby->hostSuccess ) {
                 initialConfig.mode.value = ClientMode::Host;
                 addressSelected = true;
+                LOG( "Lobby host Prerun");
                 RUN ( _address, initialConfig );
+                LOG( "Lobby host Postrun");
                 _ui->popNonUserInput();
+                LOG( "Lobby preunhost");
                 _lobby->unhost();
+                LOG( "Lobby postunhost");
                 if ( ! sessionError.empty() ) {
                     lobbyDisplay = lobbyBase + " - " + sessionError;
                     sessionError.clear();
@@ -227,11 +251,14 @@ void MainUi::lobby( RunFuncPtr run )
             }
         } else {
             //Connecting
+            LOG( "Connecting" );
             initialConfig.mode.value = ClientMode::Client;
             _netplayConfig.clear();
             _address = lobbyIps[ mode ];
             addressSelected = true;
+            LOG( "Lobby join Prerun");
             RUN ( _address, initialConfig );
+            LOG( "Lobby join Postrun");
             _ui->popNonUserInput();
             if ( ! sessionError.empty() ) {
                 lobbyDisplay = lobbyBase + " - " + sessionError;
@@ -239,41 +266,53 @@ void MainUi::lobby( RunFuncPtr run )
             }
         }
     }
+    LOG( "Lobby Stopping EM");
     EventManager::get().stop();
+    LOG( "Lobby after Stopping EM");
     if ( !addressSelected ) {
         display ( "Disconnecting from server..." );
     }
     //LOCK ( uiMutex );
+    LOG( "Lobby wait mutex");
+    //if ( lo)
     uiCondVar.wait ( uiMutex );
+    LOG( "Lobby mutex signaled");
     _ui->pop();
+    LOG( "Lobby clear ui");
     if ( !addressSelected ) {
         _ui->pop();
     }
+    LOG( "Lobby reset pointer");
+    _lobby.reset( new Lobby( this ) );
+    _lobby.reset();
+    LOG( "Lobby exiting");
 }
 
 void MainUi::matchmaking( RunFuncPtr run )
 {
+    isMatchmaking = true;
     ifstream infile;
-    infile.open( LOBBY_LIST );
-    string address;
-    getline( infile, address );
     string region = _config.getString ( "matchmakingRegion" );
-    _mmm.reset( new MatchmakingManager( this, address, region ) );
+    _mmm.reset( new MatchmakingManager( this, *serverList.cbegin(), region ) );
     AutoManager _ ( _mmm.get(), getConsoleWindow() );
 
     _mmm->start();
 
     display ( "Connecting to server..." );
     LOCK ( uiMutex );
+    LOG( "lockConnectionMutex");
     uiCondVar.wait ( uiMutex );
+    LOG( "unlockConnectionMutex");
     _ui->pop();
-    if ( ! EventManager::get().isRunning() ) {
+    if ( ! EventManager::get().isRunning() || !_mmm->isRunning() ) {
         sessionError = "Failed to connect";
         return;
     }
 
     display ( "Waiting for opponent..." );
+    LOG( "lockWaitingMutex");
     uiCondVar.wait ( uiMutex );
+    LOG( "unlockWaitingMutex");
     _ui->pop();
     if ( ! EventManager::get().isRunning() ) {
         sessionError = "Disconnected";
@@ -282,18 +321,30 @@ void MainUi::matchmaking( RunFuncPtr run )
 
     if ( initialConfig.mode.value == ClientMode::Client ) {
         _netplayConfig.clear();
+        _mmm->ignoreKb = true;
+        LOG( "MMM preRun");
         RUN ( _address, initialConfig );
+        LOG( "MMM postRun");
         _ui->popNonUserInput();
     } else if ( initialConfig.mode.value == ClientMode::Host ) {
         _netplayConfig.clear();
         _address = "46318";
+        _mmm->ignoreKb = true;
+        LOG( "MMM preRun");
         RUN ( _address, initialConfig );
+        LOG( "MMM postRun");
         _ui->popNonUserInput();
     } else {
         sessionError = "Session Closed";
     }
 
+    LOG( "MMM stopping EM");
     EventManager::get().stop();
+    LOG( "MMM done" );
+    display ( "Disconnecting from server..." );
+    uiCondVar.wait ( uiMutex );
+    _ui->pop();
+    isMatchmaking = false;
 }
 
 void MainUi::spectate ( RunFuncPtr run )
@@ -1986,14 +2037,18 @@ void MainUi::setAddr ( MatchmakingManager *mmm, string addr )
 
 void MainUi::setMode ( MatchmakingManager *mmm, string mode )
 {
-    if ( mode == "Host" )
+    if ( mode == "Host" ) {
         initialConfig.mode.value = ClientMode::Host;
-    else
+    } else if ( mode == "Client" ) {
         initialConfig.mode.value = ClientMode::Client;
+    } else {
+        initialConfig.mode.value = ClientMode::Offline;
+    }
+    LOG(initialConfig.mode.value);
 }
 
-void MainUi::hostReady(){
-    if ( _mmm ) {
+void MainUi::hostReady() {
+    if ( _mmm && _mmm->isRunning() && isMatchmaking ) {
         //Mutex host = _mmm->hostMutex;
         //LOCK( host );
         //_mmm->hostCondVar.signal();

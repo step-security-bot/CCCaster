@@ -12,6 +12,7 @@ MatchmakingManager::MatchmakingManager( Owner* owner, IpAddrPort _address, strin
 {
     timeout = 1000;
     connectionSuccess = false;
+    ignoreKb = false;
 }
 
 void MatchmakingManager::run()
@@ -19,15 +20,17 @@ void MatchmakingManager::run()
     LOG( "mmm run" );
     connect();
     EventManager::get().start();
-    LOG( "mmm stop" );
+    LOG( "mmm run finished" );
     stop();
 }
 
 void MatchmakingManager::stop()
 {
-    LOG( "stop" );
+    LOG( "mmm stop" );
     serversocket.reset();
     _timer.reset();
+    if ( owner )
+        owner->setMode( this, "Offline" );
     owner->unlock( this );
 }
 
@@ -130,8 +133,13 @@ void MatchmakingManager::socketRead ( Socket *socket, const char *bytes, size_t 
 void MatchmakingManager::sendHostReady ()
 {
     const string request = format ( "SUCCESS" );
-    LOG ( "Sending request:\n%s", request );
 
+    if ( !serversocket ) {
+        LOG ( "Socket closed" );
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+    LOG ( "Sending request:\n%s", request );
     //_timer.reset ( new Timer ( this ) );
     //_timer->start ( 3000 );
 
@@ -164,6 +172,6 @@ void MatchmakingManager::timerExpired ( Timer *timer )
 void MatchmakingManager::keyboardEvent ( uint32_t vkCode, uint32_t scanCode, bool isExtended, bool isDown )
 {
     LOG( "Matchmaking manager keyboard event" );
-    if ( vkCode == VK_ESCAPE )
+    if ( vkCode == VK_ESCAPE && !ignoreKb )
         stop();
 }

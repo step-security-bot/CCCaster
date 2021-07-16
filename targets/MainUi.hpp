@@ -99,6 +99,8 @@ private:
 
     bool serverMode = false;
 
+    bool isMatchmaking = false;
+
     void netplay ( RunFuncPtr run );
     void server ( RunFuncPtr run );
     void lobby ( RunFuncPtr run );
