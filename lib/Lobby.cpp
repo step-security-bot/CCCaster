@@ -187,6 +187,7 @@ void Lobby::stop()
     _socket.reset();
     _timer.reset();
     owner->unlock( this );
+    entryMutex.unlock();
 }
 
 void Lobby::host( string name, IpAddrPort port ) {
@@ -194,6 +195,9 @@ void Lobby::host( string name, IpAddrPort port ) {
     string portStr = port.str();
     hostResponse = false;
     const string request = format ( "HOST," + name + "|" + portStr );
+    _timer.reset ( new Timer ( this ) );
+    _timer->start ( 3000 );
+    LOG( request );
     if ( ! _socket->send ( &request[0], request.size() ) ) {
         LOG ( "Failed to send request!" );
 

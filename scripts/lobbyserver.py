@@ -145,6 +145,15 @@ async def checkAllStatus():
         print (rv)
         await asyncio.sleep(5)
 
+async def checkConnectionClosed( reader ):
+    if reader.at_eof():
+        print("connection closed")
+        async with lobbylock:
+            lobby.removeHost( connectionid )
+        writer.close()
+        return True
+    return False
+
 async def handle_connect(reader, writer):
     addr = writer.get_extra_info('peername')
     print(f"Connection from {addr}")
@@ -156,11 +165,7 @@ async def handle_connect(reader, writer):
             uuid = 0
     while True:
         data = await reader.read(100)
-        if reader.at_eof():
-            print("connection closed")
-            async with lobbylock:
-                lobby.removeHost( connectionid )
-            writer.close()
+        if await checkConnectionClosed( reader ):
             return
         message = data.decode()
         try:
@@ -218,6 +223,8 @@ async def handle_connect(reader, writer):
                     # todo add timeout
                     resp = await websocket.recv()
                     jresp = json.loads( resp )
+                    if await checkConnectionClosed( reader ):
+                        return
                 while jresp["eventType"] == "pingTest":
                     addr = jresp["address"]
                     writer.write( bytes( f"PINGTEST\x1f{addr}", 'utf-8' ) )
@@ -232,6 +239,8 @@ async def handle_connect(reader, writer):
                     resp = await websocket.recv()
                     print(f"< {resp}")
                     jresp = json.loads( resp )
+                    if await checkConnectionClosed( reader ):
+                        return
                 if jresp["eventType"] == "joinMatch":
                     msg = f"CLIENT\x1f{jresp['address']}"
                     print( msg )
