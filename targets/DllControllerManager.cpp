@@ -153,8 +153,9 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
         }
         else if ( DllOverlayUi::isTrial() )
         {
-            _overlayPositions[0] = 0;
-            _overlayPositions[1] = 0;
+            _trialOverlayPositions[0] = 0;
+            _trialOverlayPositions[1] = 0;
+            _trialOverlayPositions[2] = 0;
 
             // Disable keyboard events, since we use GetKeyState for regular controller inputs
             KeyboardManager::get().unhook();
@@ -254,7 +255,10 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
 void DllControllerManager::handleTrialMenuOverlay()
 {
     array<string, 3> text;
-    text[0] = "Trial Menu\n";
+    text[0] = "Trial Select\n";
+    text[0] += "Demo\n";
+    text[0] += "Record Demo\n";
+    text[0] += "Input Guide\n";
     DllOverlayUi::updateText ( text );
 }
 void DllControllerManager::handleMappingOverlay()

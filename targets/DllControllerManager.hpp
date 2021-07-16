@@ -58,6 +58,7 @@ private:
     std::array<Controller *, 2> _playerControllers = {{ 0, 0 }};
 
     std::array<size_t, 2> _overlayPositions = {{ 0, 0 }};
+    std::array<size_t, 3> _trialOverlayPositions = {{ 0, 0, 0 }};
 
     std::array<bool, 2> _finishedMapping = {{ false, false }};
 
