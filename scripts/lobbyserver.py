@@ -1,5 +1,7 @@
 #!/usr/bin/env python38
 import asyncio
+import socket
+import struct
 import time
 import websockets
 from enum import Enum
@@ -31,6 +33,7 @@ class HostEntry:
         self.status = WAIT
         self.numtimeouts = 0
         self.mode = VERSUS
+        self.inGameText = ""
 
     def formatWaiting( self ):
         modestring = "UNK"
@@ -41,6 +44,8 @@ class HostEntry:
         return f"{self.name:<43}|{modestring}|Waiting\x1e{self.ip}"
 
     def formatInGame( self ):
+        if self.inGameText:
+            return f"{self.inGameText}\x1e{self.ip}"
         modestring = "UNK"
         if self.mode == VERSUS:
             modestring = "VS "
@@ -92,6 +97,7 @@ lobby.addHost( 1, *dummyEntries[1] )
 lobby.addHost( 2, *dummyEntries[2] )
 lobby.addHost( 3, *dummyEntries[3] )
 """
+
 uuid = 4
 print(lobby.format())
 
@@ -105,6 +111,206 @@ def lformat( entries ):
 def formatConf( addr, region ):
     return formatForServer( json.dumps( {"eventType":"initialConfig", "ipAddress":addr, "region":region } ) )
 
+connectRequest = b"\x1d\x00\x01\x00\x00\x00\x01\xf6\xd7\xed\x39\xfe\x24\x03\x1e\x22\xd5\x4f\x3f\xe6\x5b\x90\x1c"
+connectFinal =   b"\x1d\x00\x02\x00\x00\x00\x03\x9c\x4d\x22\x26\x1e\xcf\xd5\x20\x77\x22\x37\x9a\x64\xfd\x10\x65"
+nullmsg = b''
+ack1 = b'01\x00\x01\x00\x00\x00\x43\x52\xd8\x8a\x78\xaa\x39\x75\x0b\xf7\x0c\xd6\xf2\x7b\xca\xa5'
+ack2 = b'01\x00\x01\x00\x00\x00\x43\x52\xd8\x8a\x78\xaa\x39\x75\x0b\xf7\x0c\xd6\xf2\x7b\xca\xa5'
+# TODO: get 3.1 versionconfig
+versionconfig =     b'\x1f\x00\x03\x00\x00\x00\x02\x00\x07\x00\x00\x00\x33\x2e\x30\x2e\x30\x32\x33\x0e\x00\x00\x00\x37\x30\x37\x38\x34\x36\x34\x2d\x63\x75\x73\x74\x6f\x6d\x1d\x00\x00\x00\x46\x72\x69\x2c\x20\x4a\x75\x6e\x20\x31\x31\x2c\x20\x32\x30\x32\x31\x20\x20\x31\x3a\x34\x33\x3a\x30\x35\x20\x50\x4d\x5e\x8e\x55\x45\xac\x6d\x86\xff\xd1\xc6\xd9\x1d\x6f\x32\xb4\x1c'
+def getShortCharaName( chara ):
+    # First row
+    if chara ==  22: return "Aoko"
+    if chara ==   7: return "Tohno"
+    if chara ==  51: return "Hime"
+    if chara ==  15: return "Nanaya"
+    if chara ==  28: return "Kouma"
+    # Second row
+    if chara ==   8: return "Miyako"
+    if chara ==   2: return "Ciel"
+    if chara ==   0: return "Sion"
+    if chara ==  30: return "Ries"
+    if chara ==  11: return "V.Sion"
+    if chara ==   9: return "Wara"
+    if chara ==  31: return "Roa"
+    # Third row
+    if chara ==   4: return "Maids"
+    if chara ==   3: return "Akiha"
+    if chara ==   1: return "Arc"
+    if chara ==  19: return "P.Ciel"
+    if chara ==  12: return "Warc"
+    if chara ==  13: return "V.Akiha"
+    if chara ==  14: return "M.Hisui"
+    # Fourth row
+    if chara ==  29: return "S.Akiha"
+    if chara ==  17: return "Satsuki"
+    if chara ==  18: return "Len"
+    if chara ==  33: return "Ryougi"
+    if chara ==  23: return "W.Len"
+    if chara ==  10: return "Nero"
+    if chara ==  25: return "NAC"
+    # Firth row
+    if chara ==  35: return "KohaMech"
+    if chara ==   5: return "Hisui"
+    if chara ==  20: return "Neko"
+    if chara ==   6: return "Kohaku"
+    if chara ==  34: return "NekoMech"
+    # Last row
+    if chara ==  99: return "Random"
+def getMoon(moon):
+    if moon == 0: return "C"
+    if moon == 2: return "H"
+    if moon == 1: return "F"
+
+def unpackSpectate( data, ret ):
+    type = data[0:2]
+    uint8 = data[2]
+    uint32 = data[3:7]
+    #?
+    clientMode = data[7]
+    delay = data[8]
+    rollback = data[9]
+    wincount = data[10]
+    hostplayer = data[11]
+    data = data[12:]
+    #names
+    p1nameLen = struct.unpack('i', data[:4])[0]
+    p1name = data[4:4+p1nameLen].decode( 'utf-8' )
+    data = data[4+p1nameLen:]
+    p2nameLen = struct.unpack('i', data[:4])[0]
+    p2name = data[4:4+p2nameLen].decode( 'utf-8' )
+    data = data[4+p2nameLen:]
+    sessionidLen = struct.unpack('i', data[:4])[0]
+    sessionid = data[4:4+sessionidLen]
+    data = data[4+sessionidLen:]
+    #initalgamestate
+    indexedFrame = data[:8]
+    stage = data[8:12]
+    netplayState = data[12]
+    isInTraining = data[13]
+    p1Chara = data[14]
+    p2Chara = data[15]
+    p1Moon = data[16]
+    p2Moon = data[17]
+    p1Color = data[18]
+    p2Color = data[19]
+    data = data[20:]
+    #checksum
+    #print( f"{p1name} ({getMoon(p1Moon)}-{getShortCharaName(p1Chara)}) vs {p2name} ({getMoon(p2Moon)}-{getShortCharaName(p2Chara)})")
+
+    assert len(data) == 16
+    ret[ "p1name" ] = p1name
+    ret[ "p1name" ] = p2name
+    ret[ "p1char" ] = f"{getMoon(p1Moon)}-{getShortCharaName(p1Chara)}"
+    ret[ "p2char" ] = f"{getMoon(p2Moon)}-{getShortCharaName(p2Chara)}"
+    ret[ "text" ] = f"{p1name[:12]} ({getMoon(p1Moon)}-{getShortCharaName(p1Chara)}) vs {p2name[:12]} ({getMoon(p2Moon)}-{getShortCharaName(p2Chara)})"
+
+class RelayProtocol:
+    def __init__(self, on_con_lost, addr, matchid, retDict ):
+        self.on_con_lost = on_con_lost
+        self.transport = None
+        self.addr = addr
+        self.state = 1
+        self.matchid = matchid
+        self.retDict = retDict
+
+    def connection_made(self, transport):
+        self.transport = transport
+        if self.state == 1:
+            message = b"\x01" + struct.pack("l", self.matchid )
+            self.transport.sendto(message, self.addr)
+
+    def datagram_received(self, data, addr):
+        #print("Close the socket")
+        #self.transport.close()
+        if data[:3] == b'\x1d\x00\x01':
+            print("UdpControl")
+            val = struct.unpack('>i', data[3:7])[0]
+            #print( val )
+            if val == 1:
+                print("ConnectRequest")
+            if val == 2:
+                print("ConnectReply")
+                self.transport.sendto(connectFinal, self.addr)
+            if val == 3:
+                print("ConnectFinal")
+            if val == 4:
+                print("Disconnect")
+        elif data[:2] == b'\x01\x00':
+            print("AckSeq")
+            ackId = struct.unpack( 'i', data[2:6])[0]
+            print("ackid: ", ackId)
+            if ackId == 1:
+                self.transport.sendto(ack1, self.addr)
+            if ackId == 2:
+                print("sendack2")
+                self.transport.sendto(data, self.addr)
+        elif data[:2] == b'\x1f\x00':
+            print("versionconfig")
+            self.transport.sendto(versionconfig, self.addr)
+            clientFlags = data[7]
+            print( data )
+            print( clientFlags )
+            gameStarted = ( clientFlags & 0x2 ) == 0x2
+            print( gameStarted )
+            if gameStarted:
+                self.retDict["Started"] = True
+            else:
+                self.retDict["Started"] = False
+                self.transport.close()
+        elif  data[:2] == b'\x18\x00':
+            print("specteateconfig")
+            unpackSpectate(data, self.retDict)
+            self.transport.close()
+        else:
+            print("unexpected Message: ", data)
+            self.transport.close()
+
+    def error_received(self, exc):
+        print('Error received:', exc)
+
+    def connection_lost(self, exc):
+        print("Connection closed")
+        self.on_con_lost.set_result(True)
+
+async def checkHostRelay( hostAddr ):
+    relay = "81.4.126.110:3939"
+    host, port = relay.split(":")
+    reader, writer = await asyncio.open_connection(
+        host, port)
+    writer.write(f"T{hostAddr}".encode())
+    data = await reader.read(100)
+    if not data:
+        print( "host down" )
+        writer.close()
+        return False
+    matchid = struct.unpack('i', data[9:])[0]
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+    loop = asyncio.get_running_loop()
+    on_con_lost = loop.create_future()
+    retDict = {}
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: RelayProtocol(on_con_lost, (host, int(port)), matchid, retDict),
+        sock=sock)
+    data = await reader.read(200)
+    matchid2 = struct.unpack('i', data[7:11])[0]
+    ip = data[11:-1].decode()
+    host, port = ip.split(":")
+    addr =  ( host, int(port))
+    protocol.addr = addr
+    for _ in range(10):
+        transport.sendto(connectRequest, addr)
+        sock.sendto( b'', (host, int(port)))
+        await asyncio.sleep(0.01)
+    try:
+        await asyncio.wait_for( on_con_lost, timeout=5 )
+    except asyncio.TimeoutError:
+        print("timed out!")
+        return False
+    transport.close()
+    writer.close()
+    return retDict
+
 async def checkHostStatus( key, name, hostAddr ):
     host, port = hostAddr.split( ":" )
     try:
@@ -117,18 +323,27 @@ async def checkHostStatus( key, name, hostAddr ):
         if gameStarted:
             async with lobbylock:
                 if key in lobby.entries:
-                    lobby.entries[key].state = INGAME
+                    lobby.entries[key].status = INGAME
         return True
-    except asyncio.TimeoutError:
-        print("timed out!")
-        async with lobbylock:
-            if key in lobby.entries:
-                lobby.entries[key].numtimeouts += 1
-                if lobby.entries[key].numtimeouts > 5:
-                    lobby.removeHost( key )
-        return False
-    except ConnectionRefusedError:
-        print("connection refused")
+    except ( asyncio.TimeoutError, ConnectionRefusedError ) as e:
+        if type(e) == asyncio.TimeoutError:
+            print("timed out!")
+        elif type(e) == ConnectionRefusedError:
+            print("connection refused" )
+        print("trying relay")
+        try:
+            rv = await checkHostRelay( hostAddr )
+            if rv:
+                print(rv)
+                if rv["Started"]:
+                    async with lobbylock:
+                        print("AAAA", rv["text"])
+                        if key in lobby.entries:
+                            lobby.entries[key].status = INGAME
+                            lobby.entries[key].inGameText = rv[ "text" ]
+                return True
+        except:
+            pass
         async with lobbylock:
             if key in lobby.entries:
                 lobby.entries[key].numtimeouts += 1
@@ -145,12 +360,11 @@ async def checkAllStatus():
         print (rv)
         await asyncio.sleep(5)
 
-async def checkConnectionClosed( reader ):
+async def checkConnectionClosed( reader, connectionid ):
     if reader.at_eof():
         print("connection closed")
         async with lobbylock:
             lobby.removeHost( connectionid )
-        writer.close()
         return True
     return False
 
@@ -165,7 +379,8 @@ async def handle_connect(reader, writer):
             uuid = 0
     while True:
         data = await reader.read(100)
-        if await checkConnectionClosed( reader ):
+        if await checkConnectionClosed( reader, connectionid ):
+            writer.close()
             return
         message = data.decode()
         try:
@@ -223,7 +438,8 @@ async def handle_connect(reader, writer):
                     # todo add timeout
                     resp = await websocket.recv()
                     jresp = json.loads( resp )
-                    if await checkConnectionClosed( reader ):
+                    if await checkConnectionClosed( reader, connectionid ):
+                        writer.close()
                         return
                 while jresp["eventType"] == "pingTest":
                     addr = jresp["address"]
@@ -239,7 +455,8 @@ async def handle_connect(reader, writer):
                     resp = await websocket.recv()
                     print(f"< {resp}")
                     jresp = json.loads( resp )
-                    if await checkConnectionClosed( reader ):
+                    if await checkConnectionClosed( reader, connectionid ):
+                        writer.close()
                         return
                 if jresp["eventType"] == "joinMatch":
                     msg = f"CLIENT\x1f{jresp['address']}"
