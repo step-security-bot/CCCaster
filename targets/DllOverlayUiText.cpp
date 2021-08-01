@@ -416,7 +416,7 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
         rect.left = 20;
         rect.right = viewport.Width - 20;
         rect.bottom = viewport.Height - 20;
-        wstring w = TrialManager::fullStrings[TrialManager::currentTrial];
+        wstring w = TrialManager::fullStrings[TrialManager::currentTrialIndex];
         TextCalcRectW( font, w, rect, DT_CENTER | DT_WORDBREAK, 0);
         rect.left = 20;
         rect.right = viewport.Width - 20;

@@ -648,7 +648,8 @@ struct DllMain
 
         // Handle Trial changes
         if ( netMan.config.mode.isTrial() && netMan.isInGame() ) {
-            trialMan.frameStepTrial();
+            //trialMan.frameStepTrial();
+            TrialManager::frameStepTrial();
         }
         // LOG_SYNC ( "SFX 0x%X: CC_SFX_ARRAY=%u; sfxFilterArray=%u; sfxMuteArray=%u", SFX_NUM,
         //            CC_SFX_ARRAY_ADDR[SFX_NUM], AsmHacks::sfxFilterArray[SFX_NUM], AsmHacks::sfxMuteArray[SFX_NUM] );
@@ -1023,6 +1024,8 @@ struct DllMain
                 rollMan.allocateStates();
             if ( netMan.config.mode.isTrial() ) {
                 trialMan.loadTrialFile();
+                TrialManager::loadTrialFolder();
+                trialMan.initialized = true;
             }
         }
 

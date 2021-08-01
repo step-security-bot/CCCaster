@@ -1,8 +1,11 @@
+#include "CharacterSelect.hpp"
 #include "Constants.hpp"
 #include "DllTrialManager.hpp"
 #include "DllTrialManager.hpp"
 #include "DllNetplayManager.hpp"
-#include "CharacterSelect.hpp"
+#include "ProcessManager.hpp"
+#include "StringUtils.hpp"
+#include "Shlwapi.h"
 
 #include <fstream>
 #include <locale>
@@ -10,6 +13,7 @@
 #include <string>
 #include <windows.h>
 
+using namespace std;
 
 namespace TrialManager
 {
@@ -20,13 +24,267 @@ string dtext;
 int comboTrialTextAlign = 0;
 int comboTrialLength = 0;
 int comboTrialPosition = 0;
-int currentTrial = 0;
-bool hideText = false;
+int currentTrialIndex = 0;
+bool hideText = true;
 LPDIRECT3DTEXTURE9 trialTextures = NULL;
-int trialTextures2 = 0;
-int trialTextures3 = 0;
+int trialBGTextures = 0;
+int trialInputTextures = 0;
+
+// rework
+bool playDemo = false;
+int demoPosition = 0;
+bool isRecording = false;
+//Trial* currentTrial;
+vector<Trial> charaTrials;
+int trialScale;
+
+bool comboDrop = false;
+bool comboStart = false;
+bool inputGuideEnabled = false;
+bool playInputs = false;
+int comboDropPos = -1;
+int currentHitcount = 0;
+int inputPosition = 0;
+
+void loadTrialFolder() {
+    string fileNameBase = "cccaster/trials/";
+    string moon;
+    vector<string> trialFiles;
+    switch ( *CC_P1_MOON_SELECTOR_ADDR )
+        {
+        case 0:
+            moon = "C";
+            break;
+        case 1:
+            moon = "F";
+            break;
+        case 2:
+            moon = "H";
+            break;
+        default:
+            break;
+        }
+    fileNameBase.append( moon );
+    const char* cname = getShortCharaName ( *CC_P1_CHARACTER_ADDR );
+    fileNameBase.append( "-" );
+    fileNameBase.append( cname );
+    WIN32_FIND_DATA fd;
+    string searchPath = fileNameBase+"/*.txt";
+    HANDLE hFind = ::FindFirstFile(searchPath.c_str(), &fd);
+    DWORD ftyp = GetFileAttributesA( fileNameBase.c_str() );
+    if (ftyp == INVALID_FILE_ATTRIBUTES)
+        return;
+    if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
+    {
+        do {
+            // read all (real) files in current folder
+            if(! (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ) {
+                trialFiles.push_back( fd.cFileName );
+            }
+        }while(::FindNextFile(hFind, &fd));
+        ::FindClose(hFind);
+    }
+    for ( string file : trialFiles ) {
+        TrialManager::handleTrialFile( fileNameBase + "/" + file );
+    }
+}
+
+void handleTrialFile( string fileName ) {
+    ifstream trialFile( fileName );
+    array<int32_t, 3> startingPositions;
+    // Default starting positions
+    startingPositions[0] = -16384;
+    startingPositions[1] = 16384;
+    startingPositions[2] = 0;
+    vector<string> comboText;
+    vector<uint32_t> comboSeq;
+    vector<int> comboHit;
+    vector<uint16_t> demoInputs;
+    if ( trialFile ) {
+        string str;
+        getline( trialFile, str );
+        int numFields = stoi( str );
+        for ( int i = 0; i < numFields; ++i ) {
+            getline( trialFile, str);
+            if ( str == "StartPos" ) {
+                getline( trialFile, str );
+                int readVal = stoi( str );
+                startingPositions[0] = readVal;
+                getline( trialFile, str );
+                readVal = stoi( str );
+                startingPositions[1] = readVal;
+                getline( trialFile, str );
+                readVal = stoi( str );
+                startingPositions[2] = readVal;
+            } else if ( str == "Combo" ) {
+                getline( trialFile, str);
+                int numInputs = stoi( str );
+                for ( int j = 0; j < numInputs; ++j ) {
+                    getline( trialFile, str );
+                    comboText.push_back( str );
+                    getline( trialFile, str );
+                    comboSeq.push_back( stoi( str ) );
+                    getline( trialFile, str );
+                    comboHit.push_back( stoi( str ) );
+                }
+            } else if ( str == "Demo" ) {
+                getline( trialFile, str);
+                int numInputs = stoi( str );
+                for ( int j = 0; j < numInputs; ++j ) {
+                    getline( trialFile, str );
+                    demoInputs.push_back( stoul( str, 0, 16 ) );
+                }
+            }
+        }
+    }
+
+    vector<string> nameFragments = split( fileName, "/" );
+    fileName = nameFragments[nameFragments.size() - 1];
+    Trial t = { fileName.substr( 0, fileName.size() - 4 ),
+                startingPositions,
+                comboText,
+                comboSeq,
+                comboHit,
+                demoInputs
+    };
+    charaTrials.push_back( t );
+}
+
+void saveTrial( Trial trial ) {
+    string fileNameBase = "cccaster/trials/";
+    string moon;
+    switch ( *CC_P1_MOON_SELECTOR_ADDR )
+    {
+        case 0:
+            moon = "C";
+            break;
+        case 1:
+            moon = "F";
+            break;
+        case 2:
+            moon = "H";
+            break;
+        default:
+            break;
+    }
+    fileNameBase.append( moon );
+    const char* cname = getShortCharaName ( *CC_P1_CHARACTER_ADDR );
+    fileNameBase.append( "-" );
+    fileNameBase.append( cname );
+    fileNameBase.append( "/" );
+    fileNameBase.append( trial.name );
+    fileNameBase.append( ".txt" );
+    ofstream trialfile( fileNameBase );
+    if ( trialfile.is_open() ) {
+        int numFields = 2;
+        if ( trial.demoInputs.size() > 0 )
+            numFields++;
+        trialfile << numFields << endl;
+        trialfile << "StartPos" << endl;
+        trialfile << trial.startingPositions[0] << endl;
+        trialfile << trial.startingPositions[1] << endl;
+        trialfile << trial.startingPositions[2] << endl;
+        trialfile << "Combo" << endl;
+        trialfile << trial.comboSeq.size() << endl;
+        for ( uint32_t i = 0; i < trial.comboSeq.size(); ++i ) {
+            trialfile << trial.comboText[i] << endl;
+            trialfile << trial.comboSeq[i] << endl;
+            trialfile << trial.comboHit[i] << endl;
+        }
+        if ( trial.demoInputs.size() > 0 ) {
+            trialfile << "Demo" << endl;
+            trialfile << trial.demoInputs.size() << std::hex << endl;
+            for ( uint16_t input : trial.demoInputs ) {
+                trialfile << "0x" << input << endl;
+            }
+        }
+    }
+    trialfile.close();
+}
+
+void saveTrial() {
+    saveTrial( charaTrials[currentTrialIndex] );
+}
+
+int getHitcount()
+{
+    return *(uint32_t*)((*CC_P1_COMBO_OFFSET_ADDR * 0x2C) / 4 + CC_P1_COMBO_HIT_BASE_ADDR );
+}
+
+void frameStepTrial()
+{
+    if ( charaTrials.empty() ) {
+        return;
+    }
+
+    Trial currentTrial = charaTrials[currentTrialIndex];
+    char buf[1000];
+    sprintf(buf, "temp1=%d, temp=%d, ehitC=%d, rhitc=%02d,cCombo=%02d, p2cseq=%03d, currSeq=%03d, exSeq=%02d",
+            0,0,
+            currentHitcount,
+            0,
+            currentTrialIndex,
+            *CC_P2_SEQUENCE_ADDR,
+            *CC_P1_SEQUENCE_ADDR,
+            currentTrial.comboSeq[comboTrialPosition]);
+    dtext = buf;
+    if ( !comboDrop ) {
+        if ( *CC_P1_SEQUENCE_ADDR == currentTrial.comboSeq[0] &&
+             *CC_P2_SEQUENCE_ADDR != 0 && !comboStart ) {
+            comboTrialPosition = 1;
+            comboStart = true;
+            currentHitcount = getHitcount();
+        } else if ( ( *CC_P1_SEQUENCE_ADDR == currentTrial.comboSeq[comboTrialPosition] ||
+                      ( ( currentTrial.comboSeq[comboTrialPosition] == 0 ) && ( *CC_P1_SEQUENCE_ADDR == 12 ) ) )
+                    && comboStart &&
+                    ( ( currentTrial.comboHit[comboTrialPosition]) ?
+                      ( getHitcount() > currentHitcount ) : true ) ) {
+            comboTrialPosition += 1;
+            currentHitcount = getHitcount();
+        }
+        if ( *CC_P2_SEQUENCE_ADDR == 0 ) {
+            comboDrop = true;
+            comboDropPos = comboTrialPosition;
+            comboStart = false;
+            currentHitcount = 0;
+        }
+    } else if ( *CC_P1_SEQUENCE_ADDR == 0 &&
+                *CC_P2_SEQUENCE_ADDR == 0 ) {
+        if ( comboTrialPosition < currentTrial.comboSeq.size() )
+            comboTrialPosition = 0;
+    } else if ( *CC_P1_SEQUENCE_ADDR == currentTrial.comboSeq[0] &&
+                *CC_P2_SEQUENCE_ADDR != 0 ) {
+        comboTrialPosition = 1;
+        comboDrop = false;
+        comboStart = true;
+        currentHitcount = getHitcount();
+    }
+
+    if ( isRecording ) {
+        uint16_t rawinput = netManPtr->getRawInput( 1 );
+        LOG( "newRecordInput: %d@%d", rawinput, currentTrial.demoInputs.size() );
+        if ( currentTrial.demoInputs.size() < 60*30 ) {
+            charaTrials[currentTrialIndex].demoInputs.push_back( rawinput );
+        }
+    }
+
+    if ( ( GetAsyncKeyState ( VK_F2 ) & 0x1 ) == 1 ) {
+        if ( inputGuideEnabled ) {
+            inputPosition = 0;
+            playInputs = !playInputs;
+        }
+    }
+    if ( playInputs ) {
+        inputPosition -= 3;
+        if ( inputPosition < charaTrials[currentTrialIndex].demoInputs.size()* -3 - 200 ) {
+            inputPosition = 0;
+            playInputs = false;
+        }
+    }
+}
+
+
 } // namespace TrialManager
-using namespace std;
 
 extern NetplayManager* netManPtr;
 
@@ -38,8 +296,8 @@ void DllTrialManager::frameStepTrial()
         return;
 
     //TrialManager::comboTrialText = { L"5A >", L"2A >", L"5B >", L"5C" };
-    TrialManager::comboTrialText = comboText[TrialManager::currentTrial];
-    TrialManager::comboName = comboNames[TrialManager::currentTrial];
+    TrialManager::comboTrialText = comboText[TrialManager::currentTrialIndex];
+    TrialManager::comboName = comboNames[TrialManager::currentTrialIndex];
     TrialManager::comboTrialLength = 4;
 
     //comboSeq = {{ 4, 1, 2, 3, -1 }};
@@ -54,24 +312,24 @@ void DllTrialManager::frameStepTrial()
             0,0,
             currentHitcount,
             getHitcount(),
-            TrialManager::currentTrial,
+            TrialManager::currentTrialIndex,
             //(*CC_P1_COMBO_OFFSET_ADDR * 0x2C),
             //((*CC_P1_COMBO_OFFSET_ADDR * 0x2C) / 4 + CC_P1_COMBO_HIT_BASE_ADDR ),
             *CC_P2_SEQUENCE_ADDR,
             *CC_P1_SEQUENCE_ADDR,
-            comboSeq[TrialManager::currentTrial][TrialManager::comboTrialPosition]);
-    TrialManager::dtext = buf;
-    cout << TrialManager::dtext << endl;
+            comboSeq[TrialManager::currentTrialIndex][TrialManager::comboTrialPosition]);
+    //TrialManager::dtext = buf;
+    //cout << TrialManager::dtext << endl;
     if ( !comboDrop ) {
-        if ( *CC_P1_SEQUENCE_ADDR == comboSeq[TrialManager::currentTrial][0] &&
+        if ( *CC_P1_SEQUENCE_ADDR == comboSeq[TrialManager::currentTrialIndex][0] &&
              *CC_P2_SEQUENCE_ADDR != 0 && !comboStart ) {
             TrialManager::comboTrialPosition = 1;
             comboStart = true;
             currentHitcount = getHitcount();
-        } else if ( ( *CC_P1_SEQUENCE_ADDR == comboSeq[TrialManager::currentTrial][TrialManager::comboTrialPosition] ||
-                      ( ( comboSeq[TrialManager::currentTrial][TrialManager::comboTrialPosition] == 0 ) && ( *CC_P1_SEQUENCE_ADDR == 12 ) ) )
+        } else if ( ( *CC_P1_SEQUENCE_ADDR == comboSeq[TrialManager::currentTrialIndex][TrialManager::comboTrialPosition] ||
+                      ( ( comboSeq[TrialManager::currentTrialIndex][TrialManager::comboTrialPosition] == 0 ) && ( *CC_P1_SEQUENCE_ADDR == 12 ) ) )
                     && comboStart &&
-                    ( (comboHit[TrialManager::currentTrial][TrialManager::comboTrialPosition]) ?
+                    ( (comboHit[TrialManager::currentTrialIndex][TrialManager::comboTrialPosition]) ?
                       (getHitcount() > currentHitcount) : true ) ) {
             TrialManager::comboTrialPosition += 1;
             currentHitcount = getHitcount();
@@ -86,7 +344,7 @@ void DllTrialManager::frameStepTrial()
     } else if ( *CC_P1_SEQUENCE_ADDR == 0 &&
                 *CC_P2_SEQUENCE_ADDR == 0 ) {
         TrialManager::comboTrialPosition = 0;
-    } else if ( *CC_P1_SEQUENCE_ADDR ==  comboSeq[TrialManager::currentTrial][0] &&
+    } else if ( *CC_P1_SEQUENCE_ADDR ==  comboSeq[TrialManager::currentTrialIndex][0] &&
                 *CC_P2_SEQUENCE_ADDR != 0 ) {
         TrialManager::comboTrialPosition = 1;
         comboDrop = false;
@@ -95,11 +353,11 @@ void DllTrialManager::frameStepTrial()
     }
     /*
     if ( ( GetAsyncKeyState ( VK_F3 ) & 0x1 ) == 1 ) {
-        loadCombo( TrialManager::currentTrial + 1 );
+        loadCombo( TrialManager::currentTrialIndex + 1 );
     }
     */
     if ( ( GetAsyncKeyState ( VK_F2 ) & 0x1 ) == 1 ) {
-        loadCombo( TrialManager::currentTrial - 1 );
+        loadCombo( TrialManager::currentTrialIndex - 1 );
     }
     if ( ( GetAsyncKeyState ( VK_F12 ) & 0x1 ) == 1 ) {
         if ( TrialManager::comboTrialTextAlign > 1 ) {
@@ -110,6 +368,17 @@ void DllTrialManager::frameStepTrial()
         }
         else if ( TrialManager::comboTrialTextAlign == 0 ) {
             TrialManager::comboTrialTextAlign = 1;
+        }
+    }
+
+
+
+
+    if ( TrialManager::isRecording ) {
+        uint16_t rawinput = netManPtr->getRawInput( 1 );
+        LOG( "newRecordInput: %d@%d", rawinput, TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.size() );
+        if ( TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.size() < 60*30 ) {
+            TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.push_back( rawinput );
         }
     }
 }
@@ -177,9 +446,16 @@ void DllTrialManager::loadTrialFile()
         initialized = true;
     }
     //*CC_SHOW_ATTACK_DISPLAY = 1;
-    FILE* file = fopen ("coords.txt", "r");
-    fscanf (file, "%d %d %d %d %d %d", &i1, &i2, &i3, &i4, &i5, &i6);
-    fclose( file );
+    //FILE* file = fopen ("coords.txt", "r");
+    //fscanf (file, "%d %d %d %d %d %d", &i1, &i2, &i3, &i4, &i5, &i6);
+    i1 = 4;
+    i2 = 5;
+    i3 = 7;
+    i4 = 20;
+    i5 = 300;
+    i6 = 11;
+
+    //fclose( file );
     //cout << TrialManager::fullStrings[0];
 }
 
@@ -187,7 +463,7 @@ void DllTrialManager::loadCombo( int comboId )
 {
     if ( comboId < 0 )
         comboId = numCombos - 1;
-    TrialManager::currentTrial = ( comboId % numCombos );
+    TrialManager::currentTrialIndex = ( comboId % numCombos );
     TrialManager::comboTrialPosition = 0;
     currentHitcount = 0;
     comboDrop = false;
@@ -211,8 +487,12 @@ extern "C" int CallDrawRect ( int screenXAddr, int screenYAddr, int width, int h
 void DllTrialManager::drawButton( int buttonId, int screenX, int screenY, int width, int height )
 {
     // Buttons:
-    // 0: A 1: B 2: C 3:D
-    CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*buttonId, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    // 0: A 1: B 2: C 3:D 4:E
+    if ( buttonId == 4 ) {
+        CallDrawSprite ( width, 0, (int)TrialManager::trialInputTextures, screenX, screenY, height, 0x19, 75, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    } else {
+        CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*buttonId, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    }
 }
 
 void DllTrialManager::drawArrow( int direction, int screenX, int screenY, int width, int height )
@@ -269,12 +549,12 @@ void DllTrialManager::drawShadowButton( int buttonId, int screenX, int screenY, 
 {
     // Buttons:
     // 0=A 1=B 2=C 3=D
-    CallDrawSprite ( width, 0, (int) TrialManager::trialTextures3, screenX, screenY, height, 0x19*buttonId, 125, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    CallDrawSprite ( width, 0, (int) TrialManager::trialInputTextures, screenX, screenY, height, 0x19*buttonId, 125, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
 }
 
 void DllTrialManager::drawShadowArrow( int direction, int screenX, int screenY, int width, int height )
 {
-    CallDrawSprite ( width, 0, (int) TrialManager::trialTextures3, screenX, screenY, height, 0x19*direction, 100, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    CallDrawSprite ( width, 0, (int) TrialManager::trialInputTextures, screenX, screenY, height, 0x19*direction, 100, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
 }
 
 int DllTrialManager::drawComboBacking( MovePosition position, MoveStatus status, int screenX, int screenY, int width, int height )
@@ -303,14 +583,14 @@ int DllTrialManager::drawComboBacking( MovePosition position, MoveStatus status,
             break;
     }
     if ( drawStart ) {
-        CallDrawSprite ( 15, 0, (int) TrialManager::trialTextures2, screenX, screenY, height, texStartX, texStartY+yoffset, 15, 32, 0xFFFFFFFF, 0, 0x2cb );
+        CallDrawSprite ( 15, 0, (int) TrialManager::trialBGTextures, screenX, screenY, height, texStartX, texStartY+yoffset, 15, 32, 0xFFFFFFFF, 0, 0x2cb );
         screenX +=15;
         nextX += 15;
     }
-    CallDrawSprite ( width, 0, (int) TrialManager::trialTextures2, screenX, screenY, height, centerStartX, texStartY+yoffset, centerTexWidth, 32, 0xFFFFFFFF, 0, 0x1cc );
+    CallDrawSprite ( width, 0, (int) TrialManager::trialBGTextures, screenX, screenY, height, centerStartX, texStartY+yoffset, centerTexWidth, 32, 0xFFFFFFFF, 0, 0x1cc );
     nextX += width;
     if ( drawEnd ) {
-        CallDrawSprite ( 18, 0, (int) TrialManager::trialTextures2, screenX+width, screenY, height, endStartX, texStartY+yoffset, 18, 32, 0xFFFFFFFF, 0, 0x2cb );
+        CallDrawSprite ( 18, 0, (int) TrialManager::trialBGTextures, screenX+width, screenY, height, endStartX, texStartY+yoffset, 18, 32, 0xFFFFFFFF, 0, 0x2cb );
         nextX += 4;
     }
     return nextX ;
@@ -360,52 +640,133 @@ void DllTrialManager::drawInputs()
     }
 }
 
-vector<Move> DllTrialManager::tokenizeText( vector<wstring> text )
+int DllTrialManager::getMoveWidth( Move move, int x )
 {
-    wstring dirs = L"12346789";
-    wstring buttons = L"ABCD";
-    wstring brackets = L"[]{}";
+    int moveWidth = 0;
+    int roffset = i3;
+    for( Token token : move.text ) {
+        if ( token.type == Button ) {
+            moveWidth += 25;
+        } else if ( token.type == Direction ) {
+            moveWidth += 25;
+        } else if ( token.type == String ) {
+            moveWidth += 24*token.text.length();
+        } else if ( token.type == Symbol ) {
+            if ( token.text[ 0 ] == 'd' ) {
+                moveWidth += 35 + 11;
+            } else if ( token.text[ 0 ] == 'j' ) {
+                moveWidth += 30;
+            } else if ( token.text[ 0 ] == 'A' ) {
+                moveWidth += 20;
+                moveWidth += 16;
+                moveWidth += 14;
+                moveWidth += 17;
+            } else if ( token.text[ 0 ] == 't' ) {
+                moveWidth += 15;
+                moveWidth += 11;
+                moveWidth += 15;
+            }
+        }
+    }
+    return moveWidth + roffset;
+}
+
+int DllTrialManager::getMoveWidthScaled( Move move, int x, int buttonWidth )
+{
+    int moveWidth = 0;
+    int roffset = i3;
+    for( Token token : move.text ) {
+        if ( token.type == Button ) {
+            moveWidth += buttonWidth;
+        } else if ( token.type == Direction ) {
+            moveWidth += buttonWidth;
+        } else if ( token.type == String ) {
+            moveWidth += buttonWidth*token.text.length();
+        } else if ( token.type == Symbol ) {
+            if ( token.text[ 0 ] == 'd' ) {
+                moveWidth += buttonWidth*3;
+            } else if ( token.text[ 0 ] == 'j' ) {
+                moveWidth += buttonWidth*2;
+            } else if ( token.text[ 0 ] == 'A' ) {
+                moveWidth += buttonWidth*4;
+            } else if ( token.text[ 0 ] == 't' ) {
+                moveWidth += buttonWidth*3;
+            }
+        }
+    }
+    return moveWidth + roffset;
+}
+
+vector<Move> DllTrialManager::tokenizeText( vector<string> text )
+{
+    string dirs = "123456789";
+    string buttons = "ABCD";
+    string brackets = "[]{}";
     vector<Move> moves;
     for( unsigned int j = 0; j < text.size(); ++j ) {
-        wstring move = text[j];
+        string move = text[j];
         vector<Token> tokens;
         unsigned int i = 0;
         while( i < move.length() ) {
-            wchar_t curMove = move[i];
-            if ( curMove == L'd' ) {
-                tokens.push_back( Token{ "d.", Symbol, 2 } );
-                i++;
-            } else if ( curMove == L'j' ) {
+            char curMove = move[i];
+            if ( curMove == 'd' ) {
+                tokens.push_back( Token{ "dj.", Symbol, 3 } );
+                i+=2;
+            } else if ( curMove == 'j' ) {
                 tokens.push_back( Token{ "j.", Symbol, 2 } );
                 i++;
-            } else if ( curMove == L't' ) {
+            } else if ( curMove == 't' ) {
                 tokens.push_back( Token{ "tk.", Symbol, 3 } );
                 i += 2;
-            } else if ( dirs.find( curMove ) != wstring::npos ) {
-                tokens.push_back( Token{ string( 1, curMove ), Direction, 1 } );
-            } else if ( buttons.find( curMove ) != wstring::npos ) {
-                if ( i+1 < move.length() && move[i+1] == L'T' ) {
+            } else if ( curMove == 'a' ) {
+                if ( i+3 < move.length() && move[i+3] == 'd' ) {
+                    if ( i+4 < move.length() && move[i+4] == 'o' ) {
+                        tokens.push_back( Token{ "Airdodge", String, 8 } );
+                        i += 7;
+                    } else if ( i+4 < move.length() && move[i+4] == 'a' ) {
+                        tokens.push_back( Token{ "Airdash", String, 7 } );
+                        i += 6;
+                    }
+                } else if ( i+3 < move.length() && move[i+3] == 'b' ) {
+                    tokens.push_back( Token{ "Airbackdash", String, 11 } );
+                    i += 10;
+                }
+            } else if ( curMove == 'X' ) {
+                tokens.push_back( Token{ "X", String, 1 } );
+            } else if ( dirs.find( curMove ) != string::npos ) {
+                if ( curMove != '5' ) {
+                    tokens.push_back( Token{ string( 1, curMove ), Direction, 1 } );
+                }
+            } else if ( buttons.find( curMove ) != string::npos ) {
+                if ( i+1 < move.length() && move[i+1] == 'T' ) {
                     tokens.push_back( Token{ "AT", String, 2 } );
                     i++;
-                } else if ( i+1 < move.length() && move[i+1] == L'd' ) {
+                } else if ( i+1 < move.length() && move[i+1] == 'd' ) {
                     tokens.push_back( Token{ "Add.", Symbol, 4 } );
-                    i += 3;
+                    i += 4;
+                } else if ( i+1 < move.length() && move[i+1] == 'i' ) {
+                    tokens.push_back( Token{ "Airdash", Symbol, 7 } );
+                    i += 6;
                 } else {
                     tokens.push_back( Token{ string( 1, curMove ), Button, 1 } );
                 }
-            } else if ( curMove == L'(' ) {
+            } else if ( curMove == '(' ) {
                 string textFrag;
                 int len = 2;
-                while( move[i] != L')' ){
+                while( move[i] != ')' ){
                     textFrag += move[i];
                     i++;
                     len++;
                 }
-                textFrag += L')';
+                textFrag += ')';
                 i++;
                 tokens.push_back( Token{ textFrag, String, len } );
-            } else if ( brackets.find( curMove ) != wstring::npos ) {
+            } else if ( brackets.find( curMove ) != string::npos ) {
                 tokens.push_back( Token{ string( 1, curMove ), String, 1 } );
+            } else {
+                LOG( "Unkown token: %s, %d", move, i );
+                tokens.push_back( Token{ move, String, move.length() } );
+                i = move.length();
             }
             i++;
         }
@@ -437,7 +798,7 @@ int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
     for( Token token : move.text ) {
         if ( token.type == Button ) {
             nextX += 25;
-            if ( nextX > 630){
+            if ( nextX > 620){
                 y += 25;
                 currX = x + loffset;
             }
@@ -451,15 +812,76 @@ int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
             currX += 25;
             moveWidth += 25;
         } else if ( token.type == String ) {
-            drawText( token.text, currX, y+ytextoffset );
-            currX += 24*token.text.length();
-            moveWidth += 24*token.text.length();
+            if ( token.text == "Airbackdash" ) {
+                drawText( "A", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "i", currX, y+ytextoffset );
+                currX += 24 - 10;
+                drawText( "r", currX, y+ytextoffset );
+                currX += 24 - 10;
+                drawText( "b", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "a", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "c", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "k", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "d", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "a", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "s", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "h", currX, y+ytextoffset );
+                currX += 24;
+                moveWidth += 24*token.text.length() - 20;
+            } else if ( token.text == "Airdash" ) {
+                drawText( "A", currX, y+ytextoffset );
+                currX += 24 - 8;
+                drawText( "i", currX, y+ytextoffset );
+                currX += 24 - 10;
+                drawText( "r", currX, y+ytextoffset );
+                currX += 24 - 11;
+                drawText( "d", currX, y+ytextoffset );
+                currX += 24 - 10;
+                drawText( "a", currX, y+ytextoffset );
+                currX += 24 - 8;
+                drawText( "s", currX, y+ytextoffset );
+                currX += 24 - 8;
+                drawText( "h", currX, y+ytextoffset );
+                currX += 24;
+                moveWidth += 24*token.text.length() -8 -8 -10 -10 - 11 -8;
+            } else if ( token.text == "Airdodge" ) {
+                drawText( "A", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "i", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "r", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "d", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "o", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "d", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "g", currX, y+ytextoffset );
+                currX += 24;
+                drawText( "e", currX, y+ytextoffset );
+                currX += 24;
+                moveWidth += 24*token.text.length();
+            } else {
+                drawText( token.text, currX, y+ytextoffset );
+                currX += 24*token.text.length();
+                moveWidth += 24*token.text.length();
+            }
         } else if ( token.type == Symbol ) {
             if ( token.text[ 0 ] == 'd' ) {
                 drawText( "d", currX, y+ytextoffset );
-                drawText( ".", currX + 15, y+ytextoffset );
-                currX += 35;
-                moveWidth += 35;
+                drawText( "j", currX + 14, y+ytextoffset );
+                drawText( ".", currX + 25, y+ytextoffset );
+                currX += 35 + 11;
+                moveWidth += 35 + 11;
             } else if ( token.text[ 0 ] == 'j' ) {
                 drawText( "j", currX, y+ytextoffset );
                 drawText( ".", currX + 10, y+ytextoffset );
@@ -495,43 +917,91 @@ int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
     return x;
 }
 
+int DllTrialManager::drawMoveScaled( Move move, MoveStatus color, int x, int y, int buttonWidth )
+{
+    int loffset = i1;
+    if ( move.position != Start ) {
+        loffset += 15;
+    }
+    int yoffset = i2;
+    int ytextoffset = i2;
+    int roffset = i3;
+    int currX = x + loffset;
+    int nextX = x + loffset;
+    int moveWidth = 0;
+
+    for( Token token : move.text ) {
+        if ( token.type == Button ) {
+            int buttonId = token.text[0] - 'A';
+            drawButton( buttonId, currX, y+yoffset, buttonWidth, buttonWidth );
+            currX += buttonWidth;
+            moveWidth += buttonWidth;
+        } else if ( token.type == Direction ) {
+            int buttonId = token.text[0] - '0';
+            drawArrow( buttonId, currX, y+yoffset, buttonWidth, buttonWidth );
+            currX += buttonWidth;
+            moveWidth += buttonWidth;
+        } else if ( token.type == String ) {
+            drawText( token.text, currX, y+ytextoffset, buttonWidth, buttonWidth );
+            drawTextWithBorder( token.text, currX, y+ytextoffset, buttonWidth, buttonWidth );
+            currX += buttonWidth*token.text.length() - 10;
+            moveWidth += buttonWidth*token.text.length() - 10;
+        } else if ( token.type == Symbol ) {
+            if ( token.text[ 0 ] == 'd' ) {
+                drawText( "dj.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                drawTextWithBorder( "dj.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                currX += buttonWidth*3;
+                moveWidth += buttonWidth*3;
+            } else if ( token.text[ 0 ] == 'j' ) {
+                drawText( "j.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                drawTextWithBorder( "j.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                currX += buttonWidth*2;
+                moveWidth += buttonWidth*2;
+            } else if ( token.text[ 0 ] == 'A' ) {
+                drawText( "Add.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                drawTextWithBorder( "Add.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                currX += buttonWidth*4;
+                moveWidth += buttonWidth*4;
+            } else if ( token.text[ 0 ] == 't' ) {
+                drawText( "tk.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                drawTextWithBorder( "tk.", currX, y+ytextoffset, buttonWidth, buttonWidth );
+                currX += buttonWidth*3;
+                moveWidth += buttonWidth*3;
+            }
+            currX -= buttonWidth / 2;
+            moveWidth -= buttonWidth / 2;
+        }
+    }
+    x = drawComboBacking( move.position, color, x, y, moveWidth+roffset, buttonWidth + 7 );
+    return x;
+}
+
 void DllTrialManager::drawCombo()
 {
-    drawComboBacking( Middle,Next,20+67-15,20,67,50);
-    drawComboBacking( Start,Current,20+67-15,70,67,50);
-    drawComboBacking( Ending,Done,20+67-15,120,67,50);
-    drawComboBacking( Start,Done,20+67-15,170,67,50);
-    drawComboBacking( Middle,Done,20+67-15+67+4,170,67,50);
-    drawComboBacking( Ending,Failed,20+67-15+(67+4)*2+15,170,500,50);
-    char* test = "j.[B]";
-
-    /*
-    CallDrawText ( i1, i2, i3, i4, test, 0xff, 0xff, 0xcc,
-                   (void*) FONT2,
-                   0, 0, 0 );
-    */
     int x = i4;
     int newx = i4;
     int y = i5;
+    y = 20;
+    if ( TrialManager::inputGuideEnabled ) {
+        y += 25;
+    }
     int loffset = 0;
     int yoffset = 0;
-    int roffset = 10;
+    //int roffset = 10;
     int currentMove = 0;
     int currentFail = 3;
     MoveStatus color;
 
-    vector<wstring> comboTrialText = { L"5A", L"2A", L"5B", L"AT",
-        L"tk.236B", L"Add.A", L"j.B", L"[B]"};
-    //    L"(delay)j.5B(hold)"};
-    if ( !TrialManager::comboTrialText.empty() ) {
-        //if ( initialized ) {
-        comboTrialText = TrialManager::comboTrialText;
+    vector<string> comboTrialText;
+    if ( !TrialManager::charaTrials.empty() ) {
+        Trial currentTrial = TrialManager::charaTrials[TrialManager::currentTrialIndex];
+        comboTrialText = currentTrial.comboText;
         currentMove = TrialManager::comboTrialPosition;
-        currentFail = comboDropPos;
+        currentFail = TrialManager::comboDropPos;
     }
     vector<Move> moveList = tokenizeText( comboTrialText );
 
-    for( int i = 0; i < moveList.size(); ++i ) {
+    for( uint16_t i = 0; i < moveList.size(); ++i ) {
         if ( i < currentMove ) {
             color = Done;
         } else if ( i == currentMove ) {
@@ -542,12 +1012,32 @@ void DllTrialManager::drawCombo()
             color = Next;
         }
         Move move = moveList[i];
-
-        newx = drawMove( move, color, x+loffset, y+yoffset );
-        if ( newx < x ) {
-            y += 25;
+        int moveWidth;
+        if ( TrialManager::trialScale == 0 ) {
+            moveWidth = getMoveWidth( move, x+loffset );
+            if ( moveWidth + x > 630 ) {
+                y += 30;
+                x = i4;
+            }
+            newx = drawMove( move, color, x+loffset, y+yoffset );
+            x = newx;
+        } else if ( TrialManager::trialScale == 1 ) {
+            moveWidth = getMoveWidthScaled( move, x+loffset, 20 );
+            if ( moveWidth + x > 630 ) {
+                y += 26;
+                x = i4;
+            }
+            newx = drawMoveScaled( move, color, x+loffset, y+yoffset, 20 );
+            x = newx;
+        } else if ( TrialManager::trialScale == 2 ) {
+            moveWidth = getMoveWidth( move, x+loffset );
+            if ( moveWidth + x > 630 ) {
+                y += 18;
+                x = i4;
+            }
+            newx = drawMoveScaled( move, color, x+loffset, y+yoffset, 0xc );
+            x = newx;
         }
-        x = newx;
     }
 }
 
@@ -555,7 +1045,6 @@ void DllTrialManager::drawSolidRect( int x, int y, int width, int height, ARGB c
     int colorValue = ( color.alpha << 24 ) + ( color.red << 16 ) +
         ( color.green << 8 ) + ( color.blue );
     CallDrawRect( x, y, width, height, colorValue, colorValue, colorValue, colorValue, layer );
-    //CallDrawRect( 0, 0, 100,480, 0xffffffff, 0xff0000ff, 0xff00, colorValue, 0x2cb );
 }
 void DllTrialManager::drawiidx(){
     if (tmp2 > boxHeight + 10 ) {
@@ -577,6 +1066,85 @@ void DllTrialManager::drawiidx(){
     drawSolidRect( 2, tmp2, 25, 2, white, 0x2cc );
     drawSolidRect( 29, tmp2-10, 25, 2, white, 0x2cc );
     drawSolidRect( 56, tmp2-20, 25, 2, white, 0x2cc );
+}
+
+void DllTrialManager::drawInputGuideButtons( uint16_t input, uint16_t lastinput, int x ) {
+    bool drawA, drawB, drawC, drawD, drawE;
+    int y = 12;
+    drawA = ( input & COMBINE_INPUT ( 0, CC_BUTTON_A ) ) && ( !( lastinput & COMBINE_INPUT ( 0, CC_BUTTON_A ) ) );
+    drawB = ( input & COMBINE_INPUT ( 0, CC_BUTTON_B ) ) && ( !( lastinput & COMBINE_INPUT ( 0, CC_BUTTON_B ) ) );
+    drawC = ( input & COMBINE_INPUT ( 0, CC_BUTTON_C ) ) && ( !( lastinput & COMBINE_INPUT ( 0, CC_BUTTON_C ) ) );
+    drawD = ( input & COMBINE_INPUT ( 0, CC_BUTTON_D ) ) && ( !( lastinput & COMBINE_INPUT ( 0, CC_BUTTON_D ) ) );
+    drawE = ( input & COMBINE_INPUT ( 0, CC_BUTTON_E ) ) && ( !( lastinput & COMBINE_INPUT ( 0, CC_BUTTON_E ) ) );
+    int numButtons = drawA + drawB + drawC + drawD + drawE;
+    int button1, button2, button3, button4;
+    button1 = button2 = button3 = button4 = 0;
+    if ( drawA ) {
+        button1 = 0;
+    }
+    if ( drawB ) {
+        if ( button1 ) {
+            button2 = 1;
+        } else {
+            button1 = 1;
+        }
+    }
+    if ( drawC ) {
+        if ( button2 ) {
+            button3 = 2;
+        } else if ( button1 ) {
+            button2 = 2;
+        } else {
+            button1 = 2;
+        }
+    }
+    if ( drawD ) {
+        if ( button3 ) {
+            button4 = 3;
+        } else if ( button2 ) {
+            button3 = 3;
+        } else if ( button1 ) {
+            button2 = 3;
+        } else {
+            button1 = 3;
+        }
+    }
+    if ( drawE ) {
+        button1 = 4;
+        LOG("DrawE");
+    }
+    if ( numButtons == 0 ) {
+        return;
+    } else if ( numButtons == 1 ) {
+        drawButton( button1, x, y );
+    } else if ( numButtons == 2 ) {
+        drawButton( button1, x, y );
+        drawButton( button2, x, 22 + y );
+    } else if ( numButtons == 3 ) {
+        drawButton( button1, x, y );
+        drawButton( button2, x-12, 22 + y );
+        drawButton( button2, x+13, 22 + y );
+    } else if ( numButtons == 4 ) {
+        drawButton( button1, x, y );
+        drawButton( button2, x, 22 + y);
+        drawButton( button1, x+25, y );
+        drawButton( button2, x+25, 22 + y );
+    }
+    drawSolidRect( x+10, 7, 4, 33, white, 0x2cb );
+}
+
+void DllTrialManager::drawInputGuide() {
+    int x = TrialManager::inputPosition;
+    Trial currentTrial = TrialManager::charaTrials[TrialManager::currentTrialIndex];
+    drawSolidRect( 0, 21, 640, 3, white, 0x2ca );
+    drawSolidRect( 30, 0, 3, 45, white, 0x2ca );
+    drawSolidRect( 0, 0, 640, 46, darkgrey, 0x2ca );
+    for ( uint16_t i = 1; i < currentTrial.demoInputs.size(); ++i ) {
+        uint16_t input = currentTrial.demoInputs[i];
+        uint16_t lastinput = currentTrial.demoInputs[i-1];
+        drawInputGuideButtons( input, lastinput, x );
+        x+=3;
+    }
 }
 
 void DllTrialManager::drawAttackDisplay()
@@ -663,8 +1231,10 @@ void DllTrialManager::render()
         drawAttackDisplay();
     }
     //drawInputs();
-    //drawCombo();
+    drawCombo();
     //drawiidx();
+    if ( TrialManager::inputGuideEnabled )
+        drawInputGuide();
 }
 
 void DllTrialManager::clear()
@@ -679,5 +1249,13 @@ void DllTrialManager::clear()
     currentHitcount = 0;
     comboDrop = false;
     comboStart = false;
-
+    TrialManager::playDemo = false;
+    TrialManager::demoPosition = 0;
+    TrialManager::isRecording = false;
+    TrialManager::charaTrials.clear();
+    TrialManager::inputGuideEnabled = false;
+    TrialManager::playInputs = false;
+    TrialManager::comboDrop = false;
+    TrialManager::comboStart = false;
+    TrialManager::inputPosition = 0;
 }

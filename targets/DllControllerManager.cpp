@@ -2,6 +2,7 @@
 #include "DllOverlayUi.hpp"
 #include "DllHacks.hpp"
 #include "DllAsmHacks.hpp"
+#include "DllTrialManager.hpp"
 #include "KeyboardState.hpp"
 #include "CharacterSelect.hpp"
 
@@ -63,7 +64,8 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     // }
 
     // Toggle with a keyboard hotkey
-    if ( KeyboardState::isPressed ( VK_TOGGLE_TRIAL_MENU ) )
+    if ( KeyboardState::isPressed ( VK_TOGGLE_TRIAL_MENU ) &&
+         *CC_GAME_MODE_ADDR == CC_GAME_MODE_IN_GAME )
     {
         toggleTrialMenu = true;
     }
@@ -146,6 +148,10 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
 
             // Disable Escape to exit
             AsmHacks::enableEscapeToExit = false;
+            if ( TrialManager::isRecording ) {
+                TrialManager::isRecording = false;
+                TrialManager::saveTrial();
+            }
 
             // Enable overlay
             DllOverlayUi::setTrial();
@@ -153,18 +159,7 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
         }
         else if ( DllOverlayUi::isTrial() )
         {
-            _trialOverlayPositions[0] = 0;
-            _trialOverlayPositions[1] = 0;
-            _trialOverlayPositions[2] = 0;
-
-            // Disable keyboard events, since we use GetKeyState for regular controller inputs
-            KeyboardManager::get().unhook();
-
-            // Re-enable Escape to exit
-            AsmHacks::enableEscapeToExit = true;
-
-            // Disable overlay
-            DllOverlayUi::disable();
+            disableTrialMenuOverlay();
         }
     }
     else if ( toggleOverlay && !ProcessManager::isWine() )
@@ -252,15 +247,247 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     }
 }
 
+void DllControllerManager::disableTrialMenuOverlay()
+{
+    _trialMenuSelection = 0;
+    _trialSubMenuSelection = 0;
+    DllOverlayUi::updateSelector ( 0 );
+    DllOverlayUi::updateSelector ( 1 );
+    _trialOverlayPositions[0] = 0;
+    _trialOverlayPositions[1] = 0;
+    _trialOverlayPositions[2] = 0;
+    _trialMenuIndex = 0;
+
+    // Disable keyboard events, since we use GetKeyState for regular controller inputs
+    KeyboardManager::get().unhook();
+
+    // Re-enable Escape to exit
+    AsmHacks::enableEscapeToExit = true;
+
+    // Disable overlay
+    DllOverlayUi::disable();
+}
+
 void DllControllerManager::handleTrialMenuOverlay()
 {
     array<string, 3> text;
-    text[0] = "Trial Select\n";
-    text[0] += "Demo\n";
-    text[0] += "Record Demo\n";
-    text[0] += "Input Guide\n";
+    text[0] = "Press Up/Down to choose entry\n";
+    text[0] += "Press Right to select\n";
+    text[0] += "Press Left to cancel\n";
+    text[0] += "\n";
+
+    array<vector<string>, 2> options;
+    options[0].push_back( "Trial Select\n" );
+    options[0].push_back( "Demo\n" );
+    options[0].push_back( "Record Demo\n" );
+    options[0].push_back( "Input Guide\n" );
+    options[0].push_back( "Interface Size\n" );
+    options[0].push_back( "Exit\n" );
+
+    if ( _trialMenuSelection == 1 ) {
+        if ( TrialManager::charaTrials.size() > 0 ) {
+            if ( TrialManager::charaTrials.size() > 10 ) {
+                if ( _trialScrollSelect == 0 ) {
+                    text[2] = "Trials\n\n";
+                } else {
+                    text[2] = "Trials\n...\n";
+                }
+                for ( int i = 0; i < 10; ++i ) {
+                    Trial t = TrialManager::charaTrials[ _trialScrollSelect + i ];
+                    text[2] += t.name;
+                    text[2] += "\n";
+                    options[1].push_back( t.name );
+                }
+                if ( _trialScrollSelect < TrialManager::charaTrials.size() - 10 ) {
+                    text[2] += "...\n";
+                } else {
+                    text[2] += "\n";
+                }
+            } else {
+                text[2] = "Trials\n\n";
+                for ( Trial t : TrialManager::charaTrials ) {
+                    text[2] += t.name;
+                    text[2] += "\n";
+                    options[1].push_back( t.name );
+                }
+            }
+        } else {
+            text[2] = "No trials found\n\n";
+            text[2] += "Press Left to return";
+            options[1].push_back( "Press Left to return\n" );
+        }
+
+        options[1].push_back( "\n" );
+    } else if ( _trialMenuSelection == 2 ) {
+        text[2] = "No demo exists for this trial\n\n";
+        text[2] += "Press Left to return";
+        options[1].push_back( "Press Left to return\n" );
+    } else if ( _trialMenuSelection == 3 ) {
+        if ( TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.empty() ) {
+            text[2] = "No trial currently selected\n\n";
+            text[2] += "Press Left to return";
+            options[1].push_back( "Press Left to return\n" );
+        } else {
+            text[2] = "A demo already exists for this trial. Overwrite?\n\n";
+            text[2] += "Yes\n";
+            text[2] += "No\n";
+            options[1].push_back( "Yes" );
+            options[1].push_back( "No" );
+        }
+    } else if ( _trialMenuSelection == 4 ) {
+        options[1].push_back( "Press Left to return\n" );
+    } else if ( _trialMenuSelection == 5 ) {
+        text[2] = "Select interface size\n\n";
+        text[2] += "Large\n";
+        text[2] += "Medium\n";
+        text[2] += "Small\n";
+        options[1].push_back( "Large" );
+        options[1].push_back( "Medium" );
+        options[1].push_back( "Small" );
+    }
+    vector<string> demooptions;
+    vector<string> recordoptions;
+
+    for( string option : options[0] ) {
+        text[0] += option;
+    }
+
+    int headerOffset = 4;
+    int subheaderOffset = 2;
+
+    // Get first input from any controller
+    uint8_t input = 0;
+    for ( Controller *controller : _allControllers )
+    {
+        if ( ( controller->isJoystick() && isDirectionPressed ( controller, 8 ) )
+                || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_UP ) ) ) {
+            // Up input
+            input = 8;
+            break;
+        } else if ( ( controller->isJoystick() && isDirectionPressed ( controller, 4 ) )
+                  || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_LEFT ) ) ) {
+            // Left input
+            LOG("Left");
+            input = 4;
+            break;
+        } else if ( ( controller->isJoystick() && isDirectionPressed ( controller, 6 ) )
+                || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_RIGHT ) ) ) {
+            // Right input
+            LOG("Right");
+            input = 6;
+            break;
+        } else if ( ( controller->isJoystick() && isDirectionPressed ( controller, 2 ) )
+                  || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_DOWN ) ) ) {
+            // Down input
+            input = 2;
+            break;
+        }
+    }
+
+    if ( input == 2 ) {
+        if ( _trialMenuSelection == 1 ) {
+            if ( _trialOverlayPositions[1] == 9 ) {
+                if ( _trialScrollSelect < TrialManager::charaTrials.size() - 10 ) {
+                    _trialScrollSelect += 1;
+                }
+            } else {
+                _trialOverlayPositions[_trialMenuIndex] = ( _trialOverlayPositions[_trialMenuIndex] + 1 ) % options[_trialMenuIndex].size();
+            }
+        } else {
+            _trialOverlayPositions[_trialMenuIndex] = ( _trialOverlayPositions[_trialMenuIndex] + 1 ) % options[_trialMenuIndex].size();
+        }
+    } else if ( input == 8 ) {
+        if ( _trialMenuSelection == 1 ) {
+            if ( _trialOverlayPositions[1] == 0 ) {
+                if ( _trialScrollSelect > 0 ) {
+                    _trialScrollSelect -= 1;
+                }
+            } else {
+                _trialOverlayPositions[_trialMenuIndex] = ( _trialOverlayPositions[_trialMenuIndex] + options[_trialMenuIndex].size() - 1 ) % options[_trialMenuIndex].size();
+            }
+        } else {
+            _trialOverlayPositions[_trialMenuIndex] = ( _trialOverlayPositions[_trialMenuIndex] + options[_trialMenuIndex].size() - 1 ) % options[_trialMenuIndex].size();
+        }
+    }
+
+    if ( input == 4 ) {
+        LOG("four");
+        if ( _trialMenuIndex != 0 ) {
+            _trialMenuSelection = 0;
+            _trialMenuIndex = 0;
+            _trialSubMenuSelection = 0;
+            _trialOverlayPositions[1] = 0;
+        }
+    } else if ( input == 6 ) {
+        LOG("six");
+        if ( _trialMenuIndex == 0 ) {
+            _trialMenuSelection = _trialOverlayPositions[0] + 1;
+            _trialMenuIndex = 1;
+        } else if ( _trialMenuIndex == 1 ) {
+            _trialSubMenuSelection = _trialOverlayPositions[1] + 1;
+        }
+    }
+
+    if ( _trialMenuSelection == 1 ) {
+        if ( _trialSubMenuSelection ) {
+            LOG("trial selected: %s", TrialManager::charaTrials[_trialOverlayPositions[1]].name);
+            TrialManager::currentTrialIndex = _trialOverlayPositions[1];
+            disableTrialMenuOverlay();
+            return;
+        }
+    }
+    if ( _trialMenuSelection == 2 ) {
+        if ( TrialManager::charaTrials.size() > 0 ) {
+            if ( TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.size() > 0 ) {
+                TrialManager::playDemo = true;
+                disableTrialMenuOverlay();
+            }
+        }
+    }
+    if ( _trialMenuSelection == 3 ) {
+        if ( TrialManager::charaTrials.size() > 0 ) {
+            if ( TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.empty() ||
+                 _trialSubMenuSelection == 1 ) {
+                TrialManager::isRecording = true;
+                LOG( "Saving starting pos %d %d", *CC_P1_X_POSITION_ADDR, *CC_P2_X_POSITION_ADDR);
+                TrialManager::charaTrials[TrialManager::currentTrialIndex].startingPositions[0] = *CC_P1_X_POSITION_ADDR;
+                TrialManager::charaTrials[TrialManager::currentTrialIndex].startingPositions[1] = *CC_P2_X_POSITION_ADDR;
+                TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.clear();
+                disableTrialMenuOverlay();
+            } else if ( _trialSubMenuSelection == 2 ) {
+                _trialMenuSelection = 0;
+                _trialMenuIndex = 0;
+                _trialSubMenuSelection = 0;
+                _trialOverlayPositions[1] = 0;
+            }
+        }
+    } else if ( _trialMenuSelection == 4 ) {
+        TrialManager::inputGuideEnabled = !TrialManager::inputGuideEnabled;
+        disableTrialMenuOverlay();
+        return;
+    } else if ( _trialMenuSelection == 5 ) {
+        if ( _trialSubMenuSelection ) {
+            LOG("TSS %d", _trialSubMenuSelection );
+            LOG("interface scaling: %d", _trialSubMenuSelection - 1);
+            TrialManager::trialScale = _trialSubMenuSelection - 1;
+            disableTrialMenuOverlay();
+            return;
+        }
+    } else if ( _trialMenuSelection == options[0].size() ) {
+        LOG("exiting trial menu");
+        disableTrialMenuOverlay();
+        return;
+    }
+
     DllOverlayUi::updateText ( text );
+    DllOverlayUi::updateSelector ( 0, headerOffset + _trialOverlayPositions[0], options[0][_trialOverlayPositions[0]] );
+    if ( _trialMenuSelection && options[1].size() > 0 ) {
+        DllOverlayUi::updateSelector ( 1, subheaderOffset + _trialOverlayPositions[1], options[1][_trialOverlayPositions[1]] );
+    } else {
+        DllOverlayUi::updateSelector ( 1 );
+    }
 }
+
 void DllControllerManager::handleMappingOverlay()
 {
     // Check all controllers

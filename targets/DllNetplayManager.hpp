@@ -201,12 +201,17 @@ private:
     // Separate delays for p1/p2
     bool splitDelay = true;
 
+    // Delay demo inputs until reset is done
+    int demoCountdown = 60;
+    int exitCountdown = 0;
+
     // Get the input for the specific NetplayState
     uint16_t getPreInitialInput ( uint8_t player );
     uint16_t getInitialInput ( uint8_t player );
     uint16_t getAutoCharaSelectInput ( uint8_t player );
     uint16_t getCharaSelectInput ( uint8_t player );
     uint16_t getSkippableInput ( uint8_t player );
+    uint16_t getDemoInput ( uint8_t player );
     uint16_t getInGameInput ( uint8_t player );
     uint16_t getRetryMenuInput ( uint8_t player );
     uint16_t getReplayMenuInput ( uint8_t player );

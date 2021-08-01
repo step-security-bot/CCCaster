@@ -196,24 +196,19 @@ extern "C" void addExtraDrawCallsCb() {
 extern "C" int loadTextureFromMemory( char* imgbuf1, int img1size, char* imgbuf2, int img2size, int param4 );
 
 extern "C" void addExtraTexturesCb() {
-    //if ( TrialManager::trialTextures == NULL ) {
     //MessageBoxA(0, "a", "a", 0);
-    IDirect3DDevice9* device = (IDirect3DDevice9*) CC_D3DX9_OBJ_ADDR;
-        char* filename = ".//arrows.png";
-        char* filename2 = ".//tutorial00.bmp";
-        char* filename3 = ".//inputs2.png";
-        ifstream input( filename, ios::binary );
-        vector<char> buffer( istreambuf_iterator<char>(input), {} );
-        int imgsize = buffer.size();
-        char* rawimg = &buffer[0];
-        ifstream input3( filename3, ios::binary );
-        vector<char> buffer3( istreambuf_iterator<char>(input3), {} );
-        int imgsize3 = buffer3.size();
-        char* rawimg3 = &buffer3[0];
-        //D3DXCreateTextureFromFile( device, filename, &TrialManager::trialTextures );
-        TrialManager::trialTextures2 = loadTextureFromMemory(rawimg, imgsize, 0, 0, 0);
-        TrialManager::trialTextures3 = loadTextureFromMemory(rawimg3, imgsize3, 0, 0, 0);
-        //}
+    char* filename = ".//GRP//arrows.png";
+    char* filename3 = ".//GRP//inputs.png";
+    ifstream input( filename, ios::binary );
+    vector<char> buffer( istreambuf_iterator<char>(input), {} );
+    int imgsize = buffer.size();
+    char* rawimg = &buffer[0];
+    ifstream input3( filename3, ios::binary );
+    vector<char> buffer3( istreambuf_iterator<char>(input3), {} );
+    int imgsize3 = buffer3.size();
+    char* rawimg3 = &buffer3[0];
+    TrialManager::trialBGTextures = loadTextureFromMemory(rawimg, imgsize, 0, 0, 0);
+    TrialManager::trialInputTextures = loadTextureFromMemory(rawimg3, imgsize3, 0, 0, 0);
 }
 int Asm::write() const
 {

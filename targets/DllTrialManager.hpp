@@ -5,6 +5,16 @@
 
 using namespace std;
 
+struct Trial {
+    string name;
+    array<int32_t, 3> startingPositions;
+    vector<string> comboText;
+    vector<uint32_t> comboSeq;
+    vector<int> comboHit;
+    vector<uint16_t> demoInputs;
+
+};
+
 namespace TrialManager {
 
 extern wstring comboName;
@@ -21,14 +31,39 @@ extern int comboTrialLength;
 
 extern int comboTrialPosition;
 
-extern int currentTrial;
+extern int currentTrialIndex;
 
 extern bool hideText;
 
 extern LPDIRECT3DTEXTURE9 trialTextures;
 
-extern int trialTextures2;
-extern int trialTextures3;
+extern int trialBGTextures;
+extern int trialInputTextures;
+
+
+
+// rework
+void loadTrialFolder();
+void handleTrialFile( string filename );
+void saveTrial( Trial trial );
+void saveTrial();
+void frameStepTrial();
+int getHitcount();
+
+extern bool playDemo;
+extern bool isRecording;
+    //extern Trial* currentTrial;
+extern int demoPosition;
+extern vector<Trial> charaTrials;
+
+extern bool comboDrop;
+extern bool comboStart;
+extern bool inputGuideEnabled;;
+extern int comboDropPos;
+
+extern int currentHitcount;
+extern int trialScale;
+
 } // namespace TrialManager
 
 enum MovePosition {
@@ -75,6 +110,9 @@ public:
 
     void frameStepTrial();
     void loadTrialFile();
+    void loadCombo( int comboId );
+    vector<Move> tokenizeText( vector<string> text );
+
     void clear();
     void render();
     void drawButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
@@ -86,13 +124,16 @@ public:
     void drawInputs();
     void drawSolidRect( int x, int y, int width, int height, ARGB color, int layer=0x2cb );
     void drawiidx();
+    void drawInputGuide();
+    void drawInputGuideButtons( uint16_t input, uint16_t lastinput, int x );
     void drawAttackDisplay();
     void drawAttackDisplayRow( string label, string value, int y );
+    int getMoveWidth( Move move, int x );
+    int getMoveWidthScaled( Move move, int x, int buttonWidth );
     int drawComboBacking( MovePosition position, MoveStatus status, int screenX, int screenY, int width, int height=32 );
     void drawCombo();
-    void loadCombo( int comboId );
     int drawMove( Move move, MoveStatus color, int x, int y );
-    vector<Move> tokenizeText( vector<wstring> text );
+    int drawMoveScaled( Move move, MoveStatus color, int x, int y, int buttonWidth );
 
     bool initialized = false;
 
@@ -121,6 +162,8 @@ private:
     int i5;
     int i6;
     ARGB white = ARGB{ 0xff, 0xff, 0xff, 0xff };
+    ARGB black = ARGB{ 0xff, 0x0, 0x0, 0x0 };
+    ARGB darkgrey = ARGB{ 0xc8, 0x40, 0x40, 0x40 };
     ARGB red = ARGB{ 0xff, 0xff, 0x0, 0x0 };
     int boxHeight = 380;
     int boxWidth = 83;
