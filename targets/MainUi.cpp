@@ -1398,8 +1398,8 @@ void MainUi::main ( RunFuncPtr run )
             "Netplay",
             "Spectate",
             "Broadcast",
-            "Server",
             "Offline",
+            "Server",
             "Controls",
             "Settings",
             "Update",
@@ -1474,11 +1474,11 @@ void MainUi::main ( RunFuncPtr run )
                 break;
 
             case 3:
-                server( run );
+                offline ( run );
                 break;
 
             case 4:
-                offline ( run );
+                server( run );
                 break;
 
             case 5:
