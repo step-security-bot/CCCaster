@@ -212,7 +212,25 @@ void MainUpdater::httpResponse ( HttpGet *httpGet, int code, const string& data,
     ASSERT ( _httpGet.get() == httpGet );
     ASSERT ( _type == Type::Version );
 
-    Version version ( trimmed ( data ) );
+    Version version;
+    vector<string> versiondata;
+    switch (_channel.value) {
+        case Channel::Stable:
+            version = Version( trimmed ( data ) );
+            break;
+        case Channel::Dev:
+            versiondata = split( data, "\n" );
+            LOG( versiondata[0] );
+            LOG( versiondata[1] );
+            LOG( versiondata[2] );
+            version = Version ( trimmed ( versiondata[0] ),
+                              trimmed ( versiondata[1] ),
+                              trimmed ( versiondata[2] ) );
+            break;
+        default:
+            version = Version( trimmed ( data ) );
+            break;
+    }
 
     _httpGet.reset();
 

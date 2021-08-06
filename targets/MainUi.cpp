@@ -1755,7 +1755,7 @@ string MainUi::getUpdate ( bool isStartup )
         return "Cannot fetch info for " + _updater.getTargetDescName() + " version";
     }
 
-    if ( LocalVersion.isSimilar ( _updater.getTargetVersion(), 2 ) )
+    if ( LocalVersion.isSimilar ( _updater.getTargetVersion(), _config.getInteger("updateChannel") ? 4 : 2 ) )
     {
         _upToDate = true;
         if ( ! isStartup )
@@ -1769,9 +1769,10 @@ string MainUi::getUpdate ( bool isStartup )
         name[0] = std::toupper(name[0]);
         if (!isStartup) _ui->pop();
         _ui->pushBelow ( new ConsoleUi::TextBox ( format (
-                             "%s" + name + " version is %s",
+                             "%s" + name + " version is %s-%s",
                              /* sessionMessage.empty() ? */ "" /* : ( sessionMessage + "\n" ) */,
-                             _updater.getTargetVersion() ) ) );
+                             _updater.getTargetVersion(),
+                             _updater.getTargetVersion().revision ) ) );
 
         sessionMessage.clear();
 
