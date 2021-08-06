@@ -197,13 +197,13 @@ extern "C" int loadTextureFromMemory( char* imgbuf1, int img1size, char* imgbuf2
 
 extern "C" void addExtraTexturesCb() {
     //MessageBoxA(0, "a", "a", 0);
-    char* filename = ".//GRP//arrows.png";
-    char* filename3 = ".//GRP//inputs.png";
-    ifstream input( filename, ios::binary );
+    string filename = ".//GRP//arrows.png";
+    string filename3 = ".//GRP//inputs.png";
+    ifstream input( filename.c_str(), ios::binary );
     vector<char> buffer( istreambuf_iterator<char>(input), {} );
     int imgsize = buffer.size();
     char* rawimg = &buffer[0];
-    ifstream input3( filename3, ios::binary );
+    ifstream input3( filename3.c_str(), ios::binary );
     vector<char> buffer3( istreambuf_iterator<char>(input3), {} );
     int imgsize3 = buffer3.size();
     char* rawimg3 = &buffer3[0];
