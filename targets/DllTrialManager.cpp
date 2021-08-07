@@ -12,6 +12,7 @@
 #include <codecvt>
 #include <string>
 #include <windows.h>
+#include <mmsystem.h>
 
 using namespace std;
 
@@ -45,6 +46,11 @@ bool playInputs = false;
 int comboDropPos = -1;
 int currentHitcount = 0;
 int inputPosition = 0;
+
+bool playAudioCue = false;
+bool playScreenFlash = false;
+string audioCueName = "SystemDefault";
+uint32_t screenFlashColor = 0xff0000ff;
 
 void loadTrialFolder() {
     string fileNameBase = "cccaster/trials/";
@@ -145,8 +151,15 @@ void handleTrialFile( string fileName ) {
                 comboText,
                 comboSeq,
                 comboHit,
-                demoInputs
+                demoInputs,
+                tokenizeText( comboText )
     };
+    LOG(t.name);
+    for( Move m : t.tokens ) {
+        for( Token t : m.text ) {
+            LOG(t.text);
+        }
+    }
     charaTrials.push_back( t );
 }
 
@@ -283,6 +296,97 @@ void frameStepTrial()
     }
 }
 
+
+
+vector<Move> tokenizeText( vector<string> text )
+{
+    string dirs = "123456789";
+    string buttons = "ABCD";
+    string brackets = "[]{}";
+    vector<Move> moves;
+    for( unsigned int j = 0; j < text.size(); ++j ) {
+        string move = text[j];
+        vector<Token> tokens;
+        unsigned int i = 0;
+        while( i < move.length() ) {
+            char curMove = move[i];
+            if ( curMove == 'd' ) {
+                if ( move[i+1] == 'a' ) {
+                    tokens.push_back( Token{ "dash", String, 4 } );
+                    i += 3;
+                } else {
+                    tokens.push_back( Token{ "dj.", Symbol, 3 } );
+                    i+=2;
+                }
+            } else if ( curMove == 'j' ) {
+                tokens.push_back( Token{ "j.", Symbol, 2 } );
+                i++;
+            } else if ( curMove == 't' ) {
+                tokens.push_back( Token{ "tk.", Symbol, 3 } );
+                i += 2;
+            } else if ( curMove == 'a' ) {
+                if ( i+3 < move.length() && move[i+3] == 'd' ) {
+                    if ( i+4 < move.length() && move[i+4] == 'o' ) {
+                        tokens.push_back( Token{ "Airdodge", String, 8 } );
+                        i += 7;
+                    } else if ( i+4 < move.length() && move[i+4] == 'a' ) {
+                        tokens.push_back( Token{ "Airdash", String, 7 } );
+                        i += 6;
+                    }
+                } else if ( i+3 < move.length() && move[i+3] == 'b' ) {
+                    tokens.push_back( Token{ "Airbackdash", String, 11 } );
+                    i += 10;
+                }
+            } else if ( curMove == 'X' ) {
+                tokens.push_back( Token{ "X", String, 1 } );
+            } else if ( dirs.find( curMove ) != string::npos ) {
+                if ( curMove != '5' ) {
+                    tokens.push_back( Token{ string( 1, curMove ), Direction, 1 } );
+                }
+            } else if ( buttons.find( curMove ) != string::npos ) {
+                if ( i+1 < move.length() && move[i+1] == 'T' ) {
+                    tokens.push_back( Token{ "AT", String, 2 } );
+                    i++;
+                } else if ( i+1 < move.length() && move[i+1] == 'd' ) {
+                    tokens.push_back( Token{ "Add.", Symbol, 4 } );
+                    i += 4;
+                } else if ( i+1 < move.length() && move[i+1] == 'i' ) {
+                    tokens.push_back( Token{ "Airdash", String, 7 } );
+                    i += 6;
+                } else {
+                    tokens.push_back( Token{ string( 1, curMove ), Button, 1 } );
+                }
+            } else if ( curMove == '(' ) {
+                string textFrag;
+                int len = 2;
+                while( move[i] != ')' ){
+                    textFrag += move[i];
+                    i++;
+                    len++;
+                }
+                textFrag += ')';
+                tokens.push_back( Token{ textFrag, String, len } );
+            } else if ( brackets.find( curMove ) != string::npos ) {
+                tokens.push_back( Token{ string( 1, curMove ), String, 1 } );
+            } else {
+                LOG( "Unkown token: %s, %d", move, i );
+                tokens.push_back( Token{ move, String, move.length() } );
+                i = move.length();
+            }
+            i++;
+        }
+        MovePosition pos;
+        if ( j == 0 ) {
+            pos = Start;
+        } else if ( j == text.size() - 1 ) {
+            pos = Ending;
+        } else {
+            pos = Middle;
+        }
+        moves.push_back( Move{ tokens, pos } );
+    }
+    return moves;
+}
 
 } // namespace TrialManager
 
@@ -651,6 +755,9 @@ int DllTrialManager::getMoveWidth( Move move, int x )
             moveWidth += 25;
         } else if ( token.type == String ) {
             moveWidth += 24*token.text.length();
+            if ( token.text[token.text.size() - 1] == ')') {
+                moveWidth -= 20;
+            }
         } else if ( token.type == Symbol ) {
             if ( token.text[ 0 ] == 'd' ) {
                 moveWidth += 35 + 11;
@@ -668,7 +775,7 @@ int DllTrialManager::getMoveWidth( Move move, int x )
             }
         }
     }
-    return moveWidth + roffset;
+    return moveWidth + roffset + 18;
 }
 
 int DllTrialManager::getMoveWidthScaled( Move move, int x, int buttonWidth )
@@ -682,6 +789,9 @@ int DllTrialManager::getMoveWidthScaled( Move move, int x, int buttonWidth )
             moveWidth += buttonWidth;
         } else if ( token.type == String ) {
             moveWidth += buttonWidth*token.text.length();
+            if ( token.text[token.text.size() - 1] == ')') {
+                moveWidth -= buttonWidth / 2;
+            }
         } else if ( token.type == Symbol ) {
             if ( token.text[ 0 ] == 'd' ) {
                 moveWidth += buttonWidth*3;
@@ -695,92 +805,6 @@ int DllTrialManager::getMoveWidthScaled( Move move, int x, int buttonWidth )
         }
     }
     return moveWidth + roffset;
-}
-
-vector<Move> DllTrialManager::tokenizeText( vector<string> text )
-{
-    string dirs = "123456789";
-    string buttons = "ABCD";
-    string brackets = "[]{}";
-    vector<Move> moves;
-    for( unsigned int j = 0; j < text.size(); ++j ) {
-        string move = text[j];
-        vector<Token> tokens;
-        unsigned int i = 0;
-        while( i < move.length() ) {
-            char curMove = move[i];
-            if ( curMove == 'd' ) {
-                tokens.push_back( Token{ "dj.", Symbol, 3 } );
-                i+=2;
-            } else if ( curMove == 'j' ) {
-                tokens.push_back( Token{ "j.", Symbol, 2 } );
-                i++;
-            } else if ( curMove == 't' ) {
-                tokens.push_back( Token{ "tk.", Symbol, 3 } );
-                i += 2;
-            } else if ( curMove == 'a' ) {
-                if ( i+3 < move.length() && move[i+3] == 'd' ) {
-                    if ( i+4 < move.length() && move[i+4] == 'o' ) {
-                        tokens.push_back( Token{ "Airdodge", String, 8 } );
-                        i += 7;
-                    } else if ( i+4 < move.length() && move[i+4] == 'a' ) {
-                        tokens.push_back( Token{ "Airdash", String, 7 } );
-                        i += 6;
-                    }
-                } else if ( i+3 < move.length() && move[i+3] == 'b' ) {
-                    tokens.push_back( Token{ "Airbackdash", String, 11 } );
-                    i += 10;
-                }
-            } else if ( curMove == 'X' ) {
-                tokens.push_back( Token{ "X", String, 1 } );
-            } else if ( dirs.find( curMove ) != string::npos ) {
-                if ( curMove != '5' ) {
-                    tokens.push_back( Token{ string( 1, curMove ), Direction, 1 } );
-                }
-            } else if ( buttons.find( curMove ) != string::npos ) {
-                if ( i+1 < move.length() && move[i+1] == 'T' ) {
-                    tokens.push_back( Token{ "AT", String, 2 } );
-                    i++;
-                } else if ( i+1 < move.length() && move[i+1] == 'd' ) {
-                    tokens.push_back( Token{ "Add.", Symbol, 4 } );
-                    i += 4;
-                } else if ( i+1 < move.length() && move[i+1] == 'i' ) {
-                    tokens.push_back( Token{ "Airdash", Symbol, 7 } );
-                    i += 6;
-                } else {
-                    tokens.push_back( Token{ string( 1, curMove ), Button, 1 } );
-                }
-            } else if ( curMove == '(' ) {
-                string textFrag;
-                int len = 2;
-                while( move[i] != ')' ){
-                    textFrag += move[i];
-                    i++;
-                    len++;
-                }
-                textFrag += ')';
-                i++;
-                tokens.push_back( Token{ textFrag, String, len } );
-            } else if ( brackets.find( curMove ) != string::npos ) {
-                tokens.push_back( Token{ string( 1, curMove ), String, 1 } );
-            } else {
-                LOG( "Unkown token: %s, %d", move, i );
-                tokens.push_back( Token{ move, String, move.length() } );
-                i = move.length();
-            }
-            i++;
-        }
-        MovePosition pos;
-        if ( j == 0 ) {
-            pos = Start;
-        } else if ( j == text.size() - 1 ) {
-            pos = Ending;
-        } else {
-            pos = Middle;
-        }
-        moves.push_back( Move{ tokens, pos } );
-    }
-    return moves;
 }
 
 int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
@@ -798,10 +822,12 @@ int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
     for( Token token : move.text ) {
         if ( token.type == Button ) {
             nextX += 25;
+            /*
             if ( nextX > 620){
                 y += 25;
                 currX = x + loffset;
             }
+            */
             int buttonId = token.text[0] - L'A';
             drawButton( buttonId, currX, y+yoffset );
             currX += 25;
@@ -874,6 +900,10 @@ int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
                 drawText( token.text, currX, y+ytextoffset );
                 currX += 24*token.text.length();
                 moveWidth += 24*token.text.length();
+                if ( token.text[token.text.size() - 1] == ')') {
+                    currX -= 20;
+                    moveWidth -= 20;
+                }
             }
         } else if ( token.type == Symbol ) {
             if ( token.text[ 0 ] == 'd' ) {
@@ -944,8 +974,12 @@ int DllTrialManager::drawMoveScaled( Move move, MoveStatus color, int x, int y, 
         } else if ( token.type == String ) {
             drawText( token.text, currX, y+ytextoffset, buttonWidth, buttonWidth );
             drawTextWithBorder( token.text, currX, y+ytextoffset, buttonWidth, buttonWidth );
-            currX += buttonWidth*token.text.length() - 10;
-            moveWidth += buttonWidth*token.text.length() - 10;
+            currX += buttonWidth*token.text.length();
+            moveWidth += buttonWidth*token.text.length();
+            if ( token.text[token.text.size() - 1] == ')') {
+                currX -= buttonWidth / 2;
+                moveWidth -= buttonWidth / 2;
+            }
         } else if ( token.type == Symbol ) {
             if ( token.text[ 0 ] == 'd' ) {
                 drawText( "dj.", currX, y+ytextoffset, buttonWidth, buttonWidth );
@@ -993,13 +1027,15 @@ void DllTrialManager::drawCombo()
     MoveStatus color;
 
     vector<string> comboTrialText;
+    Trial currentTrial;
+    vector<Move> moveList;
     if ( !TrialManager::charaTrials.empty() ) {
-        Trial currentTrial = TrialManager::charaTrials[TrialManager::currentTrialIndex];
+        currentTrial = TrialManager::charaTrials[TrialManager::currentTrialIndex];
         comboTrialText = currentTrial.comboText;
+        moveList = currentTrial.tokens;
         currentMove = TrialManager::comboTrialPosition;
         currentFail = TrialManager::comboDropPos;
     }
-    vector<Move> moveList = tokenizeText( comboTrialText );
 
     for( uint16_t i = 0; i < moveList.size(); ++i ) {
         if ( i < currentMove ) {
@@ -1111,7 +1147,6 @@ void DllTrialManager::drawInputGuideButtons( uint16_t input, uint16_t lastinput,
     }
     if ( drawE ) {
         button1 = 4;
-        LOG("DrawE");
     }
     if ( numButtons == 0 ) {
         return;
@@ -1131,6 +1166,20 @@ void DllTrialManager::drawInputGuideButtons( uint16_t input, uint16_t lastinput,
         drawButton( button2, x+25, 22 + y );
     }
     drawSolidRect( x+10, 7, 4, 33, white, 0x2cb );
+    int inputOffset = 18;
+    if ( x == inputOffset && TrialManager::playAudioCue ) {
+        LOG(TrialManager::audioCueName.c_str());
+        PlaySound(TEXT(TrialManager::audioCueName.c_str()), 0, SND_ALIAS | SND_ASYNC );
+    }
+    if ( (x == inputOffset || x == inputOffset + 3) && TrialManager::playScreenFlash ) {
+        uint32_t rawcolor = TrialManager::screenFlashColor;
+        LOG(TrialManager::audioCueName.c_str());
+        ARGB color = ARGB{ ( rawcolor >> 24 ) & 0xFF,
+                           ( rawcolor >> 16 ) & 0xFF,
+                           ( rawcolor >> 8 ) & 0xFF,
+                           ( rawcolor ) & 0xFF };
+        drawSolidRect( 0, 0, 640, 480, color, 0x300 );
+    }
 }
 
 void DllTrialManager::drawInputGuide() {

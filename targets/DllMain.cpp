@@ -1836,6 +1836,10 @@ struct DllMain
                     netMan.setRemotePlayer ( remotePlayer );
 
                     netplayStateChanged ( NetplayState::Initial );
+                    if ( netMan.config.mode.isTrial() ) {
+                        TrialManager::audioCueName = netMan.config.trialAudioCue;
+                        TrialManager::screenFlashColor = netMan.config.trialFlashColor;
+                    }
                 }
 
                 minRollbackSpacing = clamped<uint8_t> ( netMan.config.rollback, 2, 4 );

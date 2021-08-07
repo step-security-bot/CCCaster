@@ -136,6 +136,10 @@ struct InitialConfig : public SerializableSequence
     std::string localName, remoteName;
     uint8_t winCount = 2;
 
+    // Offline only not serialized
+    std::string trialAudioCue;
+    uint32_t trialFlashColor;
+
     void clear()
     {
         mode.clear();
@@ -143,6 +147,8 @@ struct InitialConfig : public SerializableSequence
         localName.clear();
         remoteName.clear();
         winCount = 2;
+        trialAudioCue.clear();
+        trialFlashColor = 0;
     }
 
     PROTOCOL_MESSAGE_BOILERPLATE ( InitialConfig, mode, dataPort, localName, remoteName, winCount )
@@ -162,6 +168,9 @@ struct NetplayConfig : public SerializableSequence
 
     // Session ID
     std::string sessionId;
+
+    std::string trialAudioCue;
+    uint32_t trialFlashColor;
 
     // Offline only tournament mode flag (DO NOT SERIALIZE)
     bool tournament = false;
@@ -193,10 +202,12 @@ struct NetplayConfig : public SerializableSequence
         names[1].clear();
         sessionId.clear();
         tournament = false;
+        trialAudioCue.clear();
+        trialFlashColor = 0;
     }
 
     PROTOCOL_MESSAGE_BOILERPLATE ( NetplayConfig, mode, delay, rollback, rollbackDelay,
-                                   winCount, hostPlayer, broadcastPort, names, sessionId )
+                                   winCount, hostPlayer, broadcastPort, names, sessionId, trialAudioCue, trialFlashColor )
 };
 
 

@@ -282,6 +282,7 @@ void DllControllerManager::handleTrialMenuOverlay()
     options[0].push_back( "Record Demo\n" );
     options[0].push_back( "Input Guide\n" );
     options[0].push_back( "Interface Size\n" );
+    options[0].push_back( "Input Guide Options\n" );
     options[0].push_back( "Exit\n" );
 
     if ( _trialMenuSelection == 1 ) {
@@ -344,6 +345,16 @@ void DllControllerManager::handleTrialMenuOverlay()
         options[1].push_back( "Large" );
         options[1].push_back( "Medium" );
         options[1].push_back( "Small" );
+    } else if ( _trialMenuSelection == 6 ) {
+        text[2] = "Input guide options\n\n";
+        string audioText = "Play audio cue: ";
+        audioText += ( TrialManager::playAudioCue ? "Enabled" : "Disabled" );
+        string flashText = "Flash screen: ";
+        flashText += ( TrialManager::playScreenFlash ? "Enabled" : "Disabled" );
+        text[2] += audioText + "\n";
+        text[2] += flashText + "\n";
+        options[1].push_back( audioText );
+        options[1].push_back( flashText );
     }
     vector<string> demooptions;
     vector<string> recordoptions;
@@ -379,6 +390,7 @@ void DllControllerManager::handleTrialMenuOverlay()
         } else if ( ( controller->isJoystick() && isDirectionPressed ( controller, 2 ) )
                   || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_DOWN ) ) ) {
             // Down input
+            LOG("Down");
             input = 2;
             break;
         }
@@ -430,8 +442,9 @@ void DllControllerManager::handleTrialMenuOverlay()
 
     if ( _trialMenuSelection == 1 ) {
         if ( _trialSubMenuSelection ) {
-            LOG("trial selected: %s", TrialManager::charaTrials[_trialOverlayPositions[1]].name);
-            TrialManager::currentTrialIndex = _trialOverlayPositions[1];
+            int adjustedPosition = _trialOverlayPositions[1] + _trialScrollSelect;
+            LOG("trial selected: %s", TrialManager::charaTrials[adjustedPosition].name);
+            TrialManager::currentTrialIndex = adjustedPosition;
             disableTrialMenuOverlay();
             return;
         }
@@ -473,6 +486,18 @@ void DllControllerManager::handleTrialMenuOverlay()
             disableTrialMenuOverlay();
             return;
         }
+    } else if ( _trialMenuSelection == 6 ) {
+        LOG("TS %d", _trialMenuSelection );
+        if ( _trialSubMenuSelection ) {
+            LOG("TSS %d", _trialSubMenuSelection );
+            if ( _trialSubMenuSelection == 1) {
+                TrialManager::playAudioCue = !TrialManager::playAudioCue;
+            }
+            if ( _trialSubMenuSelection == 2) {
+                TrialManager::playScreenFlash = !TrialManager::playScreenFlash;
+            }
+            _trialSubMenuSelection = 0;
+        }
     } else if ( _trialMenuSelection == options[0].size() ) {
         LOG("exiting trial menu");
         disableTrialMenuOverlay();
@@ -486,6 +511,7 @@ void DllControllerManager::handleTrialMenuOverlay()
     } else {
         DllOverlayUi::updateSelector ( 1 );
     }
+    ControllerManager::get().savePrevStates();
 }
 
 void DllControllerManager::handleMappingOverlay()

@@ -5,67 +5,6 @@
 
 using namespace std;
 
-struct Trial {
-    string name;
-    array<int32_t, 3> startingPositions;
-    vector<string> comboText;
-    vector<uint32_t> comboSeq;
-    vector<int> comboHit;
-    vector<uint16_t> demoInputs;
-
-};
-
-namespace TrialManager {
-
-extern wstring comboName;
-
-extern vector<wstring> comboTrialText;
-
-extern vector<wstring> fullStrings;
-
-extern string dtext;
-
-extern int comboTrialTextAlign;
-
-extern int comboTrialLength;
-
-extern int comboTrialPosition;
-
-extern int currentTrialIndex;
-
-extern bool hideText;
-
-extern LPDIRECT3DTEXTURE9 trialTextures;
-
-extern int trialBGTextures;
-extern int trialInputTextures;
-
-
-
-// rework
-void loadTrialFolder();
-void handleTrialFile( string filename );
-void saveTrial( Trial trial );
-void saveTrial();
-void frameStepTrial();
-int getHitcount();
-
-extern bool playDemo;
-extern bool isRecording;
-    //extern Trial* currentTrial;
-extern int demoPosition;
-extern vector<Trial> charaTrials;
-
-extern bool comboDrop;
-extern bool comboStart;
-extern bool inputGuideEnabled;;
-extern int comboDropPos;
-
-extern int currentHitcount;
-extern int trialScale;
-
-} // namespace TrialManager
-
 enum MovePosition {
     Start,
     Middle,
@@ -104,6 +43,71 @@ struct Move {
     MovePosition position;
 };
 
+struct Trial {
+    string name;
+    array<int32_t, 3> startingPositions;
+    vector<string> comboText;
+    vector<uint32_t> comboSeq;
+    vector<int> comboHit;
+    vector<uint16_t> demoInputs;
+    vector<Move> tokens;
+};
+
+namespace TrialManager {
+
+extern wstring comboName;
+
+extern vector<wstring> comboTrialText;
+
+extern vector<wstring> fullStrings;
+
+extern string dtext;
+
+extern int comboTrialTextAlign;
+
+extern int comboTrialLength;
+
+extern int comboTrialPosition;
+
+extern int currentTrialIndex;
+
+extern bool hideText;
+
+extern LPDIRECT3DTEXTURE9 trialTextures;
+
+extern int trialBGTextures;
+extern int trialInputTextures;
+
+extern bool playAudioCue;
+extern bool playScreenFlash;
+extern string audioCueName;
+extern uint32_t screenFlashColor;
+
+// rework
+void loadTrialFolder();
+void handleTrialFile( string filename );
+void saveTrial( Trial trial );
+void saveTrial();
+void frameStepTrial();
+int getHitcount();
+vector<Move> tokenizeText( vector<string> text );
+
+extern bool playDemo;
+extern bool isRecording;
+    //extern Trial* currentTrial;
+extern int demoPosition;
+extern vector<Trial> charaTrials;
+
+extern bool comboDrop;
+extern bool comboStart;
+extern bool inputGuideEnabled;;
+extern int comboDropPos;
+
+extern int currentHitcount;
+extern int trialScale;
+
+} // namespace TrialManager
+
 class DllTrialManager
 {
 public:
@@ -111,7 +115,6 @@ public:
     void frameStepTrial();
     void loadTrialFile();
     void loadCombo( int comboId );
-    vector<Move> tokenizeText( vector<string> text );
 
     void clear();
     void render();

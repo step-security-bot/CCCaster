@@ -97,7 +97,8 @@ lobby.addHost( 1, *dummyEntries[1] )
 lobby.addHost( 2, *dummyEntries[2] )
 lobby.addHost( 3, *dummyEntries[3] )
 """
-
+# ip = 127.0.0.1:46318
+#lobby.addHost( 3, "A", str(ip))
 uuid = 4
 print(lobby.format())
 
@@ -215,12 +216,14 @@ class RelayProtocol:
         self.retDict = retDict
 
     def connection_made(self, transport):
+        print("conmade")
         self.transport = transport
         if self.state == 1:
             message = b"\x01" + struct.pack("l", self.matchid )
             self.transport.sendto(message, self.addr)
 
     def datagram_received(self, data, addr):
+        print("datagram:", data)
         #print("Close the socket")
         #self.transport.close()
         if data[:3] == b'\x1d\x00\x01':
@@ -303,6 +306,7 @@ async def checkHostRelay( hostAddr ):
         sock.sendto( b'', (host, int(port)))
         await asyncio.sleep(0.01)
     try:
+        print("wait")
         await asyncio.wait_for( on_con_lost, timeout=5 )
     except asyncio.TimeoutError:
         print("timed out!")
