@@ -3,6 +3,7 @@ from collections import defaultdict
 import os.path
 import os
 import sys
+import argparse
 
 comboparser = Lark(r"""
     combo: input (SEPARATOR input)*
@@ -203,6 +204,7 @@ class MyTransformer(Transformer):
         dispString = ""
         moveString = ""
         textOpen = False
+        print(items)
         for item in items:
             if ( item.type == "NUMBER" ):
                 dispString += " ("
@@ -223,7 +225,7 @@ class MyTransformer(Transformer):
                     moveString += item[1:-1].upper()
                 else:
                     moveString += item.upper()
-        if (item.type == "TEXT" ):
+        if (item.type == "TEXT" or item.type == "NUMBER"):
             dispString += ")"
 
         return [ dispString, self.seqDict[moveString], "1", moveString ]
@@ -302,6 +304,8 @@ class MyTransformer(Transformer):
                 outputs[-1][0] += item
                 if "whiff" in item:
                     outputs[-1][2] = "0"
+                if "detonate" in item:
+                    moveString += "(detonate)"
         return outputs
 
     def var_input(self, items):
@@ -315,7 +319,7 @@ class MyTransformer(Transformer):
         dispString = ""
         moveString = ""
         dirMark = False
-        sethit = False
+        setHit = False
         exhit = 0
         for item in items:
             if ( item.type == "DELAY" ):
@@ -374,10 +378,10 @@ class MyTransformer(Transformer):
                 assert False
         #trace()
         return [ dispString, self.seqDict[moveString],
-                 self.hitDict[moveString] if not sethit else exhit,
+                 self.hitDict[moveString] if not setHit else exhit,
                  moveString ]
 
-class Transformer(MyTransformer):
+class ComboTransformer(MyTransformer):
     def follow_input(self, items):
         moves = [ items[0] ]
         lastMove = 0
@@ -387,16 +391,19 @@ class Transformer(MyTransformer):
             while i < len( items ):
                 move = items[i]
                 move[0] = "Add. " + move[0]
+                print(move)
                 if "5" == move[3][0]:
                     move[3] = move[3][1:]
                 searchMove = searchMoves[lastMove]+"~"+move[3]
                 searchMoves.append( searchMoves[lastMove]+"~"+move[3][:-1] + "X" )
+                print(searchMoves)
                 move[3] = moves[lastMove][3]+"~"+move[3]
                 move[1] = self.seqDict[move[3]]
                 move[2] = self.hitDict[move[3]]
                 if move[1] == '-0':
                     move[1] = self.seqDict[searchMove]
                     move[2] = self.hitDict[searchMove]
+                print(move)
                 moves.append(move)
                 i += 2
                 lastMove+=1
@@ -476,7 +483,7 @@ def exportCombo( combo ):
             assert False
 
 def process( comboList, seqList, outputFolderName ):
-    a = Transformer( seqList )
+    a = ComboTransformer( seqList )
     g = []
     with open( comboList, 'r' ) as f:
         for w in f:
@@ -486,13 +493,23 @@ def process( comboList, seqList, outputFolderName ):
             print( comboName )
             comboText = next(f, None)
             t = comboparser.parse(comboText)
-            print t.pretty()
+            print( t.pretty() )
             g.append([comboName, a.transform(t)])
             #print g
     exportComboFolder( g, outputFolderName )
-
+def processSinglePrint( comboText, seqList ):
+    a = ComboTransformer( seqList )
+    t = comboparser.parse(comboText)
+    print( t.pretty() )
+    print( a.transform(t))
+    
 if __name__ == "__main__":
-    comboName = input( "enter name of combo file: " )
-    seqName = input( "enter name of sequence file: " )
-    outputName = input( "Enter name of output folder" )
-    process( comboName, seqName, outputName )
+    parser = argparse.ArgumentParser(description='Parse combo')
+    #comboText = input( "enter name of combo file: " )
+    #comboName = input( "enter name of combo file: " )
+    #seqName = input( "enter name of sequence file: " )
+    #outputName = input( "Enter name of output folder" )
+    #process( comboName, seqName, outputName )
+    comboText = sys.argv[1]
+    seqName = sys.argv[2]
+    processSinglePrint( comboText, seqName )
