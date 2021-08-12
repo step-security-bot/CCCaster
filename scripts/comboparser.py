@@ -14,26 +14,30 @@ comboparser = Lark(r"""
     TILDE : "~"
 
     input : MOVEMENT
+          | notes_input
           | norm_input
           | var_input
           | opt_input
           | multi_input
+          | cc_input
           | follow_input
           | hit_input
           | MOVEMENT
 
+    notes_input : input NOTES
     norm_input : [ DELAY ] [ CH ] [ JUMP ] [ TK ] [ SPACING ] [ DIRECTION ] BUTTON [ NOTES ]
-               | AIRTHROW
-               | THROW
+               | AIRTHROW [ NOTES ]
+               | THROW [ NOTES ]
                | series_input
-               | HEAT
-               | ARCDRIVE
+               | HEAT [ NOTES ]
+               | ARCDRIVE [ NOTES ]
     var_input : "(" input ")" "/" "(" input ")"
     opt_input : "|" input "|"
-    follow_input : input  [ " | "] TILDE input [ "|" ] [ [ " | "] TILDE input [ "|" ] ]
-    multi_input : [ DELAY ] [ JUMP ] [ DIRECTION ] BUTTON ( BUTTON )*
+    cc_input : input TILDE "[" ( norm_input [">"] )+ "]"
+    follow_input : norm_input ( [ " | "] TILDE norm_input [ "|" ] )+
+    multi_input : [ DELAY ] [ JUMP ] [ DIRECTION ] BUTTON ( BUTTON )* [ NOTES ]
     hit_input : [ DELAY ] [ JUMP ] [ DIRECTION ] BUTTON "(" NUMBER (TEXT)* ")"
-    series_input : [ DELAY ] ONETWOTHREE
+    series_input : [ DELAY ] ONETWOTHREE [ NOTES ]
 
     MOVEMENT : "walk forward"
              | "walk"
@@ -70,7 +74,7 @@ comboparser = Lark(r"""
     TK : "tk" ["."]
     CH : "ch" ["."]
     SPACING : ( "c" | "f" ) ["."]
-    DELAY : "dl[.]"
+    DELAY : "dl" ["."] [" "]
           | "(" "delay" ")"
     AIRTHROW : [ "4" | "6" ] ["g"] "AT"
              | "Airthrow"
@@ -83,12 +87,15 @@ comboparser = Lark(r"""
            | LBRACKET ("a".."d") RBRACKET
     NOTES : "(" TEXT ")"
     TEXT : STRING
+         | ( LETTER | DIGIT | "-" )+
     LBRACKET : "[" | "{"
     RBRACKET : "]" | "}"
 
     %import common.SIGNED_NUMBER -> NUMBER
     %import common.WS
     %import common.WORD -> STRING
+    %import common.LETTER -> LETTER
+    %import common.DIGIT -> DIGIT
     %ignore WS
     """, start='combo' )#, parser="lalr")
 
@@ -155,7 +162,6 @@ def trace():
 
 def flatten(l):
     mid = [ x for x in l if x != ">" ]
-    #trace()
     temp = []
     for x in mid:
         if type(x[0]) == list and len(mid) > 1:
@@ -166,7 +172,7 @@ def flatten(l):
     print( "flattened: ", temp )
     return temp
 
-class MyTransformer(Transformer):
+class ComboTransformer(Transformer):
 
     def __init__(self, fname ):
         Transformer.__init__(self)
@@ -235,8 +241,11 @@ class MyTransformer(Transformer):
         dispPrefString = ""
         moveString = ""
         dirMark = False
+        firstInput = True
         direction = None
+        lastMoveString = ""
         outputs = []
+        print(items)
         for item in items:
             if ( item.type == "DELAY" ):
                 delayString += item
@@ -248,17 +257,26 @@ class MyTransformer(Transformer):
             if ( item.type == "BUTTON" ):
                 if not direction:
                     direction = "5"
-                dispString = delayString + dispPrefString + \
-                    toArrow(direction) + item.upper()
-                delayString = ""
-                moveString = prefixString + direction + item.upper()
-                outputs.append( [dispString, self.seqDict[ moveString ], self.hitDict[ moveString ], moveString ] )
+                if firstInput:
+                    firstInput = False
+                    dispString = delayString + dispPrefString + \
+                        toArrow(direction) + item.upper()
+                    delayString = ""
+                    moveString = prefixString + direction + item.upper()
+                    lastMoveString = moveString
+                    outputs.append( [dispString, self.seqDict[ moveString ], self.hitDict[ moveString ], moveString ] )
+                else:
+                    dispString = "Add. " + dispPrefString + toArrow(direction) + item.upper()
+                    moveString = lastMoveString + "~" + item.upper()
+                    outputs.append( [dispString, self.seqDict[ moveString ], self.hitDict[ moveString ], moveString ] )
+        print(outputs)
         return outputs
 
     def series_input( self, items ):
         return items[0]
-
+    """
     def follow_input(self, items):
+        print("oldfollow")
         delayString = ""
         prefixString = ""
         dispPrefString = ""
@@ -307,6 +325,7 @@ class MyTransformer(Transformer):
                 if "detonate" in item:
                     moveString += "(detonate)"
         return outputs
+    """
 
     def var_input(self, items):
         return items[0]
@@ -370,6 +389,8 @@ class MyTransformer(Transformer):
                 if 'whiff' in item:
                     setHit = True
                     exhit = '0'
+                if "detonate" in item:
+                    moveString += "(detonate)"
                 dispString +=  item
             else:
                 dispString += item
@@ -381,8 +402,8 @@ class MyTransformer(Transformer):
                  self.hitDict[moveString] if not setHit else exhit,
                  moveString ]
 
-class ComboTransformer(MyTransformer):
     def follow_input(self, items):
+        print("newfollow")
         moves = [ items[0] ]
         lastMove = 0
         searchMoves = [ items[0][3][:-1] + "X" ]
@@ -408,6 +429,41 @@ class ComboTransformer(MyTransformer):
                 i += 2
                 lastMove+=1
         return moves
+
+    def cc_input(self, items):
+        moves = [ items[0] ]
+        lastMove = 0
+        moveBase = items[0][3]
+        if len(items) > 1:
+            i = 2
+            while i < len( items ):
+                move = items[i]
+                move[0] = "Add. " + move[0]
+                print(move)
+                if "5" == move[3][0]:
+                    move[3] = move[3][1:]
+                searchMove = moveBase+"~"+move[3]
+                #/searchMoves.append( searchMoves[lastMove]+"~"+move[3][:-1] + "X" )
+                print(searchMove)
+                move[3] = searchMove
+                move[1] = self.seqDict[move[3]]
+                move[2] = self.hitDict[move[3]]
+                if move[1] == '-0':
+                    move[1] = self.seqDict[searchMove]
+                    move[2] = self.hitDict[searchMove]
+                print(move)
+                moves.append(move)
+                i += 2
+                lastMove+=1
+        return moves
+
+    def notes_input(self, items):
+        #trace()
+        item = items[0]
+        while type(item[0]) != str:
+            item = item[0]
+        item[0] += items[1]
+        return items[0]
 
 def exportCombos( clist, fname ):
     with open( fname, 'w' ) as f:
@@ -459,9 +515,9 @@ def exportComboFolder( clist, fname ):
                 print( comboName )
                 assert False
 
-def exportCombo( combo ):
+def exportCombo( combo, folderPath="trials/" ):
     comboName = combo[0]
-    with open( "trials/" + comboName.strip('\n') + ".txt", 'w' ) as f:
+    with open( folderPath + comboName.strip('\n') + ".txt", 'w' ) as f:
         f.write("1\n")
         f.write("Combo\n")
         comboText = combo[1]
@@ -502,7 +558,12 @@ def processSinglePrint( comboText, seqList ):
     t = comboparser.parse(comboText)
     print( t.pretty() )
     print( a.transform(t))
-    
+
+def processSingleFile( comboText, seqList, outputName ):
+    a = ComboTransformer( seqList )
+    t = comboparser.parse(comboText)
+    exportCombo( [outputName, a.transform(t)], "" )
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Parse combo')
     #comboText = input( "enter name of combo file: " )
@@ -512,4 +573,10 @@ if __name__ == "__main__":
     #process( comboName, seqName, outputName )
     comboText = sys.argv[1]
     seqName = sys.argv[2]
-    processSinglePrint( comboText, seqName )
+    if len(sys.argv) > 3:
+        outputName = sys.argv[3]
+        print( "on", outputName)
+        if outputName:
+            processSingleFile( comboText, seqName, outputName )
+    else:
+        processSinglePrint( comboText, seqName )
