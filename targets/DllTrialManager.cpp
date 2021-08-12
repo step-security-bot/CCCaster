@@ -314,6 +314,9 @@ vector<Move> tokenizeText( vector<string> text )
                 if ( move[i+1] == 'a' ) {
                     tokens.push_back( Token{ "dash", String, 4 } );
                     i += 3;
+                } else if ( move[i+1] == 'l' ) {
+                    tokens.push_back( Token{ "dl.", String, 3 } );
+                    i+=2;
                 } else {
                     tokens.push_back( Token{ "dj.", Symbol, 3 } );
                     i+=2;
