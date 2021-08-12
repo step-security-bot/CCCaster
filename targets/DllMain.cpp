@@ -1023,6 +1023,7 @@ struct DllMain
             if ( netMan.getRollback() )
                 rollMan.allocateStates();
             if ( netMan.config.mode.isTrial() ) {
+                LOG("Load trial file");
                 trialMan.loadTrialFile();
                 TrialManager::loadTrialFolder();
                 trialMan.initialized = true;

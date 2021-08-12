@@ -152,6 +152,8 @@ static BOOL WINAPI consoleCtrl ( DWORD ctrl )
 {
     LOG ( "Console ctrl %d received", ctrl );
     deinitialize();
+    Sleep(1000);
+    LOG ( "Exiting" );
     exit ( 0 );
     return TRUE;
 }
