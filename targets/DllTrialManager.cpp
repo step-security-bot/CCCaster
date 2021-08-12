@@ -26,7 +26,7 @@ int comboTrialTextAlign = 0;
 int comboTrialLength = 0;
 int comboTrialPosition = 0;
 int currentTrialIndex = 0;
-bool hideText = true;
+bool hideText = false;
 LPDIRECT3DTEXTURE9 trialTextures = NULL;
 int trialBGTextures = 0;
 int trialInputTextures = 0;
@@ -227,6 +227,9 @@ int getHitcount()
 void frameStepTrial()
 {
     if ( charaTrials.empty() ) {
+        char buf[1000];
+        sprintf(buf, "currSeq=%03d", *CC_P1_SEQUENCE_ADDR );
+        dtext = buf;
         return;
     }
 
@@ -1172,7 +1175,10 @@ void DllTrialManager::drawInputGuideButtons( uint16_t input, uint16_t lastinput,
     int inputOffset = 18;
     if ( x == inputOffset && TrialManager::playAudioCue ) {
         LOG(TrialManager::audioCueName.c_str());
-        PlaySound(TEXT(TrialManager::audioCueName.c_str()), 0, SND_ALIAS | SND_ASYNC );
+        if ( audioCueName.find ( SYSTEM_ALERT_PREFEX ) == 0 )
+            PlaySound(TEXT(TrialManager::audioCueName.c_str()), 0, SND_ALIAS | SND_ASYNC );
+        else
+            PlaySound(TEXT(TrialManager::audioCueName.c_str()), 0, SND_FILENAME | SND_ASYNC | SND_NODEFAULT );
     }
     if ( (x == inputOffset || x == inputOffset + 3) && TrialManager::playScreenFlash ) {
         uint32_t rawcolor = TrialManager::screenFlashColor;

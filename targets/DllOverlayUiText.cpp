@@ -396,6 +396,16 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
 
 #endif // RELEASE
 
+    if ( ! TrialManager::dtext.empty() && !TrialManager::hideText ) {
+        int debugTextAlign = 1;
+        RECT rect2;
+        rect2.top = rect2.left = 0;
+        rect2.right = viewport.Width;
+        rect2.bottom = viewport.Height;
+        DrawText ( font, TrialManager::dtext, rect2, DT_WORDBREAK |
+                   ( debugTextAlign == 0 ? DT_CENTER : ( debugTextAlign < 0 ? DT_LEFT : DT_RIGHT ) ),
+                   OVERLAY_DEBUG_COLOR );
+    }
     if ( ! TrialManager::comboTrialText.empty() && !TrialManager::hideText )
     {
         /*
@@ -438,14 +448,6 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
         ++i;
         }
 
-        int debugTextAlign = 1;
-        RECT rect2;
-        rect2.top = rect2.left = 0;
-        rect2.right = viewport.Width;
-        rect2.bottom = viewport.Height;
-        DrawText ( font, TrialManager::dtext, rect2, DT_WORDBREAK |
-                   ( debugTextAlign == 0 ? DT_CENTER : ( debugTextAlign < 0 ? DT_LEFT : DT_RIGHT ) ),
-                   OVERLAY_DEBUG_COLOR );
         RECT rect3;
         rect3.top = 50;
         rect3.left = 30;
