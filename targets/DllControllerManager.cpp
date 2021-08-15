@@ -131,7 +131,7 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     {
         DllOverlayUi::updateMessage();
     }
-    else if ( toggleTrialMenu && !ProcessManager::isWine() )
+    else if ( toggleTrialMenu )
     {
         toggleTrialMenu = false;
 
@@ -162,7 +162,7 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
             disableTrialMenuOverlay();
         }
     }
-    else if ( toggleOverlay && !ProcessManager::isWine() )
+    else if ( toggleOverlay )
     {
         toggleOverlay = false;
 
@@ -207,7 +207,7 @@ void DllControllerManager::updateControls ( uint16_t *localInputs )
     }
 
     // Only update player controls when the overlay is NOT enabled
-    if ( !DllOverlayUi::isEnabled() || ProcessManager::isWine() )
+    if ( !DllOverlayUi::isEnabled() )
     {
         if ( _playerControllers[localPlayer - 1] ) {
             uint16_t input = getInput ( _playerControllers[localPlayer - 1] );
@@ -317,8 +317,6 @@ void DllControllerManager::handleTrialMenuOverlay()
             text[2] += "Press Left to return";
             options[1].push_back( "Press Left to return\n" );
         }
-
-        options[1].push_back( "\n" );
     } else if ( _trialMenuSelection == 2 ) {
         text[2] = "No demo exists for this trial\n\n";
         text[2] += "Press Left to return";

@@ -1670,12 +1670,12 @@ struct DllMain
                 clientMode = msg->getAs<ClientMode>();
                 clientMode.flags |= ClientMode::GameStarted;
 
+                for ( const AsmHacks::Asm& hack : AsmHacks::addExtraDraws )
+                    WRITE_ASM_HACK ( hack );
                 if ( clientMode.isTraining() ) {
                     WRITE_ASM_HACK ( AsmHacks::forceGotoTraining );
                     if ( clientMode.isTrial() ) {
                         for ( const AsmHacks::Asm& hack : AsmHacks::disableHealthBars )
-                            WRITE_ASM_HACK ( hack );
-                        for ( const AsmHacks::Asm& hack : AsmHacks::addExtraDraws )
                             WRITE_ASM_HACK ( hack );
                         isTrial = true;
                     }

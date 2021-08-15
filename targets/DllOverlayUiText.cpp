@@ -73,32 +73,57 @@ static ID3DXFont *font = 0;
 
 static IDirect3DVertexBuffer9 *background = 0;
 
+static array<string, 2> selectorLine;
+
 namespace DllOverlayUi
 {
 
+array<string, 3> getText()
+{
+    return text;
+}
+
+array<string, 2> getSelectorLine()
+{
+    return selectorLine;
+}
+
+int getHeight()
+{
+    return height;
+}
+
+int getNewHeight()
+{
+    return newHeight;
+}
+
+array<RECT, 2> getSelector()
+{
+    return selector;
+}
+
+array<bool, 2> getShouldDrawSelector()
+{
+    return shouldDrawSelector;
+}
+
 void enable()
 {
-    if ( ProcessManager::isWine() )
-        return;
-
+    TrialManager::showCombo = false;
     if ( state != State::Enabled )
         state = State::Enabling;
 }
 
 void disable()
 {
-    if ( ProcessManager::isWine() )
-        return;
-
+    TrialManager::showCombo = true;
     if ( state != State::Disabled )
         state = State::Disabling;
 }
 
 void toggle()
 {
-    if ( ProcessManager::isWine() )
-        return;
-
     if ( isEnabled() )
         disable();
     else
@@ -122,9 +147,6 @@ void updateText()
 
 void updateText ( const array<string, 3>& newText )
 {
-    if ( ProcessManager::isWine() )
-        return;
-
     switch ( state.value )
     {
         default:
@@ -179,33 +201,26 @@ void updateText ( const array<string, 3>& newText )
 
 bool isEnabled()
 {
-    if ( ProcessManager::isWine() )
-        return false;
-
     return ( state != State::Disabled ) && ( messageTimeout <= 0 );
+}
+
+bool isDisabled()
+{
+    return ( state == State::Disabled );
 }
 
 bool isToggling()
 {
-    if ( ProcessManager::isWine() )
-        return false;
-
     return ( state == State::Enabling || state == State::Disabling );
 }
 
 bool isTrial()
 {
-    if ( ProcessManager::isWine() )
-        return false;
-
     return mode == Mode::Trial;
 }
 
 bool isMapping()
 {
-    if ( ProcessManager::isWine() )
-        return false;
-
     return mode == Mode::Mapping;
 }
 
@@ -221,9 +236,6 @@ void setMapping()
 
 void showMessage ( const string& newText, int timeout )
 {
-    if ( ProcessManager::isWine() )
-        return;
-
     // Get timeout in frames
     initialTimeout = messageTimeout = ( timeout / 17 );
 
@@ -236,9 +248,6 @@ void showMessage ( const string& newText, int timeout )
 
 void updateMessage()
 {
-    if ( ProcessManager::isWine() )
-        return;
-
     updateText ( text );
 
     if ( messageTimeout == 1 )
@@ -267,6 +276,7 @@ void updateSelector ( uint8_t index, int position, const string& line )
     if ( index > 1 )
         return;
 
+    selectorLine[index] = line;
     if ( position == 0 || line.empty() )
     {
         shouldDrawSelector[index] = false;
@@ -299,9 +309,6 @@ void updateSelector ( uint8_t index, int position, const string& line )
 
 bool isShowingMessage()
 {
-    if ( ProcessManager::isWine() )
-        return false;
-
     return ( messageTimeout > 0 );
 }
 

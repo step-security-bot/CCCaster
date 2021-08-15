@@ -15,8 +15,8 @@ extern "C" {
     void (*drawrect) (int, int, int, int, int, int, int, int, int) = (void(*)(int, int, int, int, int, int, int, int, int)) 0x415450;
     int (*createTexFromFileInMemory) (int, char*, int, int) = (int(*)(int, char*, int, int)) 0x4bd2d0;
 
-    int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* addr, int spacing, int unk, char* out ) {
-        (*drawtext)( yAddr, text, textShade, textAlpha, textShade2, addr, height, spacing, unk );
+    int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int layer, void* addr, int spacing, int unk, char* out ) {
+        (*drawtext)( yAddr, text, textShade, textAlpha, layer, addr, height, spacing, unk );
         return 1;
     }
 

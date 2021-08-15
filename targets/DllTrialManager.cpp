@@ -2,6 +2,7 @@
 #include "Constants.hpp"
 #include "DllTrialManager.hpp"
 #include "DllTrialManager.hpp"
+#include "DllOverlayUi.hpp"
 #include "DllNetplayManager.hpp"
 #include "ProcessManager.hpp"
 #include "StringUtils.hpp"
@@ -15,6 +16,8 @@
 #include <mmsystem.h>
 
 using namespace std;
+
+#define SYSTEM_ALERT_PREFEX "System"
 
 namespace TrialManager
 {
@@ -33,6 +36,7 @@ int trialInputTextures = 0;
 
 // rework
 bool playDemo = false;
+bool showCombo = true;
 int demoPosition = 0;
 bool isRecording = false;
 //Trial* currentTrial;
@@ -235,12 +239,17 @@ void frameStepTrial()
 
     Trial currentTrial = charaTrials[currentTrialIndex];
     char buf[1000];
+    /*
     sprintf(buf, "temp1=%d, temp=%d, ehitC=%d, rhitc=%02d,cCombo=%02d, p2cseq=%03d, currSeq=%03d, exSeq=%02d",
             0,0,
             currentHitcount,
             0,
             currentTrialIndex,
             *CC_P2_SEQUENCE_ADDR,
+            *CC_P1_SEQUENCE_ADDR,
+            currentTrial.comboSeq[comboTrialPosition]);
+    */
+    sprintf(buf, "currSeq=%03d, exSeq=%02d",
             *CC_P1_SEQUENCE_ADDR,
             currentTrial.comboSeq[comboTrialPosition]);
     dtext = buf;
@@ -610,7 +619,7 @@ void DllTrialManager::drawArrow( int direction, int screenX, int screenY, int wi
     CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*direction, 0, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
 }
 
-void DllTrialManager::drawText( string text, int screenX, int screenY, int width, int height )
+void DllTrialManager::drawText( string text, int screenX, int screenY, int width, int height, int layer )
 {
     vector<char> ctext(text.begin(), text.end());
     ctext.push_back(0);
@@ -618,12 +627,12 @@ void DllTrialManager::drawText( string text, int screenX, int screenY, int width
     CallDrawText ( width, height, screenX, screenY, &ctext[0],
                    0xff, // alpha
                    0xff, // shade
-                   0xff, // also alpha?
+                   layer, // also alpha?
                    (void*) FONT2,
                    0, 0, 0 );
 }
 
-void DllTrialManager::drawTextWithBorder( string text, int screenX, int screenY, int width, int height )
+void DllTrialManager::drawTextWithBorder( string text, int screenX, int screenY, int width, int height, int layer )
 {
     vector<char> ctext(text.begin(), text.end());
     ctext.push_back(0);
@@ -631,25 +640,25 @@ void DllTrialManager::drawTextWithBorder( string text, int screenX, int screenY,
     CallDrawText ( width, height, screenX-1, screenY, &ctext[0],
                    0xff, // alpha
                    0x0, // shade
-                   0xff, // also alpha?
+                   layer,
                    (void*) FONT2,
                    0, 0, 0 );
     CallDrawText ( width, height, screenX+1, screenY, &ctext[0],
                    0xff, // alpha
                    0x0, // shade
-                   0xff, // also alpha?
+                   layer,
                    (void*) FONT2,
                    0, 0, 0 );
     CallDrawText ( width, height, screenX, screenY-1, &ctext[0],
                    0xff, // alpha
                    0x0, // shade
-                   0xff, // also alpha?
+                   layer,
                    (void*) FONT2,
                    0, 0, 0 );
     CallDrawText ( width, height, screenX, screenY+1, &ctext[0],
                    0xff, // alpha
                    0x0, // shade
-                   0xff, // also alpha?
+                   layer,
                    (void*) FONT2,
                    0, 0, 0 );
 
@@ -703,6 +712,7 @@ int DllTrialManager::drawComboBacking( MovePosition position, MoveStatus status,
         CallDrawSprite ( 18, 0, (int) TrialManager::trialBGTextures, screenX+width, screenY, height, endStartX, texStartY+yoffset, 18, 32, 0xFFFFFFFF, 0, 0x2cb );
         nextX += 4;
     }
+
     return nextX ;
 }
 void DllTrialManager::drawInputs()
@@ -1043,6 +1053,11 @@ void DllTrialManager::drawCombo()
         currentFail = TrialManager::comboDropPos;
     }
 
+    if ( !TrialManager::inputGuideEnabled ) {
+        drawText ( currentTrial.name, 30, y-16, 14, 16, 0x1f0 );
+        drawTextWithBorder ( currentTrial.name, 30, y-16, 14, 16, 0x1f0 );
+        drawSolidRect( 25, y-16, currentTrial.name.size() * 11, 17, bg, 0x2ef );
+    }
     for( uint16_t i = 0; i < moveList.size(); ++i ) {
         if ( i < currentMove ) {
             color = Done;
@@ -1175,7 +1190,7 @@ void DllTrialManager::drawInputGuideButtons( uint16_t input, uint16_t lastinput,
     int inputOffset = 18;
     if ( x == inputOffset && TrialManager::playAudioCue ) {
         LOG(TrialManager::audioCueName.c_str());
-        if ( audioCueName.find ( SYSTEM_ALERT_PREFEX ) == 0 )
+        if ( TrialManager::audioCueName.find ( SYSTEM_ALERT_PREFEX ) == 0 )
             PlaySound(TEXT(TrialManager::audioCueName.c_str()), 0, SND_ALIAS | SND_ASYNC );
         else
             PlaySound(TEXT(TrialManager::audioCueName.c_str()), 0, SND_FILENAME | SND_ASYNC | SND_NODEFAULT );
@@ -1289,10 +1304,91 @@ void DllTrialManager::render()
         drawAttackDisplay();
     }
     //drawInputs();
-    drawCombo();
+    if ( TrialManager::showCombo )
+        drawCombo();
     //drawiidx();
     if ( TrialManager::inputGuideEnabled )
         drawInputGuide();
+    if ( ProcessManager::isWine() )
+        drawWineOverlay();
+}
+
+void DllTrialManager::drawWineOverlay()
+{
+    int textHeight = 16;
+    int textWidth = 7;
+    array<string, 3> text = DllOverlayUi::getText();
+    array<string, 2> selectorLine = DllOverlayUi::getSelectorLine();
+    int height = DllOverlayUi::getHeight();
+    int newHeight = DllOverlayUi::getNewHeight();
+    array<RECT, 2> selector = DllOverlayUi::getSelector();
+    array<bool, 2> shouldDrawSelector = DllOverlayUi::getShouldDrawSelector();
+    int left;
+
+    if ( ! TrialManager::dtext.empty() && !TrialManager::hideText ) {
+        left = 640 - 13*TrialManager::dtext.size();
+        drawText ( TrialManager::dtext, left, 0, 14, textHeight, 0x1f0 );
+        drawTextWithBorder ( TrialManager::dtext, left, 0, 14, textHeight, 0x1f0 );
+    }
+    if ( DllOverlayUi::isDisabled() )
+        return;
+
+    // Only draw text if fully enabled or showing a message
+    drawSolidRect( 0, 0, 640, height * 1.2 + 20, bg, 0x2fe );
+    if ( !DllOverlayUi::isEnabled() )
+        return;
+
+    if ( ! ( text[0].empty() && text[1].empty() && text[2].empty() ) )
+    {
+        const int centerX = 640 / 2;
+        int OVERLAY_TEXT_BORDER = 10;
+        RECT rect;
+        rect.left   = OVERLAY_TEXT_BORDER;
+        rect.right  = 640 - OVERLAY_TEXT_BORDER;
+        rect.top    = OVERLAY_TEXT_BORDER - 2;
+        rect.bottom = rect.top + height + OVERLAY_TEXT_BORDER;
+        if ( newHeight == height && height > 5 )
+        {
+            int right;
+            if ( shouldDrawSelector[0] ) {
+                right = selector[0].left + selectorLine[0].size() * (textWidth-1) + 5;
+                drawSolidRect ( selector[0].left, selector[0].top, right - selector[0].left, selector[0].bottom - selector[0].top, red, 0x2ff );
+            }
+
+            if ( shouldDrawSelector[1] ) {
+                int width = selectorLine[1].size()* (textWidth-1);
+                left = 640 - width;
+                drawSolidRect ( left - 10, selector[1].top, width + 5, selector[1].bottom - selector[1].top, right_selector_color, 0x2ff );
+            }
+            int top;
+            if ( ! text[0].empty() ) {
+                left = rect.left - 5;
+                top = rect.top;
+                for ( string line : split( text[0], "\n" ) ) {
+                    drawText ( line, left, top, textWidth, textHeight, 0x500 );
+                    top += textHeight - 2;
+                }
+            }
+
+            if ( ! text[1].empty() ) {
+                top = rect.top;
+                for ( string line : split( text[1], "\n" ) ) {
+                    left = centerX - textWidth * ( line.size() / 2 ) - 5;
+                    drawText ( line, left, top, textWidth, textHeight, 0x500 );
+                    top += textHeight - 2;
+                }
+            }
+
+            if ( ! text[2].empty() ) {
+                top = rect.top;
+                for ( string line : split( text[2], "\n" ) ) {
+                    left = 640 - line.size()* (textWidth-1) - 5;
+                    drawText ( line, left, top, textWidth, textHeight, 0x500 );
+                    top += textHeight - 2;
+                }
+            }
+        }
+    }
 }
 
 void DllTrialManager::clear()

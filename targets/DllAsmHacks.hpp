@@ -483,23 +483,12 @@ extern "C" void addExtraDrawCallsCb();
 
 static const AsmList addExtraDraws =
 {
-    { ( void * ) 0x424E09, {
-        0xE8, INLINE_DWORD ( ( ( char * ) &addExtraDrawCallsCb ) - 0x424E09 - 5 ),       // call charaSelectColorCb
-        0x90
-    } },
-    /*{ ( void * ) 0x424E0F, { 0xE9, 0x50, 0x04, 0x00, 0x00 } }, // jmp 00424E09
-    { ( void * ) 0x424E09, {
-                             0x90,0x90,0x90,0x90,0x90,
-                              0x90
-    } },
-    */
-    { ( void * ) 0x424E0F, {
-        0x5F, 0x5E, 0x5D, 0x5B,                                // pop edi, esi, ebp, ebx
-        0x8B, 0xE5,                                            // mov esp, ebp
-        0x5D, 0x90, 0x90, 0x90,                                // pop ebp
-        0xE9, 0x41, 0x04, 0x00, 0x00                           // jmp 0x42525F (RETURN)
-    } },
-    { ( void * ) 0x425258, { 0xE9, 0xAC, 0xFB, 0xFF, 0xFF } }, // jmp 00424E09
+    { ( void * ) 0x432CD2, {
+            0xE8, INLINE_DWORD ( ( ( char * ) &addExtraDrawCallsCb ) - 0x432CD2 - 5 ),       // call charaSelectColorCb
+            0x6A, 0xFF,                                          // Push -1
+            0xE9, 0x54, 0x00, 0x00, 0x00                         // jmp 432D32
+        } },
+    { ( void * ) 0x432D30, { 0xEB, 0xA0 } }, // jmp 00424E09
 };
 
 extern "C" void addExtraTexturesCb();

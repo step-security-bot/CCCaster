@@ -93,6 +93,7 @@ int getHitcount();
 vector<Move> tokenizeText( vector<string> text );
 
 extern bool playDemo;
+extern bool showCombo;
 extern bool isRecording;
     //extern Trial* currentTrial;
 extern int demoPosition;
@@ -120,13 +121,14 @@ public:
     void render();
     void drawButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
-    void drawText( string text, int screenX, int screenY, int width=24, int height=24 );
-    void drawTextWithBorder( string text, int screenX, int screenY, int width=24, int height=24 );
+    void drawText( string text, int screenX, int screenY, int width=24, int height=24, int layer=0xff );
+    void drawTextWithBorder( string text, int screenX, int screenY, int width=24, int height=24, int layer=0xff );
     void drawShadowButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawShadowArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawInputs();
     void drawSolidRect( int x, int y, int width, int height, ARGB color, int layer=0x2cb );
     void drawiidx();
+    void drawWineOverlay();
     void drawInputGuide();
     void drawInputGuideButtons( uint16_t input, uint16_t lastinput, int x );
     void drawAttackDisplay();
@@ -168,6 +170,8 @@ private:
     ARGB black = ARGB{ 0xff, 0x0, 0x0, 0x0 };
     ARGB darkgrey = ARGB{ 0xc8, 0x40, 0x40, 0x40 };
     ARGB red = ARGB{ 0xff, 0xff, 0x0, 0x0 };
+    ARGB bg = ARGB{ 220, 0x0, 0x0, 0x0 };
+    ARGB right_selector_color = ARGB{ 0xff, 30, 30, 0xff };
     int boxHeight = 380;
     int boxWidth = 83;
 

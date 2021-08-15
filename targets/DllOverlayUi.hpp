@@ -2,6 +2,7 @@
 
 #include <string>
 #include <array>
+#include <d3dx9.h>
 
 
 #define DEFAULT_MESSAGE_TIMEOUT ( 3000 )
@@ -20,6 +21,20 @@ void disable();
 void toggle();
 
 bool isEnabled();
+
+bool isDisabled();
+
+std::array<std::string, 3> getText();
+
+int getHeight();
+
+int getNewHeight();
+
+std::array<RECT, 2> getSelector();
+
+std::array<bool, 2> getShouldDrawSelector();
+
+std::array<std::string, 2> getSelectorLine();
 
 bool isTrial();
 
