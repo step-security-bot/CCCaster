@@ -55,7 +55,7 @@ comboparser = Lark(r"""
              | "66"
              | "j.66"
              | "j.22"
-             | "2" | "4" | "7" | "8" | "9"
+             | "2" | "4" | "6" | "7" | "8" | "9"
 
     HEAT : "Heat" | "Heat"
          | "IH" | "Initiative Heat"
@@ -462,7 +462,15 @@ class ComboTransformer(Transformer):
         item = items[0]
         while type(item[0]) != str:
             item = item[0]
-        item[0] += items[1]
+        text = items[1]
+        itemWithSpace = item[0] + " " + text
+        item[0] += text
+        if "whiff" in text:
+            items[0][2] = 0
+        if item[0] in self.seqDict:
+            item[1] = self.seqDict[item[0]]
+        if itemWithSpace in self.seqDict:
+            item[1] = self.seqDict[itemWithSpace]
         return items[0]
 
 def exportCombos( clist, fname ):
