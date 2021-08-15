@@ -139,7 +139,7 @@ palettes: $(PALETTES)
 
 
 $(ARCHIVE): $(BINARY) $(FOLDER)/$(DLL) $(FOLDER)/$(LAUNCHER) $(FOLDER)/$(UPDATER)
-$(ARCHIVE): $(FOLDER)/unzip.exe $(FOLDER)/$(README) $(FOLDER)/$(CHANGELOG)
+$(ARCHIVE): $(FOLDER)/unzip.exe $(FOLDER)/$(README) $(FOLDER)/$(CHANGELOG) $(FOLDER)/trials
 	@echo
 	rm -f $(wildcard $(NAME)*.zip)
 	$(ZIP) $(ARCHIVE) $^
@@ -148,6 +148,7 @@ $(ARCHIVE): $(FOLDER)/unzip.exe $(FOLDER)/$(README) $(FOLDER)/$(CHANGELOG)
 	$(ZIP) $(ARCHIVE) -j $(LOBBY_LIST)
 	cp -r res/GRP GRP
 	$(ZIP) $(ARCHIVE) -r GRP
+	$(ZIP) $(ARCHIVE) -r cccaster/trials
 	rm -rf GRP
 	$(GRANT)
 
@@ -182,6 +183,9 @@ $(FOLDER)/$(UPDATER): tools/Updater.cpp lib/StringUtils.cpp | $(FOLDER)
 
 $(FOLDER)/unzip.exe: 3rdparty/unzip.exe | $(FOLDER)
 	cp -f $^ $(FOLDER)/
+
+$(FOLDER)/trials: trials | $(FOLDER)
+	cp -r $^ $(FOLDER)/
 
 $(FOLDER)/$(README): $(README) | $(FOLDER)
 	cp -f $^ $(FOLDER)/
@@ -321,6 +325,7 @@ clean-lib:
 
 clean-common: clean-proto clean-res clean-lib
 	rm -rf tmp*
+	rm -rf $(FOLDER)/trials
 	rm -f .depend_$(BRANCH) .include_$(BRANCH) *.exe *.zip tools/*.exe \
 $(filter-out $(FOLDER)/$(TAG)config.ini $(wildcard $(FOLDER)/*.mappings $(FOLDER)/*.log),$(wildcard $(FOLDER)/*))
 
