@@ -127,7 +127,7 @@ static bool initDirsAndSanityCheck ( bool checkGameExe = true )
     return success;
 }
 
-static void deinitialize()
+static bool deinitialize()
 {
     static bool deinitialized = false;
     static Mutex deinitMutex;
@@ -135,10 +135,12 @@ static void deinitialize()
     LOCK ( deinitMutex );
 
     if ( deinitialized )
-        return;
+        return false;
     deinitialized = true;
+    bool running = EventManager::get().isRunning();
 
     EventManager::get().release();
+    return running;
 }
 
 static void signalHandler ( int signum )
@@ -151,8 +153,9 @@ static void signalHandler ( int signum )
 static BOOL WINAPI consoleCtrl ( DWORD ctrl )
 {
     LOG ( "Console ctrl %d received", ctrl );
-    deinitialize();
-    Sleep(1000);
+    bool running = deinitialize();
+    if ( running )
+        Sleep(1000);
     LOG ( "Exiting" );
     exit ( 0 );
     return TRUE;
