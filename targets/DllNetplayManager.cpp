@@ -130,6 +130,15 @@ uint16_t NetplayManager::getDemoInput ( uint8_t player )
     if ( player == 2 ) {
         return 0;
     }
+    uint16_t playerInput = getRawInput( player );
+    if ( playerInput != COMBINE_INPUT( 0, 0 ) &&
+         playerInput != COMBINE_INPUT( 0, CC_PLAYER_FACING ) ) {
+        TrialManager::playDemo = false;
+        TrialManager::demoPosition = 0;
+        demoCountdown = 60;
+        exitCountdown = 0;
+        return playerInput;
+    }
     LOG("demoinput");
     Trial currentTrial = TrialManager::charaTrials[TrialManager::currentTrialIndex];
     if ( exitCountdown > 0 ) {
