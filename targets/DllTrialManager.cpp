@@ -57,6 +57,7 @@ string audioCueName = "SystemDefault";
 uint32_t screenFlashColor = 0xff0000ff;
 
 void loadTrialFolder() {
+    LOG("Load trial folder");
     string fileNameBase = "cccaster/trials/";
     string moon;
     vector<string> trialFiles;
@@ -99,7 +100,103 @@ void loadTrialFolder() {
     }
 }
 
+string getButtons(unsigned int x) {
+    string output = "";
+    if ((x & 0x4100) != 0) {
+        output += "A";
+    }
+    if ((x & 0x8200) != 0) {
+        output += "B";
+    }
+    if ((x & 0x0400) != 0) {
+        output += "M";
+    }
+    if ((x & 0x0080) != 0) {
+        output += "C";
+    }
+    if ((x & 0x0040) != 0) {
+        output += "D";
+    }
+    if ((x & 0x0800) != 0) {
+        output += "E";
+    }
+    return output;
+}
+
+vector<DemoInput> formatDemo( vector<uint16_t> demoInputs )
+{
+    vector<DemoInput> output;
+    for ( uint16_t i = 0; i < demoInputs.size(); ++i ) {
+        uint16_t input = demoInputs[i];
+        if ( input != 0 && input != 0x20 ) {
+            int direction = input & 0xF;
+            if ( direction == 0 )
+                direction = 5;
+            string buttons = getButtons(input);
+            output.push_back( DemoInput{ i, direction, buttons} );
+        }
+    }
+    return output;
+}
+
+DemoInput stringToDemoInput( string input )
+{
+    vector<string> splitvals = split( input, ":" );
+    string frame = splitvals[0];
+    int dir = stoi( trimmed( splitvals[1] ).substr(0,1) );
+    string inputs = trimmed( splitvals[1] ).substr( 1 );
+    return DemoInput{ stoi( frame.substr( 1 ) ),
+        dir,
+        inputs
+    };
+}
+
+uint16_t stringToButtons( string buttons ) {
+    uint16_t output = 0;
+    LOG( buttons.find("A") );
+    if ( buttons.find("A") != string::npos ) {
+        output |= CC_BUTTON_A;
+    }
+    if ( buttons.find("B") != string::npos ) {
+        output |= CC_BUTTON_B;
+    }
+    if ( buttons.find("C") != string::npos ) {
+        output |= CC_BUTTON_C;
+    }
+    if ( buttons.find("D") != string::npos ) {
+        output |= CC_BUTTON_D;
+    }
+    if ( buttons.find("E") != string::npos ) {
+        output |= CC_BUTTON_E;
+    }
+    if ( buttons.find("M") != string::npos ) {
+        output |= CC_BUTTON_AB;
+    }
+    return output;
+}
+
+vector<uint16_t> unformatDemo( vector<DemoInput> fdemoInputs )
+{
+    vector<uint16_t> output;
+    int lastFrame = fdemoInputs.back().frame;
+    int index = 0;
+    for ( uint16_t i = 0; i < lastFrame; ++i ) {
+        if ( i == fdemoInputs[index].frame) {
+            DemoInput input = fdemoInputs[index];
+            LOG( input.buttons );
+            output.push_back( COMBINE_INPUT( input.direction,
+                                             stringToButtons( input.buttons ) ) );
+            LOG( stringToButtons( input.buttons ) );
+            index++;
+        } else {
+            output.push_back( 0 );
+        }
+    }
+    return output;
+}
+
 void handleTrialFile( string fileName ) {
+    LOG("handling trial: %s", fileName );
     ifstream trialFile( fileName );
     array<int32_t, 3> startingPositions;
     // Default starting positions
@@ -144,6 +241,15 @@ void handleTrialFile( string fileName ) {
                     getline( trialFile, str );
                     demoInputs.push_back( stoul( str, 0, 16 ) );
                 }
+            } else if ( str == "DemoFormatted" ) {
+                getline( trialFile, str);
+                int numInputs = stoi( str );
+                vector<DemoInput> fdemo;
+                for ( int j = 0; j < numInputs; ++j ) {
+                    getline( trialFile, str );
+                    fdemo.push_back( stringToDemoInput( str ) );
+                }
+                demoInputs = unformatDemo( fdemo );
             }
         }
     }
@@ -156,6 +262,7 @@ void handleTrialFile( string fileName ) {
                 comboSeq,
                 comboHit,
                 demoInputs,
+                formatDemo( demoInputs ),
                 tokenizeText( comboText )
     };
     LOG(t.name);
@@ -168,6 +275,7 @@ void handleTrialFile( string fileName ) {
 }
 
 void saveTrial( Trial trial ) {
+    trial.demoInputsFormatted = formatDemo( trial.demoInputs );
     string fileNameBase = "cccaster/trials/";
     string moon;
     switch ( *CC_P1_MOON_SELECTOR_ADDR )
@@ -196,6 +304,8 @@ void saveTrial( Trial trial ) {
         int numFields = 2;
         if ( trial.demoInputs.size() > 0 )
             numFields++;
+        if ( trial.demoInputsFormatted.size() > 0 )
+            numFields++;
         trialfile << numFields << endl;
         trialfile << "StartPos" << endl;
         trialfile << trial.startingPositions[0] << endl;
@@ -213,6 +323,14 @@ void saveTrial( Trial trial ) {
             trialfile << trial.demoInputs.size() << std::hex << endl;
             for ( uint16_t input : trial.demoInputs ) {
                 trialfile << "0x" << input << endl;
+            }
+            trialfile << std::dec;
+        }
+        if ( trial.demoInputsFormatted.size() > 0 ) {
+            trialfile << "DemoFormatted" << endl;
+            trialfile << trial.demoInputsFormatted.size() << endl;
+            for ( DemoInput input : trial.demoInputsFormatted ) {
+                trialfile << "F" << input.frame << ": " << input.direction << input.buttons << endl;
             }
         }
     }
@@ -1056,7 +1174,7 @@ void DllTrialManager::drawCombo()
     if ( !TrialManager::inputGuideEnabled ) {
         drawText ( currentTrial.name, 30, y-16, 14, 16, 0x1f0 );
         drawTextWithBorder ( currentTrial.name, 30, y-16, 14, 16, 0x1f0 );
-        drawSolidRect( 25, y-16, currentTrial.name.size() * 11, 17, bg, 0x2ef );
+        drawSolidRect( 25, y-16, currentTrial.name.size() * 15, 17, bg, 0x2ef );
     }
     for( uint16_t i = 0; i < moveList.size(); ++i ) {
         if ( i < currentMove ) {
@@ -1198,10 +1316,10 @@ void DllTrialManager::drawInputGuideButtons( uint16_t input, uint16_t lastinput,
     if ( (x == inputOffset || x == inputOffset + 3) && TrialManager::playScreenFlash ) {
         uint32_t rawcolor = TrialManager::screenFlashColor;
         LOG(TrialManager::audioCueName.c_str());
-        ARGB color = ARGB{ ( rawcolor >> 24 ) & 0xFF,
-                           ( rawcolor >> 16 ) & 0xFF,
-                           ( rawcolor >> 8 ) & 0xFF,
-                           ( rawcolor ) & 0xFF };
+        ARGB color = ARGB{ (uint8_t) ( ( rawcolor >> 24 ) & 0xFF ),
+                           (uint8_t) ( ( rawcolor >> 16 ) & 0xFF ),
+                           (uint8_t) ( ( rawcolor >> 8 ) & 0xFF ),
+                           (uint8_t) ( ( rawcolor ) & 0xFF ) };
         drawSolidRect( 0, 0, 640, 480, color, 0x300 );
     }
 }
@@ -1303,6 +1421,8 @@ void DllTrialManager::render()
     if ( *CC_SHOW_ATTACK_DISPLAY ) {
         drawAttackDisplay();
     }
+    if ( TrialManager::hideText )
+        return;
     //drawInputs();
     if ( TrialManager::showCombo )
         drawCombo();

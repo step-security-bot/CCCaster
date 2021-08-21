@@ -43,6 +43,12 @@ struct Move {
     MovePosition position;
 };
 
+struct DemoInput {
+    int frame;
+    int direction;
+    string buttons;
+};
+
 struct Trial {
     string name;
     array<int32_t, 3> startingPositions;
@@ -50,6 +56,7 @@ struct Trial {
     vector<uint32_t> comboSeq;
     vector<int> comboHit;
     vector<uint16_t> demoInputs;
+    vector<DemoInput> demoInputsFormatted;
     vector<Move> tokens;
 };
 
@@ -91,6 +98,11 @@ void saveTrial();
 void frameStepTrial();
 int getHitcount();
 vector<Move> tokenizeText( vector<string> text );
+vector<DemoInput> formatDemo( vector<uint16_t> demoInputs );
+vector<uint16_t> unformatDemo( vector<DemoInput> fdemoInputs );
+string getButtons(unsigned int x);
+uint16_t stringToButtons( string input );
+DemoInput stringToDemoInput( string input );
 
 extern bool playDemo;
 extern bool showCombo;

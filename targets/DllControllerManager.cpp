@@ -464,6 +464,7 @@ void DllControllerManager::handleTrialMenuOverlay()
                 TrialManager::charaTrials[TrialManager::currentTrialIndex].startingPositions[0] = *CC_P1_X_POSITION_ADDR;
                 TrialManager::charaTrials[TrialManager::currentTrialIndex].startingPositions[1] = *CC_P2_X_POSITION_ADDR;
                 TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.clear();
+                TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputsFormatted.clear();
                 disableTrialMenuOverlay();
             } else if ( _trialSubMenuSelection == 2 ) {
                 _trialMenuSelection = 0;
@@ -478,16 +479,12 @@ void DllControllerManager::handleTrialMenuOverlay()
         return;
     } else if ( _trialMenuSelection == 5 ) {
         if ( _trialSubMenuSelection ) {
-            LOG("TSS %d", _trialSubMenuSelection );
-            LOG("interface scaling: %d", _trialSubMenuSelection - 1);
             TrialManager::trialScale = _trialSubMenuSelection - 1;
             disableTrialMenuOverlay();
             return;
         }
     } else if ( _trialMenuSelection == 6 ) {
-        LOG("TS %d", _trialMenuSelection );
         if ( _trialSubMenuSelection ) {
-            LOG("TSS %d", _trialSubMenuSelection );
             if ( _trialSubMenuSelection == 1) {
                 TrialManager::playAudioCue = !TrialManager::playAudioCue;
             }
