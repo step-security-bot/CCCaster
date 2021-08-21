@@ -438,7 +438,7 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
         rect.left = 20;
         rect.right = viewport.Width - 20;
         DrawRectangle ( device, INLINE_RECT ( rect ), OVERLAY_COMBO_BG_COLOR );
-        int i = 0;
+        uint32_t i = 0;
         rect.left = 30;
         for ( wstring text : TrialManager::comboTrialText ) {
             TextCalcRectW( font, text, rect, DT_LEFT, 0);
@@ -448,7 +448,8 @@ void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport 
                    ( TrialManager::comboTrialTextAlign == 0 ? DT_CENTER : ( TrialManager::comboTrialTextAlign < 0 ? DT_LEFT : DT_RIGHT ) ),
                        color );
             rect.left = rect.right;
-            if ( rect.left > ( viewport.Width - 70 ) ){
+            long int newlineBreakpoint = viewport.Width - 70;
+            if ( rect.left > newlineBreakpoint ) {
                 rect.left = 29;
                 rect.top = rect.bottom;
             }

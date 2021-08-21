@@ -27,7 +27,7 @@ vector<wstring> fullStrings;
 string dtext;
 int comboTrialTextAlign = 0;
 int comboTrialLength = 0;
-int comboTrialPosition = 0;
+uint32_t comboTrialPosition = 0;
 int currentTrialIndex = 0;
 bool hideText = false;
 LPDIRECT3DTEXTURE9 trialTextures = NULL;
@@ -145,15 +145,11 @@ DemoInput stringToDemoInput( string input )
     string frame = splitvals[0];
     int dir = stoi( trimmed( splitvals[1] ).substr(0,1) );
     string inputs = trimmed( splitvals[1] ).substr( 1 );
-    return DemoInput{ stoi( frame.substr( 1 ) ),
-        dir,
-        inputs
-    };
+    return DemoInput{ stoi( frame.substr( 1 ) ), dir, inputs };
 }
 
 uint16_t stringToButtons( string buttons ) {
     uint16_t output = 0;
-    LOG( buttons.find("A") );
     if ( buttons.find("A") != string::npos ) {
         output |= CC_BUTTON_A;
     }
@@ -419,7 +415,8 @@ void frameStepTrial()
     }
     if ( playInputs ) {
         inputPosition -= 3;
-        if ( inputPosition < charaTrials[currentTrialIndex].demoInputs.size()* -3 - 200 ) {
+        int endPlayPosition = charaTrials[currentTrialIndex].demoInputs.size() * -3 - 200;
+        if ( inputPosition < endPlayPosition ) {
             inputPosition = 0;
             playInputs = false;
         }
@@ -491,7 +488,7 @@ vector<Move> tokenizeText( vector<string> text )
                 }
             } else if ( curMove == '(' ) {
                 string textFrag;
-                int len = 2;
+                uint32_t len = 2;
                 while( move[i] != ')' ){
                     textFrag += move[i];
                     i++;
@@ -525,6 +522,7 @@ vector<Move> tokenizeText( vector<string> text )
 
 extern NetplayManager* netManPtr;
 
+/*
 void DllTrialManager::frameStepTrial()
 {
     //tmp2 += 1;
@@ -588,11 +586,9 @@ void DllTrialManager::frameStepTrial()
         comboStart = true;
         currentHitcount = getHitcount();
     }
-    /*
-    if ( ( GetAsyncKeyState ( VK_F3 ) & 0x1 ) == 1 ) {
-        loadCombo( TrialManager::currentTrialIndex + 1 );
-    }
-    */
+    //if ( ( GetAsyncKeyState ( VK_F3 ) & 0x1 ) == 1 ) {
+    //    loadCombo( TrialManager::currentTrialIndex + 1 );
+    //}
     if ( ( GetAsyncKeyState ( VK_F2 ) & 0x1 ) == 1 ) {
         loadCombo( TrialManager::currentTrialIndex - 1 );
     }
@@ -619,6 +615,7 @@ void DllTrialManager::frameStepTrial()
         }
     }
 }
+*/
 
 wstring tmp( string s ){
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
@@ -1091,7 +1088,6 @@ int DllTrialManager::drawMoveScaled( Move move, MoveStatus color, int x, int y, 
     int ytextoffset = i2;
     int roffset = i3;
     int currX = x + loffset;
-    int nextX = x + loffset;
     int moveWidth = 0;
 
     for( Token token : move.text ) {

@@ -171,7 +171,7 @@ uint16_t NetplayManager::getDemoInput ( uint8_t player )
     }
     uint16_t input = currentTrial.demoInputs[TrialManager::demoPosition++];
     LOG("input %d@%d", input, TrialManager::demoPosition );
-    if ( TrialManager::demoPosition >= currentTrial.demoInputs.size() ) {
+    if ( TrialManager::demoPosition >= (int) currentTrial.demoInputs.size() ) {
         TrialManager::demoPosition = 0;
         demoCountdown = 60;
         exitCountdown = 30;
@@ -185,11 +185,11 @@ uint16_t NetplayManager::getInGameInput ( uint8_t player )
     uint16_t input = getRawInput ( player );
 
     // Disable pausing in netplay versus mode. Also only allow start button in versus after holding it for a duration.
-    if ( ( ( config.mode.isNetplay() && config.mode.isVersus() ) || config.mode.isSpectate() )
+    if ( ( ( ( config.mode.isNetplay() && config.mode.isVersus() ) || config.mode.isSpectate() )
             || ( ! *CC_PAUSE_FLAG_ADDR
                  && config.mode.isVersus()
                  && heldStartDuration
-                 && ! heldButtonInHistory ( player, CC_BUTTON_START, 0, heldStartDuration ) )
+                 && ! heldButtonInHistory ( player, CC_BUTTON_START, 0, heldStartDuration ) ) )
 	    && ( !config.mode.isReplay() ) )
     {
         input &= ~ COMBINE_INPUT ( 0, CC_BUTTON_START );

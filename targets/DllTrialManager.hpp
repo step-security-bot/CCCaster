@@ -35,7 +35,7 @@ struct ARGB {
 struct Token {
     string text;
     TokenTypes type;
-    int width;
+    uint32_t width;
 };
 
 struct Move {
@@ -74,7 +74,7 @@ extern int comboTrialTextAlign;
 
 extern int comboTrialLength;
 
-extern int comboTrialPosition;
+extern uint32_t comboTrialPosition;
 
 extern int currentTrialIndex;
 
