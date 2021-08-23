@@ -21,6 +21,7 @@ comboparser = Lark(r"""
           | multi_input
           | cc_input
           | follow_input
+          | dir_input
           | hit_input
           | MOVEMENT
 
@@ -35,6 +36,7 @@ comboparser = Lark(r"""
     opt_input : "|" input "|"
     cc_input : input TILDE "[" ( norm_input [">"] )+ "]"
     follow_input : norm_input ( [ " | "] TILDE norm_input [ "|" ] )+
+    dir_input : norm_input "~" DIRECTION
     multi_input : [ DELAY ] [ JUMP ] [ DIRECTION ] BUTTON ( BUTTON )* [ NOTES ]
     hit_input : [ DELAY ] [ JUMP ] [ DIRECTION ] BUTTON "(" NUMBER (TEXT)* ")"
     series_input : [ DELAY ] ONETWOTHREE [ NOTES ]
@@ -228,7 +230,11 @@ class ComboTransformer(Transformer):
                  item.type == "BUTTON" or
                  item.type == "DIRECTION" ):
                 if ( item[0] == "[" or item[0] == "{" ):
-                    moveString += item[1:-1].upper()
+                    checkString = moveString + item.upper()
+                    if checkString in self.seqDict:
+                        moveString = checkString
+                    else:
+                        moveString += item[1:-1].upper()
                 else:
                     moveString += item.upper()
         if (item.type == "TEXT" or item.type == "NUMBER"):
@@ -356,7 +362,11 @@ class ComboTransformer(Transformer):
                     #dispString += "5"
                 dispString += item.upper()
                 if ( item[0] == "[" or "{" in item ):
-                    moveString += item[1:-1].upper()
+                    checkString = moveString + item.upper()
+                    if checkString in self.seqDict:
+                        moveString = checkString
+                    else:
+                        moveString += item[1:-1].upper()
                 else:
                     moveString += item.upper()
             elif ( item.type == "ONETWOTHREE" ):
@@ -472,6 +482,13 @@ class ComboTransformer(Transformer):
         if itemWithSpace in self.seqDict:
             item[1] = self.seqDict[itemWithSpace]
         return items[0]
+
+    def dir_input(self, items):
+        item = items[0]
+        item[0] += items[1]
+        item[3] += "~" + items[1]
+        item[1] = self.seqDict[item[3]]
+        return item
 
 def exportCombos( clist, fname ):
     with open( fname, 'w' ) as f:

@@ -344,9 +344,15 @@ int getHitcount()
 
 void frameStepTrial()
 {
+    uint32_t seqAddr;
+    if ( *CC_P1_PUPPET_STATE_ADDR ) {
+        seqAddr = *CC_P3_SEQUENCE_ADDR;
+    } else {
+        seqAddr = *CC_P1_SEQUENCE_ADDR;
+    }
     if ( charaTrials.empty() ) {
         char buf[1000];
-        sprintf(buf, "currSeq=%03d", *CC_P1_SEQUENCE_ADDR );
+        sprintf(buf, "currSeq=%03d", seqAddr );
         dtext = buf;
         return;
     }
@@ -360,25 +366,29 @@ void frameStepTrial()
             0,
             currentTrialIndex,
             *CC_P2_SEQUENCE_ADDR,
-            *CC_P1_SEQUENCE_ADDR,
+            seqAddr,
             currentTrial.comboSeq[comboTrialPosition]);
     */
-    sprintf(buf, "currSeq=%03d, exSeq=%02d",
-            *CC_P1_SEQUENCE_ADDR,
+    sprintf(buf, "ghc=%03d, hitcount=%03d, currSeq=%03d, exSeq=%02d",
+            getHitcount(),
+            currentHitcount,
+            seqAddr,
             currentTrial.comboSeq[comboTrialPosition]);
     dtext = buf;
     if ( !comboDrop ) {
-        if ( *CC_P1_SEQUENCE_ADDR == currentTrial.comboSeq[0] &&
+        if ( seqAddr == currentTrial.comboSeq[0] &&
              *CC_P2_SEQUENCE_ADDR != 0 && !comboStart ) {
             comboTrialPosition = 1;
             comboStart = true;
             currentHitcount = getHitcount();
-        } else if ( ( *CC_P1_SEQUENCE_ADDR == currentTrial.comboSeq[comboTrialPosition] ||
-                      ( ( currentTrial.comboSeq[comboTrialPosition] == 0 ) && ( *CC_P1_SEQUENCE_ADDR == 12 ) ) )
+        } else if ( ( seqAddr == currentTrial.comboSeq[comboTrialPosition] ||
+                      ( ( currentTrial.comboSeq[comboTrialPosition] == 0 ) && ( seqAddr == CC_SEQ_CROUCH_TRANSITION ) ) )
                     && comboStart &&
                     ( ( currentTrial.comboHit[comboTrialPosition]) ?
                       ( getHitcount() > currentHitcount ) : true ) ) {
             comboTrialPosition += 1;
+            currentHitcount = getHitcount();
+        } else if ( getHitcount() > currentHitcount ) {
             currentHitcount = getHitcount();
         }
         if ( *CC_P2_SEQUENCE_ADDR == 0 ) {
@@ -387,11 +397,11 @@ void frameStepTrial()
             comboStart = false;
             currentHitcount = 0;
         }
-    } else if ( *CC_P1_SEQUENCE_ADDR == 0 &&
+    } else if ( seqAddr == 0 &&
                 *CC_P2_SEQUENCE_ADDR == 0 ) {
         if ( comboTrialPosition < currentTrial.comboSeq.size() )
             comboTrialPosition = 0;
-    } else if ( *CC_P1_SEQUENCE_ADDR == currentTrial.comboSeq[0] &&
+    } else if ( seqAddr == currentTrial.comboSeq[0] &&
                 *CC_P2_SEQUENCE_ADDR != 0 ) {
         comboTrialPosition = 1;
         comboDrop = false;
@@ -1414,11 +1424,11 @@ void DllTrialManager::drawAttackDisplayRow( string label, string value, int y )
 }
 void DllTrialManager::render()
 {
+    if ( TrialManager::hideText )
+        return;
     if ( *CC_SHOW_ATTACK_DISPLAY ) {
         drawAttackDisplay();
     }
-    if ( TrialManager::hideText )
-        return;
     //drawInputs();
     if ( TrialManager::showCombo )
         drawCombo();

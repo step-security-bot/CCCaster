@@ -198,6 +198,7 @@
 #define CC_P2_FACING_FLAG_ADDR      ( ( uint8_t * )  ( ( ( char * ) CC_P1_FACING_FLAG_ADDR   ) + CC_PLR_STRUCT_SIZE ) )
 
 #define CC_P3_ENABLED_FLAG_ADDR     ( ( uint8_t * )  ( ( ( char * ) CC_P2_ENABLED_FLAG_ADDR  ) + CC_PLR_STRUCT_SIZE ) )
+#define CC_P3_SEQUENCE_ADDR         ( ( uint32_t * ) ( ( ( char * ) CC_P2_SEQUENCE_ADDR      ) + CC_PLR_STRUCT_SIZE ) )
 #define CC_P3_NO_INPUT_FLAG_ADDR    ( ( uint8_t * )  ( ( ( char * ) CC_P2_NO_INPUT_FLAG_ADDR ) + CC_PLR_STRUCT_SIZE ) )
 #define CC_P3_PUPPET_STATE_ADDR     ( ( uint8_t * )  ( ( ( char * ) CC_P2_PUPPET_STATE_ADDR  ) + CC_PLR_STRUCT_SIZE ) )
 
@@ -233,6 +234,9 @@
 #define FONT0                       ( 0x55D680 )
 #define FONT1                       ( 0x55D260 )
 #define FONT2                       ( 0x55DAA0 )
+
+// Defined Sequence numbers
+#define CC_SEQ_CROUCH_TRANSITION    ( 12 )
 
 // Display Flags
 #define CC_SHOW_ATTACK_DISPLAY      ( ( int * )      0x5595B8 )
