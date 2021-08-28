@@ -232,8 +232,6 @@ void MainUpdater::httpResponse ( HttpGet *httpGet, int code, const string& data,
             break;
     }
 
-    _httpGet.reset();
-
     if ( code != 200 || version.major().empty() || version.minor().empty() )
     {
         httpFailed ( httpGet );
