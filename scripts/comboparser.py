@@ -273,7 +273,9 @@ class ComboTransformer(Transformer):
                     outputs.append( [dispString, self.seqDict[ moveString ], self.hitDict[ moveString ], moveString ] )
                 else:
                     dispString = "Add. " + dispPrefString + toArrow(direction) + item.upper()
-                    moveString = lastMoveString + "~" + item.upper()
+                    if direction == "5":
+                        direction = ""
+                    moveString = lastMoveString + "~" + direction + item.upper()
                     outputs.append( [dispString, self.seqDict[ moveString ], self.hitDict[ moveString ], moveString ] )
         print(outputs)
         return outputs
