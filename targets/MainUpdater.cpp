@@ -21,7 +21,7 @@ static const vector<string> updateServers =
 {
     "http://192.210.227.23/",
     "http://104.206.199.123/",
-    "http://lit-beach-31246.herokuapp.com/"
+    "http://150.230.44.244/"
 };
 
 
