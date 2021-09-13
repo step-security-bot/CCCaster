@@ -196,6 +196,8 @@ class ComboTransformer(Transformer):
                         hit = "1"
                     if hit == "No" or hit == "no":
                         hit = "0"
+                    if hit == "2" or hit == "Partner":
+                        hit = "2"
                     hitDict[name] = hit
         return seqDict, hitDict
 
