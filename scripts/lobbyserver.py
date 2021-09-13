@@ -146,6 +146,7 @@ class ConcertoClient:
                                                    'type':roomtype,
                                                    'name':self.name},
                              timeout=DEFAULTTIMEOUT).json()
+            print(r)
             if 'status' in r and r['status'] == "OK":
                 self.secret = r['secret']
                 self.playerid = r['msg']
@@ -169,6 +170,7 @@ class ConcertoClient:
             r = requests.get(url=CONCERTO, params={'action':'join',
                                                    'id':code,
                                                    'name':name}, timeout=DEFAULTTIMEOUT).json()
+            print(r)
             if 'status' in r and r['status'] == "OK":
                 self.secret = r['secret']
                 self.playerid = r['msg']
@@ -229,7 +231,7 @@ class ConcertoClient:
             return f"{len(lines)}\x1f{flines}"
 
     def __repr__( self ):
-        return f"{self.live} {self.idle}"
+        return f"{self.playerid} {self.live} {self.idle} {self.challenges}"
 
 lobby = Lobby()
 
