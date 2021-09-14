@@ -108,36 +108,38 @@ class ConcertoClient:
         self.challenges = {}
         self.idle = []
         self.playing = []
+        self.lock = asyncio.Lock()
 
     def list( self ):
         return self.publicLobbies
 
-    def update( self ):
-        if self.state == "Room":
-            r = requests.get(url=CONCERTO, params={'action':'list'}, timeout=DEFAULTTIMEOUT).json()
-            if 'status' in r and r['status'] == "OK":
-                self.publicLobbies = {}
-                for lobby in r['lobbies']:
-                    self.publicLobbies[lobby[0]] = lobby[1]
-            else:
-                self.publicLobbies = {}
-                self.live = False
+    async def update( self ):
+        async with self.lock:
+            if self.state == "Room":
+                r = requests.get(url=CONCERTO, params={'action':'list'}, timeout=DEFAULTTIMEOUT).json()
+                if 'status' in r and r['status'] == "OK":
+                    self.publicLobbies = {}
+                    for lobby in r['lobbies']:
+                        self.publicLobbies[lobby[0]] = lobby[1]
+                else:
+                    self.publicLobbies = {}
+                    self.live = False
 
-        elif self.state == "Lobby":
-            r = requests.get(url=CONCERTO, params={'action':'status',
-                                                   'id':self.roomcode,
-                                                   'secret':self.secret,
-                                                   'p':self.playerid},
-                             timeout=DEFAULTTIMEOUT).json()
-            if 'status' in r and r['status'] == "OK":
-                self.challenges = {}
-                for c in r['challenges']:
-                    self.challenges[c[1]] = (c[0], c[2])
-                self.idle = sorted( r['idle'], key=lambda x: x[1] )
-                self.playing = r['playing']
-                print(r)
-            else:
-                self.live = False
+            elif self.state == "Lobby":
+                r = requests.get(url=CONCERTO, params={'action':'status',
+                                                    'id':self.roomcode,
+                                                    'secret':self.secret,
+                                                    'p':self.playerid},
+                                timeout=DEFAULTTIMEOUT).json()
+                if 'status' in r and r['status'] == "OK":
+                    self.challenges = {}
+                    for c in r['challenges']:
+                        self.challenges[c[1]] = (c[0], c[2])
+                    self.idle = sorted( r['idle'], key=lambda x: x[1] )
+                    self.playing = r['playing']
+                    print(r)
+                else:
+                    self.live = False
 
     def create( self, name, roomtype ):
         if self.state == "Room":
@@ -213,7 +215,9 @@ class ConcertoClient:
             return f"{len(self.publicLobbies)}\x1f{flines}"
         elif self.state == "Lobby":
             lines = []
-            for name, playerid in self.idle:
+            for entry in self.idle:
+                name = entry[0]
+                playerid = entry[1]
                 if playerid == self.playerid:
                     continue
                 statusString = "       "
@@ -231,14 +235,14 @@ class ConcertoClient:
             return f"{len(lines)}\x1f{flines}"
 
     def __repr__( self ):
-        return f"{self.playerid} {self.live} {self.idle} {self.challenges}"
+        return f"{self.name}@{self.playerid} {self.live} {self.idle} {self.challenges}"
 
 lobby = Lobby()
 
 lobbylock = asyncio.Lock()
 idlock = asyncio.Lock()
 clientlock = asyncio.Lock()
-cclients = defaultdict( ConcertoClient )
+cclients = {}
 
 """
 lobby.addHost( 1, *dummyEntries[1] )
@@ -508,7 +512,7 @@ async def updateLoop():
         # update concerto clients
         async with clientlock:
             for client in cclients.values():
-                client.update()
+                await client.update()
         # issues with checking ips at server, just kick old ones for now
         """
         aw = []
@@ -657,9 +661,9 @@ async def handle_connect(reader, writer):
                         await websocket.send( formatForServer( json.dumps ( {"eventType":'portIsOpen'} ) ) )
                     await asyncio.sleep(10)
         elif req == "CLIST":
-            #if uuid not in cclients:
-            #    cclients[uuid] = ConcertoClient( name );
-            cclients[uuid].update()
+            if uuid not in cclients:
+                cclients[uuid] = ConcertoClient();
+            await cclients[uuid].update()
             if not cclients[uuid].live:
                 await cleanup( writer, uuid )
                 return
@@ -669,11 +673,15 @@ async def handle_connect(reader, writer):
             await writer.drain()
         elif req == "CLOBBY":
             print(cclients)
+            if uuid not in cclients:
+                await cleanup( writer, uuid )
+                return
             if not cclients[uuid].live:
                 print(uuid)
                 await cleanup( writer, uuid )
                 return
-            retString = "CLOBBY\x1f"+cclients[uuid].format()
+            async with client.lock:
+                retString = "CLOBBY\x1f"+cclients[uuid].format()
             print(f"< {retString}")
             writer.write(bytes( retString, 'utf-8'))
             await writer.drain()
@@ -681,6 +689,8 @@ async def handle_connect(reader, writer):
             name, code = info.split("|")
             if name == "":
                 name = "Anonymous"
+            if uuid not in cclients:
+                cclients[uuid] = ConcertoClient();
             client = cclients[uuid]
             success = client.join( name, code, addr )
             if not success:
@@ -714,12 +724,15 @@ async def handle_connect(reader, writer):
             name, lobbytype = info.split("|")
             if name == "":
                 name = "Anonymous"
+            if uuid not in cclients:
+                cclients[uuid] = ConcertoClient();
             client = cclients[uuid]
             code = client.create( name, lobbytype )
             if not client.live:
                 await cleanup( writer, uuid )
                 return
-            retString = f"CCREATE\x1f"+client.format()+f"\x1f{code}"
+            async with client.lock:
+                retString = f"CCREATE\x1f"+client.format()+f"\x1f{code}"
             print(f"< {retString}")
             writer.write(bytes( retString, 'utf-8'))
             await writer.drain()
@@ -727,7 +740,8 @@ async def handle_connect(reader, writer):
             print("invalid request")
             print(data)
             print("connection closed")
-            del cclients[uuid]
+            if uuid in cclients:
+                del cclients[uuid]
             writer.close()
             return
 
@@ -735,7 +749,8 @@ async def handle_connect(reader, writer):
         await asyncio.sleep(1)
 
     print("Close the connection")
-    del cclients[uuid]
+    if uuid in cclients:
+        del cclients[uuid]
     writer.close()
 
 async def main():
