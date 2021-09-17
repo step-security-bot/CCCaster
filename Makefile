@@ -1,7 +1,7 @@
 VERSION = 3.1
 SUFFIX = .001
 NAME = cccaster
-TAG = rc3
+TAG = rc4
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 ifneq ($(TAG),)

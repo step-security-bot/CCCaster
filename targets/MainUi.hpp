@@ -43,6 +43,7 @@ public:
 
     std::vector<std::string> lobbyText;
     std::vector<std::string> lobbyIps;
+    std::vector<std::string> lobbyIds;
 
     MainUi();
 
@@ -74,6 +75,7 @@ public:
 
     bool isServer() { return serverMode; }
     void hostReady();
+    void sendConnected();
 
 private:
 
@@ -112,6 +114,7 @@ private:
     void settings();
     void update();
     void results();
+    void wait();
 
     bool areYouSure();
 
@@ -154,4 +157,5 @@ private:
     void setAddr( MatchmakingManager* lobby, std::string addr );
     void setMode( MatchmakingManager* lobby, std::string mode );
     void unlock( MatchmakingManager* lobby );
+
 };

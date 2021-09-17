@@ -607,7 +607,10 @@ struct MainApp
         // This runs a different thread waiting for user confirmation
         LOCK ( uiMutex );
         LOG( "lockUserMutex");
-        uiCondVar.wait ( uiMutex );
+        while ( uiCondVar.wait ( uiMutex, 5000 ) ) {
+            if ( ! EventManager::get().isRunning() || !connected )
+                return;
+        }
         LOG( "unlockUserMutex");
 
         if ( ! EventManager::get().isRunning() || !connected )
@@ -630,6 +633,8 @@ struct MainApp
                 break;
         }
 
+        if ( clientMode.value == ClientMode::Client )
+            ui.sendConnected();
         // Signal the main thread via a UDP packet
         uiSendSocket->send ( NullMsg );
     }
@@ -1438,8 +1443,11 @@ void runMain ( const IpAddrPort& address, const Serializable& config )
 
     MainApp main ( address, config );
 
+    LOG( "Main Start" );
     main.start();
+    LOG( "Main wfuc" );
     main.waitForUserConfirmation();
+    LOG( "Main End" );
 }
 
 void runFake ( const IpAddrPort& address, const Serializable& config )

@@ -9,11 +9,27 @@ using namespace std;
 
 vector<string> Lobby::getMenu()
 {
-    return entries;
+    if ( mode == MENU ) {
+        return { "Public Lobbies", "Create Lobby", "Enter Lobby Code", "Default Lobby" };
+    } else if ( mode == CONCERTO_BROWSE ) {
+        return publiclobbies;
+    } else if ( mode == CONCERTO_LOBBY ) {
+        return lobbyentries;
+    } else {
+        return entries;
+    }
 }
 
 vector<string> Lobby::getIps(){
-    return ips;
+    if ( mode == CONCERTO_LOBBY ) {
+        return lobbyips;
+    } else {
+        return ips;
+    }
+}
+
+vector<string> Lobby::getIds(){
+    return lobbyids;
 }
 
 Lobby::Lobby( Owner* owner )
@@ -33,6 +49,8 @@ Lobby::Lobby( Owner* owner )
     }
     entries = menu;
     connectionSuccess = false;
+    newRequestSuccess = false;
+    mode = MENU;
 }
 
 bool Lobby::connect( std::string url )
@@ -139,11 +157,80 @@ void Lobby::socketRead ( Socket *socket, const char *bytes, size_t len, const Ip
 
     } else if  ( reqType == "HOST" ) {
         hostSuccess = rawdata[1] == "True";
+    } else if ( reqType == "CLIST" ) {
+        int entryCount = stoi( rawdata[1] );
+        if ( entryCount > 0 ) {
+            entryMutex.lock();
+            numEntries = stoi( rawdata[1] );
+            publiclobbies.clear();
+            roomcodes.clear();
+            for( uint32_t i = 2; i < numEntries + 2; ++i ) {
+                vector<string> codeplayer = split( rawdata[i], "\x1e" );
+                string code = codeplayer[0];
+                roomcodes.push_back( code );
+                string numPlayers = codeplayer[1];
+                string output = code + "   " + numPlayers;
+                publiclobbies.push_back( output );
+            }
+            entryMutex.unlock();
+        } else {
+            entryMutex.lock();
+            numEntries = 0;
+            entryMutex.unlock();
+        }
+    } else if ( reqType == "CLOBBY" || reqType == "CCREATE" ) {
+        mode = CONCERTO_LOBBY;
+        int entryCount = stoi( rawdata[1] );
+        if ( entryCount > 0 ) {
+            entryMutex.lock();
+            numEntries = stoi( rawdata[1] );
+            LOG(rawdata[1]);
+            lobbyentries.clear();
+            lobbyips.clear();
+            lobbyids.clear();
+            for( uint32_t i = 2; i < numEntries + 2; ++i ) {
+                vector<string> players = split( rawdata[i], "\x1e" );
+                string name = players[0];
+                LOG(name);
+                string ip = players[1];
+                string id = players[2];
+                lobbyentries.push_back( name );
+                lobbyips.push_back( ip );
+                lobbyids.push_back( id );
+            }
+            entryMutex.unlock();
+        } else {
+            entryMutex.lock();
+            numEntries = 0;
+            lobbyentries.clear();
+            entryMutex.unlock();
+        }
+        if ( reqType == "CCREATE" ) {
+            lobbyMsg = rawdata.back();
+            LOG( lobbyMsg );
+        }
+    } else if ( reqType == "CCHAL" ) {
+        hostSuccess = true;
+    } else if ( reqType == "CJOINF" ) {
+        lobbyError = rawdata[1];
+        owner->unlock( this );
+    } else if ( reqType == "CERROR" ) {
+        lobbyError = rawdata[1];
+        owner->unlock( this );
     }
 
     if ( owner && !connectionSuccess ) {
         connectionSuccess = true;
+        LOG("D");
         owner->unlock( this );
+    }
+    if ( owner && !newRequestSuccess ) {
+        if ( ( mode == CONCERTO_BROWSE && reqType == "CLIST" ) ||
+             ( mode == CONCERTO_LOBBY && reqType == "CLOBBY" ) ) {
+            newRequestSuccess = true;
+            LOG("D");
+            owner->unlock( this );
+        }
     }
     if ( owner && !hostResponse ) {
         hostResponse = true;
@@ -158,7 +245,16 @@ void Lobby::timerExpired ( Timer *timer )
     LOG( "Timer Expired Callback" );
     ASSERT ( _timer.get() == timer );
 
-    const string request = format ( "LIST,none" );
+    string request;
+    if ( mode == DEFAULT_LOBBY ) {
+        request = format ( "LIST,none" );
+    } else if ( mode == CONCERTO_BROWSE ) {
+        request = format ( "CLIST,none" );
+    } else if ( mode == CONCERTO_LOBBY ) {
+        request = format( "CLOBBY,none");
+    } else {
+        return;
+    }
     LOG ( "Sending request:\n%s", request );
 
     _timer.reset ( new Timer ( this ) );
@@ -170,6 +266,19 @@ void Lobby::timerExpired ( Timer *timer )
         if ( owner )
             owner->connectionFailed ( this );
     }
+}
+
+void Lobby::fetchPublicLobby()
+{
+    LOG( "Fetch public lobbies" );
+    const string request = format ( "CLIST,none" );
+    if ( ! _socket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+    newRequestSuccess = false;
 }
 
 void Lobby::run()
@@ -206,6 +315,33 @@ void Lobby::host( string name, IpAddrPort port ) {
     }
 }
 
+void Lobby::challenge( string target, IpAddrPort port ) {
+    hostSuccess = false;
+    string portStr = port.str();
+    hostResponse = false;
+    const string request = format ( "CCHAL," + target + "|" + portStr );
+    _timer.reset ( new Timer ( this ) );
+    _timer->start ( 3000 );
+    LOG( request );
+    if ( ! _socket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+}
+
+void Lobby::end() {
+    const string request = format ( "CEND," );
+    LOG( request );
+    if ( ! _socket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+}
+
 void Lobby::unhost() {
     const string request = format ( "UNHOST,none" );
     if ( ! _socket->send ( &request[0], request.size() ) ) {
@@ -214,4 +350,75 @@ void Lobby::unhost() {
         if ( owner )
             owner->connectionFailed ( this );
     }
+}
+
+string Lobby::join( string name, int selection ) {
+    string code = roomcodes[selection];
+    join( name, code );
+    return code;
+}
+
+void Lobby::join( string name, string code ) {
+    const string request = format ( "CJOIN," + name + "|" + code );
+    _timer.reset ( new Timer ( this ) );
+    _timer->start ( 3000 );
+    LOG( request );
+    if ( ! _socket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+
+    newRequestSuccess = false;
+}
+
+void Lobby::preaccept( string code ) {
+    const string request = format ( "CPREACCEPT," + code );
+    _timer.reset ( new Timer ( this ) );
+    _timer->start ( 3000 );
+    LOG( request );
+    if ( ! _socket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+}
+
+void Lobby::accept() {
+    const string request = format ( "CACCEPT," );
+    LOG( request );
+    if ( ! _socket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+}
+
+void Lobby::create( string name, string type ) {
+    const string request = format ( "CCREATE," + name + "|" + type );
+    _timer.reset ( new Timer ( this ) );
+    _timer->start ( 3000 );
+    LOG( request );
+    if ( ! _socket->send ( &request[0], request.size() ) ) {
+        LOG ( "Failed to send request!" );
+
+        if ( owner )
+            owner->connectionFailed ( this );
+    }
+    newRequestSuccess = false;
+}
+
+bool Lobby::checkLobbyCode( string code ) {
+    if ( code.size() != 4 ) {
+        return false;
+    }
+    for ( uint32_t i; i < 4; ++i ) {
+        if ( !isdigit( code[0] ) ) {
+            return false;
+        }
+    }
+    return true;
 }

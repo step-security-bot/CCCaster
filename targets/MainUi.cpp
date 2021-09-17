@@ -140,6 +140,7 @@ void MainUi::server ( RunFuncPtr run )
             {
             case 0:
                 lobby( run );
+                _lobby.reset();
                 if ( ! sessionError.empty() ) {
                     _ui->pushBelow ( new ConsoleUi::TextBox ( sessionError ), { 1, 0 } ); // Expand width
                     sessionError.clear();
@@ -164,6 +165,14 @@ void MainUi::server ( RunFuncPtr run )
     serverMode = false;
 }
 
+void MainUi::wait() {
+    while ( uiCondVar.wait ( uiMutex, 2500 ) ) {
+        if ( ! EventManager::get().isRunning() ) {
+            break;
+        }
+    }
+}
+
 void MainUi::lobby( RunFuncPtr run )
 {
     _lobby.reset( new Lobby( this ) );
@@ -175,7 +184,7 @@ void MainUi::lobby( RunFuncPtr run )
 
     display ( "Connecting to server..." );
     LOCK ( uiMutex );
-    uiCondVar.wait ( uiMutex );
+    wait();
     _ui->pop();
     if ( ! EventManager::get().isRunning() ) {
         sessionError = "Failed to connect";
@@ -183,7 +192,11 @@ void MainUi::lobby( RunFuncPtr run )
     }
     lobbyText =_lobby->getMenu();
     lobbyIps =_lobby->getIps();
-    ConsoleUi::Element* menu = new ConsoleUi::Menu ( "Lobby", lobbyText, "Exit" );
+    ConsoleUi::Element* menu = new ConsoleUi::Menu ( "Lobby", { "Public Lobbies",
+                                                                "Create Lobby",
+                                                                "Enter Lobby Code"
+                                                              },
+        "Exit" );
 
     _ui->pushInFront ( menu );
     _ui->clearRight();
@@ -192,6 +205,7 @@ void MainUi::lobby( RunFuncPtr run )
     bool addressSelected = false;
     string lobbyBase = "Lobby";
     string lobbyDisplay = lobbyBase;
+    string name = _config.getString ( "displayName" );
     for ( ;; )
     {
         if ( ! _lobby->isRunning() || ! EventManager::get().isRunning() ) {
@@ -205,6 +219,7 @@ void MainUi::lobby( RunFuncPtr run )
         lobbyText =_lobby->getMenu();
         numEntries =_lobby->numEntries;
         lobbyIps =_lobby->getIps();
+        lobbyIds =_lobby->getIds();
         _lobby->entryMutex.unlock();
         LOG("releasing lobby mutex");
         int oldPos = _ui->top<ConsoleUi::Menu>()->getPosition();
@@ -214,56 +229,166 @@ void MainUi::lobby( RunFuncPtr run )
                                                  "Exit"
                                                  ) );
         _ui->top<ConsoleUi::Menu>()->setPosition ( oldPos );
-        _ui->top<ConsoleUi::Menu>()->setTimeout ( 5 );
+        _ui->top<ConsoleUi::Menu>()->setTimeout ( 2 );
         int mode = _ui->popUntilUserInput ( false )->resultInt; // Clear other messages since we're starting the game now
         if ( mode == MENUTIMEOUT ) {
             LOG( "menutimeout" );
             continue;
         }
-        if ( mode < 0 || mode >= 20 ) {
-            break;
-        } else if ( mode >= numEntries  ) {
-            //Hosting
-            LOG( "Hosting" );
-            _address = "46318";
-            string name = _config.getString ( "displayName" );
-            try {
-                _lobby->host( name, _address );
-            } catch (std::exception& e) {
-                LOG( e.what() );
+
+        if ( _lobby->mode == MENU ) {
+            if ( mode < 0 || mode >= 4 ) {
+                break;
+            } else if ( mode == 0 ) {
+                _lobby->mode = CONCERTO_BROWSE;
+                display ( "Fetching public lobbies..." );
+                lobbyDisplay = "  | Room | Players";
+                _lobby->fetchPublicLobby();
+                wait();
+                _ui->pop();
+            } else if ( mode == 1 ) {
+                display ( "Creating lobby..." );
+                _lobby->create( name, "Public" );
+                wait();
+                _ui->pop();
+                if ( _lobby->mode != CONCERTO_LOBBY ) {
+                    lobbyDisplay = lobbyBase + " - Error creating lobby";
+                } else {
+                    lobbyDisplay = "Room code: " + _lobby->lobbyMsg;
+                }
+            } else if ( mode == 2 ) {
+                _ui->pushInFront ( new ConsoleUi::Prompt ( ConsoleUi::Prompt::String,
+                                                           "Enter lobby code:" ),
+                                   { 1, 0 }, true ); // Expand width and clear top
+                _ui->popUntilUserInput();
+                string result = _ui->top()->resultStr;
+                _ui->pop();
+                LOG( result);
+                if ( _lobby->checkLobbyCode( result ) ) {
+                    display ( "Joining lobby..." );
+                    _lobby->join( name, result );
+                    lobbyDisplay = "Room code: " + result;
+                    wait();
+                    _ui->pop();
+                    if ( _lobby->mode != CONCERTO_LOBBY )
+                        lobbyDisplay = lobbyBase + " - Invalid lobby code";
+                } else {
+                    lobbyDisplay = lobbyBase + " - Invalid lobby code";
+                }
+            } else if ( mode == 3 ) {
+                _lobby->mode = DEFAULT_LOBBY;
             }
-            uiCondVar.wait ( uiMutex );
-            if ( _lobby->hostSuccess ) {
-                initialConfig.mode.value = ClientMode::Host;
+        } else if ( _lobby->mode == CONCERTO_BROWSE ) {
+            if ( mode < 0 || mode >= numEntries ) {
+                break;
+            } else {
+                display ( "Joining lobby..." );
+                string code = _lobby->join( name, mode );
+                lobbyDisplay = "Room code: " + code;
+                wait();
+                _ui->pop();
+                if ( _lobby->mode != CONCERTO_LOBBY )
+                    lobbyDisplay = "  | Room | Players | Error: " + _lobby->lobbyError;
+            }
+        } else if ( _lobby->mode == CONCERTO_LOBBY ) {
+            if ( mode < 0 || mode >= numEntries ) {
+                break;
+            } else {
+                if ( lobbyIps[ mode ] == "None" ) {
+                    //Hosting
+                    LOG( "Hosting" );
+                    _address = "46318";
+                    try {
+                        _lobby->challenge( lobbyIds[mode], _address );
+                    } catch (std::exception& e) {
+                        LOG( e.what() );
+                    }
+                    wait();
+                    if ( _lobby->hostSuccess ) {
+                        initialConfig.mode.value = ClientMode::Host;
+                        addressSelected = true;
+                        LOG( "Lobby host Prerun");
+                        RUN ( _address, initialConfig );
+                        LOG( "Lobby host Postrun");
+                        _ui->popNonUserInput();
+                        LOG( "Lobby preunhost");
+                        _lobby->unhost();
+                        LOG( "Lobby postunhost");
+                        if ( ! sessionError.empty() ) {
+                            lobbyDisplay = lobbyBase + " - " + sessionError;
+                            sessionError.clear();
+                        }
+                    }
+                    // TODO
+                    // unhost msg
+                    try {
+                        _lobby->end();
+                    } catch (std::exception& e) {
+                        LOG( e.what() );
+                    }
+                } else {
+                    //Connecting
+                    LOG( "Lobby Connecting" );
+                    _lobby->preaccept( lobbyIds[mode] );
+                    initialConfig.mode.value = ClientMode::Client;
+                    _netplayConfig.clear();
+                    _address = lobbyIps[ mode ];
+                    addressSelected = true;
+                    LOG( "Lobby join Prerun");
+                    RUN ( _address, initialConfig );
+                    LOG( "Lobby join Postrun");
+                    _ui->popNonUserInput();
+                    if ( ! sessionError.empty() ) {
+                        lobbyDisplay = lobbyBase + " - " + sessionError;
+                        sessionError.clear();
+                    }
+                }
+            }
+        } else if ( _lobby->mode == DEFAULT_LOBBY ) {
+            if ( mode < 0 || mode >= 20 ) {
+                break;
+            } else if ( mode >= numEntries  ) {
+                //Hosting
+                LOG( "Hosting" );
+                _address = "46318";
+                try {
+                    _lobby->host( name, _address );
+                } catch (std::exception& e) {
+                    LOG( e.what() );
+                }
+                uiCondVar.wait ( uiMutex );
+                if ( _lobby->hostSuccess ) {
+                    initialConfig.mode.value = ClientMode::Host;
+                    addressSelected = true;
+                    LOG( "Lobby host Prerun");
+                    RUN ( _address, initialConfig );
+                    LOG( "Lobby host Postrun");
+                    _ui->popNonUserInput();
+                    LOG( "Lobby preunhost");
+                    _lobby->unhost();
+                    LOG( "Lobby postunhost");
+                    if ( ! sessionError.empty() ) {
+                        lobbyDisplay = lobbyBase + " - " + sessionError;
+                        sessionError.clear();
+                    }
+                } else {
+                    lobbyDisplay = lobbyBase + " - Lobby Full";
+                }
+            } else {
+                //Connecting
+                LOG( "Connecting" );
+                initialConfig.mode.value = ClientMode::Client;
+                _netplayConfig.clear();
+                _address = lobbyIps[ mode ];
                 addressSelected = true;
-                LOG( "Lobby host Prerun");
+                LOG( "Lobby join Prerun");
                 RUN ( _address, initialConfig );
-                LOG( "Lobby host Postrun");
+                LOG( "Lobby join Postrun");
                 _ui->popNonUserInput();
-                LOG( "Lobby preunhost");
-                _lobby->unhost();
-                LOG( "Lobby postunhost");
                 if ( ! sessionError.empty() ) {
                     lobbyDisplay = lobbyBase + " - " + sessionError;
                     sessionError.clear();
                 }
-            } else {
-                lobbyDisplay = lobbyBase + " - Lobby Full";
-            }
-        } else {
-            //Connecting
-            LOG( "Connecting" );
-            initialConfig.mode.value = ClientMode::Client;
-            _netplayConfig.clear();
-            _address = lobbyIps[ mode ];
-            addressSelected = true;
-            LOG( "Lobby join Prerun");
-            RUN ( _address, initialConfig );
-            LOG( "Lobby join Postrun");
-            _ui->popNonUserInput();
-            if ( ! sessionError.empty() ) {
-                lobbyDisplay = lobbyBase + " - " + sessionError;
-                sessionError.clear();
             }
         }
     }
@@ -284,8 +409,8 @@ void MainUi::lobby( RunFuncPtr run )
         _ui->pop();
     }
     LOG( "Lobby reset pointer");
-    _lobby.reset( new Lobby( this ) );
-    _lobby.reset();
+    //_lobby.reset( new Lobby( this ) );
+    //_lobby.reset();
     LOG( "Lobby exiting");
 }
 
@@ -1978,6 +2103,12 @@ void MainUi::openChangeLog()
         system ( ( "\"start \"Viewing change log\" notepad " + file + "\"" ).c_str() );
 }
 
+void MainUi::sendConnected() {
+    if ( _lobby ) {
+        _lobby->accept();
+    }
+}
+
 void MainUi::fetch ( const MainUpdater::Type& type )
 {
     if ( type != MainUpdater::Type::Version )
@@ -2121,3 +2252,4 @@ void MainUi::hostReady() {
         _mmm->sendHostReady();
     }
 }
+

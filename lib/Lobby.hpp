@@ -12,6 +12,14 @@ enum GameType
     WinnerStaysOn,
 };
 
+enum LobbyMode
+{
+    MENU,
+    CONCERTO_BROWSE,
+    CONCERTO_LOBBY,
+    DEFAULT_LOBBY,
+};
+
 class Lobby
     : Socket::Owner
     , Timer::Owner
@@ -28,6 +36,7 @@ public:
 
     std::vector<std::string> getMenu();
     std::vector<std::string> getIps();
+    std::vector<std::string> getIds();
 
     Lobby ( Owner* owner );
 
@@ -35,6 +44,15 @@ public:
     void disconnect();
     void host( std::string name, IpAddrPort port );
     void unhost();
+    std::string join( std::string name, int selection );
+    void join( std::string name, std::string code );
+    void challenge( std::string target, IpAddrPort port );
+    void create( std::string name, std::string type );
+    void preaccept( std::string id );
+    void accept();
+    void end();
+    void fetchPublicLobby();
+    bool checkLobbyCode( std::string code );
 
     void init( Owner* owner );
 
@@ -43,10 +61,16 @@ public:
     uint64_t timeout;
     IpAddrPort _address;
     bool connectionSuccess;
+    bool newRequestSuccess;
 
     int numEntries;
     bool hostSuccess;
     Mutex entryMutex;
+    LobbyMode mode;
+
+    std::string lobbyError;
+    std::string lobbyMsg;
+
 
 private:
     SocketPtr _socket;
@@ -56,7 +80,12 @@ private:
     std::string blankEntry;
 
     std::vector<std::string> entries;
+    std::vector<std::string> lobbyentries;
+    std::vector<std::string> publiclobbies;
+    std::vector<std::string> roomcodes;
     std::vector<std::string> ips;
+    std::vector<std::string> lobbyips;
+    std::vector<std::string> lobbyids;
 
     bool hostResponse;
 
