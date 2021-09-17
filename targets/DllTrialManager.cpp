@@ -246,6 +246,7 @@ void handleTrialFile( string fileName ) {
                     fdemo.push_back( stringToDemoInput( str ) );
                 }
                 demoInputs = unformatDemo( fdemo );
+            } else if ( str == "PartnerInputs" ) {
             }
         }
     }
@@ -345,14 +346,17 @@ int getHitcount()
 void frameStepTrial()
 {
     uint32_t seqAddr;
+    uint32_t partnerAddr;
     if ( *CC_P1_PUPPET_STATE_ADDR ) {
         seqAddr = *CC_P3_SEQUENCE_ADDR;
+        partnerAddr = *CC_P1_SEQUENCE_ADDR;
     } else {
         seqAddr = *CC_P1_SEQUENCE_ADDR;
+        partnerAddr = *CC_P3_SEQUENCE_ADDR;
     }
     if ( charaTrials.empty() ) {
         char buf[1000];
-        sprintf(buf, "currSeq=%03d", seqAddr );
+        sprintf(buf, "partnerSeq=%03d, currSeq=%03d", partnerAddr, seqAddr );
         dtext = buf;
         return;
     }
@@ -369,9 +373,10 @@ void frameStepTrial()
             seqAddr,
             currentTrial.comboSeq[comboTrialPosition]);
     */
-    sprintf(buf, "ghc=%03d, hitcount=%03d, currSeq=%03d, exSeq=%02d",
+    sprintf(buf, "ghc=%03d, hitcount=%03d, partnerSeq=%03d, currSeq=%03d, exSeq=%02d",
             getHitcount(),
             currentHitcount,
+            partnerAddr,
             seqAddr,
             currentTrial.comboSeq[comboTrialPosition]);
     dtext = buf;
@@ -382,9 +387,10 @@ void frameStepTrial()
             comboStart = true;
             currentHitcount = getHitcount();
         } else if ( ( seqAddr == currentTrial.comboSeq[comboTrialPosition] ||
-                      ( ( currentTrial.comboSeq[comboTrialPosition] == 0 ) && ( seqAddr == CC_SEQ_CROUCH_TRANSITION ) ) )
+                      ( ( currentTrial.comboSeq[comboTrialPosition] == 0 ) && ( seqAddr == CC_SEQ_CROUCH_TRANSITION ) ) ||
+                      ( ( currentTrial.comboHit[comboTrialPosition] == 2 ) && ( partnerAddr == currentTrial.comboSeq[comboTrialPosition] ) ) )
                     && comboStart &&
-                    ( ( currentTrial.comboHit[comboTrialPosition]) ?
+                    ( ( currentTrial.comboHit[comboTrialPosition] == 1 ) ?
                       ( getHitcount() > currentHitcount ) : true ) ) {
             comboTrialPosition += 1;
             currentHitcount = getHitcount();
