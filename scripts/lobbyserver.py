@@ -146,8 +146,7 @@ class ConcertoClient:
         if self.state == "Room":
             self.name = name
             r = requests.get(url=CONCERTO, params={'action':'create',
-                                                   #'type':roomtype,
-                                                   'type':'private',
+                                                   'type':roomtype,
                                                    'name':self.name},
                              timeout=DEFAULTTIMEOUT).json()
             print(r)
@@ -224,7 +223,7 @@ class ConcertoClient:
                                                'p':self.playerid},
                          timeout=DEFAULTTIMEOUT).json()
 
-    def end( self, target, ip ):
+    def end( self ):
         r = requests.get(url=CONCERTO, params={'action':'end',
                                                'id':self.roomcode,
                                                'secret':self.secret,
