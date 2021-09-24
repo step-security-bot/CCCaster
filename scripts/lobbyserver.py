@@ -95,6 +95,15 @@ class Lobby:
             return True
         return False
 
+def requestTimeoutDecorator(func):
+    def _decorator(self, *args, **kwargs):
+        # access a from TestSample
+        try:
+            return func(self, *args, **kwargs)
+        except requests.exceptions.ReadTimeout:
+            self.live = False
+    return _decorator
+
 namelen = 46
 class ConcertoClient:
     def __init__( self ):
@@ -114,6 +123,7 @@ class ConcertoClient:
     def list( self ):
         return self.publicLobbies
 
+    @requestTimeoutDecorator
     async def update( self ):
         async with self.lock:
             if self.state == "Room":
@@ -128,9 +138,9 @@ class ConcertoClient:
 
             elif self.state == "Lobby":
                 r = requests.get(url=CONCERTO, params={'action':'status',
-                                                    'id':self.roomcode,
-                                                    'secret':self.secret,
-                                                    'p':self.playerid},
+                                                       'id':self.roomcode,
+                                                       'secret':self.secret,
+                                                       'p':self.playerid},
                                 timeout=DEFAULTTIMEOUT).json()
                 if 'status' in r and r['status'] == "OK":
                     self.challenges = {}
@@ -142,13 +152,14 @@ class ConcertoClient:
                 else:
                     self.live = False
 
+    @requestTimeoutDecorator
     def create( self, name, roomtype ):
         if self.state == "Room":
             self.name = name
             r = requests.get(url=CONCERTO, params={'action':'create',
                                                    'type':roomtype,
                                                    'name':self.name},
-                             timeout=DEFAULTTIMEOUT).json()
+                            timeout=DEFAULTTIMEOUT).json()
             print(r)
             if 'status' in r and r['status'] == "OK":
                 self.secret = r['secret']
@@ -166,6 +177,7 @@ class ConcertoClient:
         else:
             self.live = False
 
+    @requestTimeoutDecorator
     def join( self, name, code, ip ):
         self.name = name
         self.roomcode = code
@@ -191,6 +203,7 @@ class ConcertoClient:
             self.live = False
             return False
 
+    @requestTimeoutDecorator
     def challenge( self, target, ip ):
         if self.state == "Lobby":
             r = requests.get(url=CONCERTO, params={'action':'challenge',
@@ -207,6 +220,7 @@ class ConcertoClient:
         else:
             self.live = False
 
+    @requestTimeoutDecorator
     def preaccept( self ):
         r = requests.get(url=CONCERTO, params={'action':'pre_accept',
                                                'id':self.roomcode,
@@ -215,6 +229,7 @@ class ConcertoClient:
                                                'p':self.playerid},
                          timeout=DEFAULTTIMEOUT).json()
 
+    @requestTimeoutDecorator
     def accept( self ):
         r = requests.get(url=CONCERTO, params={'action':'accept',
                                                'id':self.roomcode,
@@ -223,6 +238,7 @@ class ConcertoClient:
                                                'p':self.playerid},
                          timeout=DEFAULTTIMEOUT).json()
 
+    @requestTimeoutDecorator
     def end( self ):
         r = requests.get(url=CONCERTO, params={'action':'end',
                                                'id':self.roomcode,

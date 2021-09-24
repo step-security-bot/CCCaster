@@ -247,8 +247,17 @@ void MainUi::lobby( RunFuncPtr run )
                 wait();
                 _ui->pop();
             } else if ( mode == 1 ) {
+                _ui->pushInFront ( new ConsoleUi::Menu ( "Room Type",
+                                                         { "Public",
+                                                           "Private" },
+                                                         "Exit" ),
+                                   { 1, 0 }, true ); // Expand width and clear top
+                _ui->popUntilUserInput();
+                string result = _ui->top()->resultStr;
+                _ui->pop();
+                LOG( result );
                 display ( "Creating lobby..." );
-                _lobby->create( name, "Public" );
+                _lobby->create( name, result );
                 wait();
                 _ui->pop();
                 if ( _lobby->mode != CONCERTO_LOBBY ) {
@@ -319,8 +328,6 @@ void MainUi::lobby( RunFuncPtr run )
                             sessionError.clear();
                         }
                     }
-                    // TODO
-                    // unhost msg
                     try {
                         _lobby->end();
                     } catch (std::exception& e) {

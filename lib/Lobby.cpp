@@ -412,11 +412,11 @@ void Lobby::create( string name, string type ) {
 }
 
 bool Lobby::checkLobbyCode( string code ) {
-    if ( code.size() != 4 ) {
+    if ( code.size() < 2 || code.size() > 8 ) {
         return false;
     }
-    for ( uint32_t i; i < 4; ++i ) {
-        if ( !isdigit( code[0] ) ) {
+    for ( uint32_t i; i < code.size(); ++i ) {
+        if ( !isalnum( code[i] ) ) {
             return false;
         }
     }
