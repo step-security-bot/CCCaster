@@ -355,13 +355,16 @@ void frameStepTrial()
         partnerAddr = *CC_P3_SEQUENCE_ADDR;
     }
     if ( charaTrials.empty() ) {
+#ifndef RELEASE
         char buf[1000];
         sprintf(buf, "partnerSeq=%03d, currSeq=%03d", partnerAddr, seqAddr );
         dtext = buf;
+#endif // RELEASE
         return;
     }
 
     Trial currentTrial = charaTrials[currentTrialIndex];
+#ifndef RELEASE
     char buf[1000];
     /*
     sprintf(buf, "temp1=%d, temp=%d, ehitC=%d, rhitc=%02d,cCombo=%02d, p2cseq=%03d, currSeq=%03d, exSeq=%02d",
@@ -380,6 +383,7 @@ void frameStepTrial()
             seqAddr,
             currentTrial.comboSeq[comboTrialPosition]);
     dtext = buf;
+#endif // RELEASE
     if ( !comboDrop ) {
         if ( seqAddr == currentTrial.comboSeq[0] &&
              *CC_P2_SEQUENCE_ADDR != 0 && !comboStart ) {
