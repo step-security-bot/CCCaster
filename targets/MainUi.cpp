@@ -1953,7 +1953,7 @@ string MainUi::getUpdate ( bool isStartup )
         return "Cannot fetch info for " + _updater.getTargetDescName() + " version";
     }
 
-    if ( LocalVersion.isSimilar ( _updater.getTargetVersion(), _config.getInteger("updateChannel") ? 3 : 2 ) )
+    if ( LocalVersion.isSimilar ( _updater.getTargetVersion(), ( _config.getInteger("updateChannel") - 1 ) ? 3 : 2 ) )
     {
         _upToDate = true;
         if ( ! isStartup )
