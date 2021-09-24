@@ -230,7 +230,7 @@ void MainUi::lobby( RunFuncPtr run )
                                                  ) );
         _ui->top<ConsoleUi::Menu>()->setPosition ( oldPos );
         _ui->top<ConsoleUi::Menu>()->setTimeout ( 2 );
-        int mode = _ui->popUntilUserInput ( false )->resultInt; // Clear other messages since we're starting the game now
+        int mode = _ui->popUntilUserInput ( false )->resultInt;
         if ( mode == MENUTIMEOUT ) {
             LOG( "menutimeout" );
             continue;
@@ -252,18 +252,19 @@ void MainUi::lobby( RunFuncPtr run )
                                                            "Private" },
                                                          "Exit" ),
                                    { 1, 0 }, true ); // Expand width and clear top
-                _ui->popUntilUserInput();
-                string result = _ui->top()->resultStr;
+                int mode = _ui->popUntilUserInput ( false )->resultInt;
                 _ui->pop();
-                LOG( result );
-                display ( "Creating lobby..." );
-                _lobby->create( name, result );
-                wait();
-                _ui->pop();
-                if ( _lobby->mode != CONCERTO_LOBBY ) {
-                    lobbyDisplay = lobbyBase + " - Error creating lobby";
-                } else {
-                    lobbyDisplay = "Room code: " + _lobby->lobbyMsg;
+                if ( mode >= 0 && mode < 2 ) {
+                    display ( "Creating lobby..." );
+                    string result = mode ? "Private" : "Public";
+                    _lobby->create( name, result );
+                    wait();
+                    _ui->pop();
+                    if ( _lobby->mode != CONCERTO_LOBBY ) {
+                        lobbyDisplay = lobbyBase + " - Error creating lobby";
+                    } else {
+                        lobbyDisplay = "Room code: " + _lobby->lobbyMsg;
+                    }
                 }
             } else if ( mode == 2 ) {
                 _ui->pushInFront ( new ConsoleUi::Prompt ( ConsoleUi::Prompt::String,
