@@ -152,7 +152,7 @@ bool DllRollbackManager::loadState ( IndexedFrame indexedFrame, NetplayManager& 
             // Count the number of frames rolled back
             int rbFrames;
             if ( !netMan.config.mode.isTraining() ) {
-                int rbFrames = _statesList.back().indexedFrame.value - it->indexedFrame.value;
+                rbFrames = _statesList.back().indexedFrame.value - it->indexedFrame.value;
                 LOG("Rolled back %i frames", rbFrames);
             }
             // Erase all other states after the current one.
@@ -164,17 +164,31 @@ bool DllRollbackManager::loadState ( IndexedFrame indexedFrame, NetplayManager& 
 
             // Disable rollback for input history if in training mode
             if ( !netMan.config.mode.isTraining() ) {
+                LOG( "Fixing input history for rbFrames %d", rbFrames );
                 // Erase one frame of inputs from the game's replay structs for each frame rolled back.
                 for (; rbFrames > 0; rbFrames--) {
-                    if (!*(RepRound**)CC_REPROUND_TBL_ENDPTR_ADDR) break;
+                    if (!*(RepRound**)CC_REPROUND_TBL_ENDPTR_ADDR) {
+                        LOG( "Missing replay table" );
+                        break;
+                    }
                     RepRound* curRound = (*(RepRound**)CC_REPROUND_TBL_ENDPTR_ADDR - 1);
-                    if (!curRound->inputs) break;
+                    LOG( "%d", curRound );
+                    if (!curRound->inputs) {
+                        LOG( "Missing inputs" );
+                        break;
+                    }
                     // Assumes there are always containers for 4 players in input container table; may not be true
                     for (int i=0; i<4; i++) {
                         RepInputContainer* inputs = &(curRound->inputs[i]);
-                        if (!inputs->states) continue;
+                        if (!inputs->states) {
+                            LOG( "player %d no states", i );
+                            continue;
+                        }
                         RepInputState* state = &(inputs->states[inputs->activeIndex]);
-                        if (!state->frameCount) continue;
+                        if (!state->frameCount) {
+                            LOG( "player %d no framecount", i );
+                            continue;
+                        }
                         if (state->frameCount == 1) {
                             memset(state, 0, sizeof(RepInputState));
                             inputs->statesEnd -= sizeof(RepInputState);
