@@ -1,3 +1,7 @@
+v3.1.002
+- Fixed replays not saving correctly
+- Fixed an issue where UDP connections would not be attempted
+
 v3.1.001
 - Fixed RNG issues in replays with rollback enabled
 - Fixed issue where inputs would be locked if training mode regen was disabled
