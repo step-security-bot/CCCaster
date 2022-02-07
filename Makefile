@@ -35,14 +35,14 @@ CONTRIB_C_SRCS = $(wildcard 3rdparty/*.c)
 
 # Main program sources
 LIB_CPP_SRCS = $(wildcard lib/*.cpp)
-BASE_CPP_SRCS = $(wildcard netplay/*.cpp) $(LIB_CPP_SRCS)
+BASE_CPP_SRCS = $(wildcard netplay/*.cpp) $(LIB_CPP_SRCS) $(wildcard sequences/*.cpp)
 MAIN_CPP_SRCS = $(wildcard targets/Main*.cpp tests/*.cpp) $(BASE_CPP_SRCS)
 DLL_CPP_SRCS = $(wildcard targets/Dll*.cpp) $(filter-out lib/ConsoleUi.cpp,$(BASE_CPP_SRCS))
 
 NON_GEN_SRCS = \
-	$(wildcard netplay/*.cpp tools/*.cpp targets/*.cpp lib/*.cpp tests/*.cpp)
+	$(wildcard netplay/*.cpp tools/*.cpp targets/*.cpp lib/*.cpp tests/*.cpp sequences/*.cpp)
 NON_GEN_HEADERS = \
-	$(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp tests/*.hpp))
+	$(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp tests/*.hpp sequences/*.hpp))
 AUTOGEN_HEADERS = $(wildcard lib/Version.*.hpp lib/Protocol.*.hpp)
 
 # Main program objects
@@ -85,7 +85,7 @@ DEFINES += -DMBAA_EXE='"$(MBAA_EXE)"' -DBINARY='"$(BINARY)"' -DFOLDER='"$(FOLDER
 DEFINES += -DHOOK_DLL='"$(FOLDER)\\$(DLL)"' -DLAUNCHER='"$(FOLDER)\\$(LAUNCHER)"' -DUPDATER='"$(UPDATER)"'
 DEFINES += -DRELAY_LIST='"$(RELAY_LIST)"' -DTAG='"$(TAG)"'
 DEFINES += -DLOBBY_LIST='"$(LOBBY_LIST)"'
-INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/tests -I$(CURDIR)/3rdparty
+INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/tests -I$(CURDIR)/3rdparty -I$(CURDIR)/sequences
 INCLUDES += -I$(CURDIR)/3rdparty/cereal/include -I$(CURDIR)/3rdparty/gtest/include -I$(CURDIR)/3rdparty/minhook/include
 INCLUDES += -I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/framedisplay
 CC_FLAGS = -m32 $(INCLUDES) $(DEFINES)
