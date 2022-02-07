@@ -101,6 +101,13 @@ def requestTimeoutDecorator(func):
         try:
             return func(self, *args, **kwargs)
         except requests.exceptions.ReadTimeout:
+            print("Concerto Connection timed out")
+            self.live = False
+        except requests.exceptions.ReadTimeoutError:
+            print("Concerto Connection timed out")
+            self.live = False
+        except Exception as e:
+            print(f"{e!r}")
             self.live = False
     return _decorator
 
@@ -653,6 +660,7 @@ async def handle_connect(reader, writer):
             name, port = info.split("|")
             if name == "":
                 name = "Anonymous"
+            name = name[:16]
             print("n", name)
             print("p", port)
             print("a", addr)
@@ -755,6 +763,7 @@ async def handle_connect(reader, writer):
             name, code = info.split("|")
             if name == "":
                 name = "Anonymous"
+            name = name[:16]
             if connectionid not in cclients:
                 cclients[connectionid] = ConcertoClient();
             client = cclients[connectionid]
@@ -790,6 +799,7 @@ async def handle_connect(reader, writer):
             name, lobbytype = info.split("|")
             if name == "":
                 name = "Anonymous"
+            name = name[:16]
             if connectionid not in cclients:
                 cclients[connectionid] = ConcertoClient();
             client = cclients[connectionid]
