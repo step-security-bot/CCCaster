@@ -258,6 +258,8 @@ void DllControllerManager::disableTrialMenuOverlay()
     _trialOverlayPositions[2] = 0;
     _trialMenuIndex = 0;
 
+    TrialManager::inputEditorEnabled = false;
+
     // Disable keyboard events, since we use GetKeyState for regular controller inputs
     KeyboardManager::get().unhook();
 
@@ -268,6 +270,162 @@ void DllControllerManager::disableTrialMenuOverlay()
     DllOverlayUi::disable();
 }
 
+void DllControllerManager::handleInputEditor()
+{
+    int input = 0;
+    for ( Controller *controller : _allControllers )
+    {
+        if ( ( controller->isJoystick() && isDirectionPressed ( controller, 8 ) )
+                || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_UP ) ) ) {
+            // Up input
+            input = 8;
+            break;
+        } else if ( ( controller->isJoystick() && isDirectionPressed ( controller, 4 ) )
+                  || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_LEFT ) ) ) {
+            // Left input
+            input = 4;
+            break;
+        } else if ( ( controller->isJoystick() && isDirectionPressed ( controller, 6 ) )
+                || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_RIGHT ) ) ) {
+            // Right input
+            input = 6;
+            break;
+        } else if ( ( controller->isJoystick() && isDirectionPressed ( controller, 2 ) )
+                  || ( controller->isKeyboard() && KeyboardState::isPressed ( VK_DOWN ) ) ) {
+            // Down input
+            input = 2;
+            break;
+        } else if ( ( controller->isJoystick() && isButtonPressed ( controller, CC_BUTTON_A ) )
+                    || ( controller->isKeyboard() && isButtonPressed( controller, CC_BUTTON_A ) ) ) {
+            input = 9;
+            break;
+        } else if ( ( controller->isJoystick() && isButtonPressed ( controller, CC_BUTTON_B ) )
+                || ( controller->isKeyboard() && isButtonPressed( controller, CC_BUTTON_B ) ) ) {
+            input = 10;
+            break;
+        } else if ( ( controller->isJoystick() && isButtonPressed ( controller, CC_BUTTON_E ) )
+                    || ( controller->isKeyboard() && isButtonPressed( controller, CC_BUTTON_E ) ) ) {
+
+            input = 11;
+        }
+        if ( ( controller->isJoystick() && isButtonPressed ( controller, CC_BUTTON_C ) )
+                || ( controller->isKeyboard() && isButtonPressed( controller, CC_BUTTON_C ) ) ) {
+            if ( TrialManager::inputEditorSpeed == 100 ) {
+                TrialManager::inputEditorSpeed = 1;
+            } else {
+                TrialManager::inputEditorSpeed *= 10 ;
+            }
+        } else if ( ( controller->isJoystick() && isButtonPressed ( controller, CC_BUTTON_D ) )
+                || ( controller->isKeyboard() && isButtonPressed( controller, CC_BUTTON_D ) ) ) {
+            input = 12;
+        }
+    }
+    int numYCells = 13;
+    if ( input == 2 ) {
+        if ( TrialManager::inputEditorY > numYCells - 1 ||
+             TrialManager::inputEditorSpeed > 1 ) {
+            TrialManager::inputEditorPosition += TrialManager::inputEditorSpeed;
+        } else {
+            TrialManager::inputEditorY += 1;
+        }
+        //TrialManager::inputEditorY %= 14;
+        if ( TrialManager::inputEditorPosition > 5900 ) {
+            TrialManager::inputEditorPosition = 5900;
+        }
+    }
+    if ( input == 8 ) {
+        if ( ( TrialManager::inputEditorY == 0 &&
+               TrialManager::inputEditorPosition > 0 ) ||
+             TrialManager::inputEditorSpeed > 1 ) {
+            TrialManager::inputEditorPosition -= TrialManager::inputEditorSpeed;
+            if ( TrialManager::inputEditorPosition < 0 ) {
+                TrialManager::inputEditorPosition = 0;
+            }
+        } else {
+            TrialManager::inputEditorY += 13;
+            TrialManager::inputEditorY %= 14;
+        }
+    }
+    if ( input == 4 ) {
+        TrialManager::inputEditorX += 8;
+        TrialManager::inputEditorX %= 9;
+    }
+    if ( input == 6 ) {
+        TrialManager::inputEditorX += 1;
+        TrialManager::inputEditorX %= 9;
+    }
+    int currentRow = TrialManager::inputEditorY + TrialManager::inputEditorPosition;
+    if ( input == 9 ) {
+        if ( TrialManager::inputEditorX == 0 ) {
+            TrialManager::inputEditorBuffer[currentRow] &= ~(1 << 2);
+        }
+        if ( TrialManager::inputEditorX == 2 ) {
+            TrialManager::inputEditorBuffer[currentRow] &= ~(1 << 0);
+        }
+        if ( TrialManager::inputEditorX == 1 ) {
+            TrialManager::inputEditorBuffer[currentRow] &= ~(1 << 3);
+        }
+        if ( TrialManager::inputEditorX == 3 ) {
+            TrialManager::inputEditorBuffer[currentRow] &= ~(1 << 1);
+        }
+        TrialManager::inputEditorBuffer[currentRow] ^= 1 << TrialManager::inputEditorX;
+    }
+    if ( input == 10 ) {
+        saveEdits();
+        DllOverlayUi::enable();
+        TrialManager::showCombo = true;
+        TrialManager::inputEditorEnabled = false;
+        _trialMenuSelection = 0;
+        TrialManager::inputEditorX = 0;
+        TrialManager::inputEditorY = 0;
+    }
+    if ( input == 11 ) {
+        deleteTrialRow( currentRow );
+    }
+    if ( input == 12 ) {
+        insertTrialRow( currentRow );
+    }
+    ControllerManager::get().savePrevStates();
+}
+
+void DllControllerManager::deleteTrialRow( int row )
+{
+    for ( int i = row; i < TrialManager::maxTrialInputs - 2; ++i ) {
+        TrialManager::inputEditorBuffer[i] = TrialManager::inputEditorBuffer[i+1];
+    }
+    TrialManager::inputEditorBuffer[TrialManager::maxTrialInputs-1] = 0;
+}
+
+void DllControllerManager::insertTrialRow( int row )
+{
+    for ( int i = TrialManager::maxTrialInputs - 2; i > row; --i ) {
+        TrialManager::inputEditorBuffer[i] = TrialManager::inputEditorBuffer[i-1];
+    }
+    TrialManager::inputEditorBuffer[row] = 0;
+}
+
+void DllControllerManager::saveEdits()
+{
+    LOG("SaveEdits");
+    vector<uint16_t>* inputs = &(TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs);
+    inputs->clear();
+    int paddingCount = 0;
+    for ( int i = 0; i < 5940; ++i ) {
+        uint16_t bufferInput = TrialManager::inputEditorBuffer[i];
+        if ( bufferInput ) {
+            for ( int j = 0; j < paddingCount; ++j ) {
+                inputs->push_back( 0 );
+            }
+            LOG(bufferInput);
+            inputs->push_back( TrialManager::unconvertInputEditor( bufferInput ) );
+            paddingCount = 0;
+        } else {
+            paddingCount += 1;
+        }
+    }
+    TrialManager::saveTrial();
+}
+
 void DllControllerManager::handleTrialMenuOverlay()
 {
     array<string, 3> text;
@@ -276,16 +434,28 @@ void DllControllerManager::handleTrialMenuOverlay()
     text[0] += "Press Left to cancel\n";
     text[0] += "\n";
 
+    enum Options {
+        TrialSelect = 1,
+        Demo,
+        RecordDemo,
+        EditDemo,
+        InputGuide,
+        Interface,
+        GuideOptions,
+        Exit
+    };
+
     array<vector<string>, 2> options;
     options[0].push_back( "Trial Select\n" );
     options[0].push_back( "Demo\n" );
     options[0].push_back( "Record Demo\n" );
+    options[0].push_back( "Edit Demo\n" );
     options[0].push_back( "Input Guide\n" );
     options[0].push_back( "Interface Size\n" );
     options[0].push_back( "Input Guide Options\n" );
     options[0].push_back( "Exit\n" );
 
-    if ( _trialMenuSelection == 1 ) {
+    if ( _trialMenuSelection == Options::TrialSelect ) {
         if ( TrialManager::charaTrials.size() > 0 ) {
             if ( TrialManager::charaTrials.size() > 10 ) {
                 if ( _trialScrollSelect == 0 ) {
@@ -317,11 +487,11 @@ void DllControllerManager::handleTrialMenuOverlay()
             text[2] += "Press Left to return";
             options[1].push_back( "Press Left to return\n" );
         }
-    } else if ( _trialMenuSelection == 2 ) {
+    } else if ( _trialMenuSelection == Options::Demo ) {
         text[2] = "No demo exists for this trial\n\n";
         text[2] += "Press Left to return";
         options[1].push_back( "Press Left to return\n" );
-    } else if ( _trialMenuSelection == 3 ) {
+    } else if ( _trialMenuSelection == Options::RecordDemo ) {
         if ( TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.empty() ) {
             text[2] = "No trial currently selected\n\n";
             text[2] += "Press Left to return";
@@ -333,9 +503,9 @@ void DllControllerManager::handleTrialMenuOverlay()
             options[1].push_back( "Yes" );
             options[1].push_back( "No" );
         }
-    } else if ( _trialMenuSelection == 4 ) {
+    } else if ( _trialMenuSelection == Options::InputGuide ) {
         options[1].push_back( "Press Left to return\n" );
-    } else if ( _trialMenuSelection == 5 ) {
+    } else if ( _trialMenuSelection == Options::Interface ) {
         text[2] = "Select interface size\n\n";
         text[2] += "Large\n";
         text[2] += "Medium\n";
@@ -343,7 +513,7 @@ void DllControllerManager::handleTrialMenuOverlay()
         options[1].push_back( "Large" );
         options[1].push_back( "Medium" );
         options[1].push_back( "Small" );
-    } else if ( _trialMenuSelection == 6 ) {
+    } else if ( _trialMenuSelection == Options::GuideOptions ) {
         text[2] = "Input guide options\n\n";
         string audioText = "Play audio cue: ";
         audioText += ( TrialManager::playAudioCue ? "Enabled" : "Disabled" );
@@ -353,7 +523,17 @@ void DllControllerManager::handleTrialMenuOverlay()
         text[2] += flashText + "\n";
         options[1].push_back( audioText );
         options[1].push_back( flashText );
+    } else if ( _trialMenuSelection == Options::EditDemo ) {
+        //DllOverlayUi::disable();
+        text[0] = text[1] = text[2] = "";
+        TrialManager::showCombo = false;
+        _trialMenuIndex = 0;
+        TrialManager::inputEditorEnabled = true;
+        DllOverlayUi::updateText ( text );
+        handleInputEditor();
+        return;
     }
+
     vector<string> demooptions;
     vector<string> recordoptions;
 
@@ -395,7 +575,7 @@ void DllControllerManager::handleTrialMenuOverlay()
     }
 
     if ( input == 2 ) {
-        if ( _trialMenuSelection == 1 ) {
+        if ( _trialMenuSelection == Options::TrialSelect ) {
             if ( _trialOverlayPositions[1] == 9 ) {
                 if ( _trialScrollSelect < TrialManager::charaTrials.size() - 10 ) {
                     _trialScrollSelect += 1;
@@ -407,7 +587,7 @@ void DllControllerManager::handleTrialMenuOverlay()
             _trialOverlayPositions[_trialMenuIndex] = ( _trialOverlayPositions[_trialMenuIndex] + 1 ) % options[_trialMenuIndex].size();
         }
     } else if ( input == 8 ) {
-        if ( _trialMenuSelection == 1 ) {
+        if ( _trialMenuSelection == Options::TrialSelect ) {
             if ( _trialOverlayPositions[1] == 0 ) {
                 if ( _trialScrollSelect > 0 ) {
                     _trialScrollSelect -= 1;
@@ -438,7 +618,7 @@ void DllControllerManager::handleTrialMenuOverlay()
         }
     }
 
-    if ( _trialMenuSelection == 1 ) {
+    if ( _trialMenuSelection == Options::TrialSelect ) {
         if ( _trialSubMenuSelection ) {
             int adjustedPosition = _trialOverlayPositions[1] + _trialScrollSelect;
             LOG("trial selected: %s", TrialManager::charaTrials[adjustedPosition].name);
@@ -447,7 +627,7 @@ void DllControllerManager::handleTrialMenuOverlay()
             return;
         }
     }
-    if ( _trialMenuSelection == 2 ) {
+    if ( _trialMenuSelection == Options::Demo ) {
         if ( TrialManager::charaTrials.size() > 0 ) {
             if ( TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.size() > 0 ) {
                 TrialManager::playDemo = true;
@@ -455,7 +635,7 @@ void DllControllerManager::handleTrialMenuOverlay()
             }
         }
     }
-    if ( _trialMenuSelection == 3 ) {
+    if ( _trialMenuSelection == Options::RecordDemo ) {
         if ( TrialManager::charaTrials.size() > 0 ) {
             if ( TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.empty() ||
                  _trialSubMenuSelection == 1 ) {
@@ -473,17 +653,24 @@ void DllControllerManager::handleTrialMenuOverlay()
                 _trialOverlayPositions[1] = 0;
             }
         }
-    } else if ( _trialMenuSelection == 4 ) {
+    } else if ( _trialMenuSelection == Options::EditDemo ) {
+        text[0] = text[1] = text[2] = "";
+        int n = TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs.size();
+        for ( int i = 0; i < n; ++i ) {
+            uint16_t trialInput = TrialManager::charaTrials[TrialManager::currentTrialIndex].demoInputs[i];
+            TrialManager::inputEditorBuffer[i] = TrialManager::convertInputEditor( trialInput );
+        }
+    } else if ( _trialMenuSelection == Options::InputGuide ) {
         TrialManager::inputGuideEnabled = !TrialManager::inputGuideEnabled;
         disableTrialMenuOverlay();
         return;
-    } else if ( _trialMenuSelection == 5 ) {
+    } else if ( _trialMenuSelection == Options::Interface ) {
         if ( _trialSubMenuSelection ) {
             TrialManager::trialScale = _trialSubMenuSelection - 1;
             disableTrialMenuOverlay();
             return;
         }
-    } else if ( _trialMenuSelection == 6 ) {
+    } else if ( _trialMenuSelection == Options::GuideOptions ) {
         if ( _trialSubMenuSelection ) {
             if ( _trialSubMenuSelection == 1) {
                 TrialManager::playAudioCue = !TrialManager::playAudioCue;

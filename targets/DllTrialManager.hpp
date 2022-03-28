@@ -102,6 +102,8 @@ vector<DemoInput> formatDemo( vector<uint16_t> demoInputs );
 vector<uint16_t> unformatDemo( vector<DemoInput> fdemoInputs );
 string getButtons(unsigned int x);
 uint16_t stringToButtons( string input );
+uint16_t convertInputEditor( uint16_t input );
+uint16_t unconvertInputEditor( uint16_t input );
 DemoInput stringToDemoInput( string input );
 
 extern bool playDemo;
@@ -113,7 +115,14 @@ extern vector<Trial> charaTrials;
 
 extern bool comboDrop;
 extern bool comboStart;
-extern bool inputGuideEnabled;;
+extern bool inputGuideEnabled;
+extern bool inputEditorEnabled;
+extern int inputEditorX;
+extern int inputEditorY;
+extern int inputEditorPosition;
+extern int inputEditorSpeed;
+static int maxTrialInputs = 5940;
+extern uint16_t inputEditorBuffer[5940];
 extern int comboDropPos;
 
 extern int currentHitcount;
@@ -143,6 +152,10 @@ public:
     void drawiidx();
     void drawWineOverlay();
     void drawInputGuide();
+    void drawInputEditor();
+    void drawInputEditorButtons( int x, int y, int frame, uint16_t input, int spacing=27 );
+    void convertInputEditorButtons( int x, int y, int frame, uint16_t input, int spacing=27 );
+    void drawGrid( int x, int y, int thickness, int xspacing, int yspacing, int numX, int numY, ARGB color );
     void drawInputGuideButtons( uint16_t input, uint16_t lastinput, int x );
     void drawAttackDisplay();
     void drawAttackDisplayRow( string label, string value, int y );

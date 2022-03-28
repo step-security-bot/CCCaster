@@ -168,7 +168,7 @@ extern "C" void loadingStateColorCb()
 
     loadingStateColorCb2 ( ptr );
 }
-//extern "C" void (*drawInputHistory) () = (void(*)()) 0x479460;
+extern "C" void (*drawInputHistory) () = (void(*)()) 0x479460;
 
 extern "C" int CallDrawText ( int width, int height, int xAddr, int yAddr, char* text, int textAlpha, int textShade, int textShade2, void* addr, int spacing, int layer, char* out );
 /*
@@ -186,11 +186,13 @@ extern "C" void addExtraDrawCallsCb() {
     renderCallback();
 
     //inputDisplay
-    //*(int*) 0x5585f8 = 0x1;
-    //drawInputHistory();
-    //*(int*) 0x55df0f = 0x1;
-    //drawInputHistory();
-    //*(int*) 0x55df0f = 0x0;
+    /*
+    *(int*) 0x5585f8 = 0x1;
+    drawInputHistory();
+    *(int*) 0x55df0f = 0x1;
+    drawInputHistory();
+    *(int*) 0x55df0f = 0x0;
+    */
 }
 
 extern "C" int loadTextureFromMemory( char* imgbuf1, int img1size, char* imgbuf2, int img2size, int param4 );

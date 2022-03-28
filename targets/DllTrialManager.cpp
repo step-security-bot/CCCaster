@@ -46,6 +46,12 @@ int trialScale;
 bool comboDrop = false;
 bool comboStart = false;
 bool inputGuideEnabled = false;
+bool inputEditorEnabled = false;
+int inputEditorX = 0;
+int inputEditorY = 0;
+int inputEditorPosition = 0;
+int inputEditorSpeed = 1;
+uint16_t inputEditorBuffer[5940] = { 0 };
 bool playInputs = false;
 int comboDropPos = -1;
 int currentHitcount = 0;
@@ -169,6 +175,119 @@ uint16_t stringToButtons( string buttons ) {
     }
     if ( buttons.find("M") != string::npos ) {
         output |= CC_BUTTON_AB;
+    }
+    return output;
+}
+
+uint16_t convertInputEditor( uint16_t input ) {
+    uint16_t output = 0;
+    int direction = input & 0xF;
+    if ( direction == 0 )
+        direction = 5;
+    switch ( direction ) {
+    case 9:
+        output ^= 0b1100;
+        break;
+    case 6:
+        output ^= 0b0100;
+        break;
+    case 3:
+        output ^= 0b0110;
+        break;
+    case 8:
+        output ^= 0b1000;
+        break;
+    case 5:
+        output ^= 0b0000;
+        break;
+    case 2:
+        output ^= 0b0010;
+        break;
+    case 7:
+        output ^= 0b1001;
+        break;
+    case 4:
+        output ^= 0b0001;
+        break;
+    case 1:
+        output ^= 0b0011;
+        break;
+    }
+    int base = 0b10000;
+    input = input >> 4;
+    if ((input & CC_BUTTON_A) != 0) {
+        output ^= base;
+    }
+    base = base << 1;
+    if ((input & CC_BUTTON_B) != 0) {
+        output ^= base;
+    }
+    base = base << 1;
+    if ((input & CC_BUTTON_C) != 0) {
+        output ^= base;
+    }
+    base = base << 1;
+    if ((input & CC_BUTTON_D) != 0) {
+        output ^= base;
+    }
+    base = base << 1;
+    if ((input & CC_BUTTON_E) != 0) {
+        output ^= base;
+    }
+    return output;
+}
+
+uint16_t unconvertInputEditor( uint16_t input ) {
+    uint16_t output = 0;
+    uint16_t direction = input & 0b1111;
+    switch ( direction ) {
+    case 0b1100:
+        output ^= 9;
+        break;
+    case 0b0100:
+        output ^= 6;
+        break;
+    case 0b0110:
+        output ^= 3;
+        break;
+    case 0b1000:
+        output ^= 8;
+        break;
+    case 0:
+        output ^= 0;
+        break;
+    case 0b0010:
+        output ^= 2;
+        break;
+    case 0b1001:
+        output ^= 7;
+        break;
+    case 0b0001:
+        output ^= 4;
+        break;
+    case 0b0011:
+        output ^= 1;
+        break;
+    }
+    int value = 0b10000;
+    if ((input & value) != 0) {
+        output ^= gameInputBits[4].second >> 4;
+    }
+    value = value << 1;
+    if ((input & value) != 0) {
+        output ^= gameInputBits[5].second >> 4;
+    }
+    value = value << 1;
+    if ((input & value) != 0) {
+        output ^= gameInputBits[6].second >> 4;
+    }
+    value = value << 1;
+    if ((input & value) != 0) {
+        output ^= gameInputBits[7].second >> 4;
+    }
+    value = value << 1;
+    if ((input & value) != 0) {
+        output ^= gameInputBits[8].second >> 4;
     }
     return output;
 }
@@ -1448,6 +1567,8 @@ void DllTrialManager::render()
         drawInputGuide();
     if ( ProcessManager::isWine() )
         drawWineOverlay();
+    if ( TrialManager::inputEditorEnabled )
+        drawInputEditor();
 }
 
 void DllTrialManager::drawWineOverlay()
@@ -1525,6 +1646,217 @@ void DllTrialManager::drawWineOverlay()
                 }
             }
         }
+    }
+}
+
+void DllTrialManager::drawGrid( int x, int y, int thickness, int xspacing, int yspacing, int numX, int numY, ARGB color )
+{
+    int width = ( thickness + xspacing ) * numX + thickness;
+    int height = ( thickness + yspacing ) * numY + thickness;
+    int left = x;
+    int top = y;
+    for ( int i = 0; i <= numX; ++i ) {
+        drawSolidRect( left, y, thickness, height, color );
+        left += thickness + xspacing;
+    }
+    for ( int i = 0; i <= numY; ++i ) {
+        drawSolidRect( x, top, width, thickness, color );
+        top += thickness + yspacing;
+    }
+}
+
+void DllTrialManager::drawInputEditor()
+{
+    int inputSpacing = 27;
+    int screenWidth = 640;
+    int gridWidth = ( 9 * 25 + 45 + 11 * 2 );
+    int gridLeftOffset = ( screenWidth - gridWidth ) / 2;
+    int x = gridLeftOffset + 45 + 2;
+    int inputLeft = x + 2;
+    int y = 40;
+
+    // bg
+    drawSolidRect( 0, 34, 640, 480, ARGB{ 220, 0x0, 0x0, 0x0 }, 0x1c0 );
+    // grids
+    drawGrid( gridLeftOffset + 45 + 2, y-3, 2, 25, 25, 9, 15, white);
+    drawGrid( gridLeftOffset, y-3, 2, 45, 25, 1, 15, white);
+
+    // Infotext
+    int infoBoxX = 35;
+    int infoButtonX = 10;
+    int infoBoxY = 150;
+
+    char buf[200];
+    sprintf(buf, "Current Scroll Speed: %d", TrialManager::inputEditorSpeed);
+    string scrollSpeed = string( buf );
+    drawTextWithBorder(scrollSpeed, 320-10*0xa, 480-25, 0xa, 0xe );
+    drawTextWithBorder(":Toggle Input", infoBoxX, infoBoxY, 0xa, 0xe );
+    drawButton( 0, infoButtonX, infoBoxY - 5 );
+    infoBoxY += 30;
+    drawTextWithBorder(":Exit", infoBoxX, infoBoxY, 0xa, 0xe );
+    drawButton( 1, infoButtonX, infoBoxY - 5 );
+    infoBoxY += 30;
+    drawTextWithBorder(":Change Speed", infoBoxX, infoBoxY, 0xa, 0xe );
+    drawButton( 2, infoButtonX, infoBoxY - 5 );
+    infoBoxY += 30;
+    drawTextWithBorder(":Insert Row", infoBoxX, infoBoxY, 0xa, 0xe );
+    drawButton( 3, infoButtonX, infoBoxY - 5 );
+    infoBoxY += 30;
+    drawTextWithBorder(":Delete Row", infoBoxX, infoBoxY, 0xa, 0xe );
+    drawButton( 4, infoButtonX, infoBoxY - 5 );
+    infoBoxY += 30;
+    drawTextWithBorder(":Switch Player", infoBoxX, infoBoxY, 0xa, 0xe );
+    drawButton( 4, infoButtonX, infoBoxY - 5 );
+    infoBoxY += 30;
+    drawTextWithBorder(":Switch Player", infoBoxX, infoBoxY, 0xa, 0xe );
+    drawButton( 4, infoButtonX, infoBoxY - 5 );
+
+    // Selection Square
+    drawSolidRect( x + inputSpacing * ( 0 + TrialManager::inputEditorX ), y - 3 + ( 1 + TrialManager::inputEditorY ) * ( inputSpacing ), 2, inputSpacing, ARGB{ 0xff, 0x0, 0xff, 0x0 }, 0x4c0 );
+    drawSolidRect( x + inputSpacing * ( 0 + TrialManager::inputEditorX ), y - 3 + ( 1 + TrialManager::inputEditorY ) * ( inputSpacing ), inputSpacing, 2, ARGB{ 0xff, 0x0, 0xff, 0x0 }, 0x4c0 );
+    drawSolidRect( x + inputSpacing * ( 1 + TrialManager::inputEditorX ), y - 3 + ( 1 + TrialManager::inputEditorY ) * ( inputSpacing ), 2, inputSpacing, ARGB{ 0xff, 0x0, 0xff, 0x0 }, 0x4c0 );
+    drawSolidRect( x + inputSpacing * ( 0 + TrialManager::inputEditorX ), y - 3 + ( 2 + TrialManager::inputEditorY ) * inputSpacing, inputSpacing, 2, ARGB{ 0xff, 0x0, 0xff, 0x0 }, 0x4c0 );
+
+    drawArrow( 4, inputLeft, 40, 25, 25, 0x2cc );
+    inputLeft += inputSpacing;
+    drawArrow( 2, inputLeft, 40, 25, 25, 0x2cc );
+    inputLeft += inputSpacing;
+    drawArrow( 6, inputLeft, 40, 25, 25, 0x2cc );
+    inputLeft += inputSpacing;
+    drawArrow( 8, inputLeft, 40, 25, 25, 0x2cc );
+    inputLeft += inputSpacing;
+    drawButton( 0, inputLeft, 40, 25, 25, 0x2cc );
+    inputLeft += inputSpacing;
+    drawButton( 1, inputLeft, 40, 25, 25, 0x2cc );
+    inputLeft += inputSpacing;
+    drawButton( 2, inputLeft, 40, 25, 25, 0x2cc );
+    inputLeft += inputSpacing;
+    drawButton( 3, inputLeft, 40, 25, 25, 0x3cc );
+    inputLeft += inputSpacing;
+    drawButton( 4, inputLeft, 40, 25, 25, 0x3cc );
+
+    y += 27;
+    int p = TrialManager::inputEditorPosition;
+    for ( int i = p; i < p+14; ++i ) {
+        drawInputEditorButtons( x + 2, y, i, TrialManager::inputEditorBuffer[i], 27 );
+        y += 27;
+    }
+    /*
+    drawSolidRect( 0, boxHeight - 32, boxWidth, 5, red );
+    drawSolidRect( 0, 0, boxWidth, boxHeight, ARGB{ 0xaa, 0x0, 0x0, 0x0 } );
+    drawSolidRect( 0, boxHeight - 27, boxWidth, 2, white );
+    drawSolidRect( 0, boxHeight, boxWidth, 2, white );
+    drawSolidRect( 0, 0, 2, boxHeight, white );
+    drawSolidRect( 27, 0, 2, boxHeight, white );
+    drawSolidRect( 54, 0, 2, boxHeight, white );
+    drawSolidRect( 81, 0, 2, boxHeight, white );
+
+    drawSolidRect( 2, tmp2, 25, 2, white, 0x2cd );
+    drawSolidRect( 29, tmp2-10, 25, 2, white, 0x2ce );
+    drawSolidRect( 56, tmp2-20, 25, 2, white, 0x2cf );
+    */
+
+}
+
+void DllTrialManager::drawInputEditorButtons( int x, int y, int frame, uint16_t input, int spacing ) {
+    drawTextWithBorder(to_string(frame), x-spacing-19, y+2, 0xa, 0xe );
+    int directionFlags = input & 0xF;
+    if ( directionFlags & 0b0001 ) {
+        drawArrow( 4, x, y );
+    }
+    if ( directionFlags & 0b0010 ) {
+        drawArrow( 2, x+spacing, y );
+    }
+    if ( directionFlags & 0b0100 ) {
+        drawArrow( 6, x+spacing*2, y );
+    }
+    if ( directionFlags & 0b1000 ) {
+        drawArrow( 8, x+spacing*3, y );
+    }
+    int buttonFlags = input >> 4;
+    if ((buttonFlags & 0b00001) != 0) {
+        drawButton( 0, x+spacing*4, y );
+    }
+    if ((buttonFlags & 0b00010) != 0) {
+        drawButton( 1, x+spacing*5, y );
+    }
+    if ((buttonFlags & 0b00100) != 0) {
+        drawButton( 2, x+spacing*6, y );
+    }
+    if ((buttonFlags & 0b01000) != 0) {
+        drawButton( 3, x+spacing*7, y );
+    }
+    if ((buttonFlags & 0b10000) != 0) {
+        drawButton( 4, x+spacing*8, y );
+    }
+}
+
+void DllTrialManager::convertInputEditorButtons( int x, int y, int frame, uint16_t input, int spacing ) {
+    string value = "400";
+    value += to_string( frame );
+    drawTextWithBorder(value, x-spacing, y, 0xa, 0xe );
+    int direction = input & 0xF;
+    if ( direction == 0 )
+        direction = 5;
+    int drawFlags = 0;
+    switch ( direction ) {
+    case 1:
+        drawFlags ^= 0b1100;
+        break;
+    case 2:
+        drawFlags ^= 0b0100;
+        break;
+    case 3:
+        drawFlags ^= 0b0110;
+        break;
+    case 4:
+        drawFlags ^= 0b1000;
+        break;
+    case 5:
+        drawFlags ^= 0b0000;
+        break;
+    case 6:
+        drawFlags ^= 0b0010;
+        break;
+    case 7:
+        drawFlags ^= 0b1001;
+        break;
+    case 8:
+        drawFlags ^= 0b0001;
+        break;
+    case 9:
+        drawFlags ^= 0b0011;
+        break;
+    }
+    if ( drawFlags & 0b1000 ) {
+        drawArrow( 4, x, y );
+    }
+    if ( drawFlags & 0b0100 ) {
+        drawArrow( 2, x+spacing, y );
+    }
+    if ( drawFlags & 0b0010 ) {
+        drawArrow( 6, x+spacing*2, y );
+    }
+    if ( drawFlags & 0b0001 ) {
+        drawArrow( 8, x+spacing*3, y );
+    }
+    if ((input & 0x4100) != 0) {
+        drawButton( 0, x+spacing*4, y );
+    }
+    if ((input & 0x8200) != 0) {
+        drawButton( 1, x+spacing*5, y );
+    }
+    if ((input & 0x0400) != 0) {
+        drawButton( 2, x+spacing*6, y );
+    }
+    if ((input & 0x0080) != 0) {
+        drawButton( 3, x+spacing*7, y );
+    }
+    if ((input & 0x0040) != 0) {
+        drawButton( 4, x+spacing*8, y );
+    }
+    if ((input & 0x0800) != 0) {
+        drawButton( 5, x+spacing*9, y );
     }
 }
 

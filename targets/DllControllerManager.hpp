@@ -5,10 +5,21 @@
 #include "ControllerManager.hpp"
 #include "Controller.hpp"
 #include "DllControllerUtils.hpp"
+//#include "Enum.hpp"
 
 #include <vector>
 #include <array>
-
+/*
+TODO: Delete?
+ENUM ( TrialMenu, None,
+       TrialSelect,
+       Demo,
+       RecordDemo,
+       InputGuide,
+       Interface,
+       GuideOptions,
+       Exit );
+*/
 
 class DllControllerManager
     : private KeyboardManager::Owner
@@ -68,8 +79,12 @@ private:
 
     bool _controllerAttached = false;
 
+    void handleInputEditor();
     void handleTrialMenuOverlay();
+    void deleteTrialRow( int row );
+    void insertTrialRow( int row );
     void handleMappingOverlay();
     void disableTrialMenuOverlay();
+    void saveEdits();
 
 };
