@@ -128,11 +128,13 @@ vector<DemoInput> formatDemo( vector<uint16_t> demoInputs )
     vector<DemoInput> output;
     for ( uint16_t i = 0; i < demoInputs.size(); ++i ) {
         uint16_t input = demoInputs[i];
+        LOG(input);
         if ( input != 0 && input != 0x20 ) {
             int direction = input & 0xF;
             if ( direction == 0 )
                 direction = 5;
             string buttons = getButtons(input);
+            LOG(buttons);
             output.push_back( DemoInput{ i, direction, buttons} );
         }
     }
@@ -231,6 +233,7 @@ void handleTrialFile( string fileName ) {
                     comboHit.push_back( stoi( str ) );
                 }
             } else if ( str == "Demo" ) {
+                LOG("Demo");
                 getline( trialFile, str);
                 int numInputs = stoi( str );
                 for ( int j = 0; j < numInputs; ++j ) {
@@ -238,6 +241,7 @@ void handleTrialFile( string fileName ) {
                     demoInputs.push_back( stoul( str, 0, 16 ) );
                 }
             } else if ( str == "DemoFormatted" ) {
+                LOG("DemoFormatted");
                 getline( trialFile, str);
                 int numInputs = stoi( str );
                 vector<DemoInput> fdemo;
@@ -250,7 +254,7 @@ void handleTrialFile( string fileName ) {
             }
         }
     }
-
+    LOG("Making trial object");
     vector<string> nameFragments = split( fileName, "/" );
     fileName = nameFragments[nameFragments.size() - 1];
     Trial t = { fileName.substr( 0, fileName.size() - 4 ),
@@ -327,6 +331,7 @@ void saveTrial( Trial trial ) {
             trialfile << "DemoFormatted" << endl;
             trialfile << trial.demoInputsFormatted.size() << endl;
             for ( DemoInput input : trial.demoInputsFormatted ) {
+                LOG(input.buttons);
                 trialfile << "F" << input.frame << ": " << input.direction << input.buttons << endl;
             }
         }
@@ -355,16 +360,16 @@ void frameStepTrial()
         partnerAddr = *CC_P3_SEQUENCE_ADDR;
     }
     if ( charaTrials.empty() ) {
-#ifndef RELEASE
+#ifdef LOGGING
         char buf[1000];
         sprintf(buf, "partnerSeq=%03d, currSeq=%03d", partnerAddr, seqAddr );
         dtext = buf;
-#endif // RELEASE
+#endif // LOGGING
         return;
     }
 
     Trial currentTrial = charaTrials[currentTrialIndex];
-#ifndef RELEASE
+#ifdef LOGGING
     char buf[1000];
     /*
     sprintf(buf, "temp1=%d, temp=%d, ehitC=%d, rhitc=%02d,cCombo=%02d, p2cseq=%03d, currSeq=%03d, exSeq=%02d",
@@ -383,7 +388,7 @@ void frameStepTrial()
             seqAddr,
             currentTrial.comboSeq[comboTrialPosition]);
     dtext = buf;
-#endif // RELEASE
+#endif // LOGGING
     if ( !comboDrop ) {
         if ( seqAddr == currentTrial.comboSeq[0] &&
              *CC_P2_SEQUENCE_ADDR != 0 && !comboStart ) {
