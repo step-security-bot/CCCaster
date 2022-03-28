@@ -738,20 +738,20 @@ extern "C" int CallDrawText ( int width, int height, int xAddr, int yAddr, char*
 
 extern "C" int CallDrawRect ( int screenXAddr, int screenYAddr, int width, int height, int A, int B, int C, int D, int layer );
 
-void DllTrialManager::drawButton( int buttonId, int screenX, int screenY, int width, int height )
+void DllTrialManager::drawButton( int buttonId, int screenX, int screenY, int width, int height, int layer )
 {
     // Buttons:
     // 0: A 1: B 2: C 3:D 4:E
     if ( buttonId == 4 ) {
-        CallDrawSprite ( width, 0, (int)TrialManager::trialInputTextures, screenX, screenY, height, 0x19, 75, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+        CallDrawSprite ( width, 0, (int)TrialManager::trialInputTextures, screenX, screenY, height, 0x19, 75, 0x19, 0x19, 0xFFFFFFFF, 0, layer );
     } else {
-        CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*buttonId, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+        CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*buttonId, 0x19, 0x19, 0x19, 0xFFFFFFFF, 0, layer );
     }
 }
 
-void DllTrialManager::drawArrow( int direction, int screenX, int screenY, int width, int height )
+void DllTrialManager::drawArrow( int direction, int screenX, int screenY, int width, int height, int layer )
 {
-    CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*direction, 0, 0x19, 0x19, 0xFFFFFFFF, 0, 0x2cc );
+    CallDrawSprite ( width, 0, *(int*)BUTTON_SPRITE_TEX, screenX, screenY, height, 0x19*direction, 0, 0x19, 0x19, 0xFFFFFFFF, 0, layer );
 }
 
 void DllTrialManager::drawText( string text, int screenX, int screenY, int width, int height, int layer )
