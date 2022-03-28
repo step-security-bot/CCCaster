@@ -767,7 +767,7 @@ void DllTrialManager::drawText( string text, int screenX, int screenY, int width
                    0, 0, 0 );
 }
 
-void DllTrialManager::drawTextWithBorder( string text, int screenX, int screenY, int width, int height, int layer )
+void DllTrialManager::drawTextBorder( string text, int screenX, int screenY, int width, int height, int layer )
 {
     vector<char> ctext(text.begin(), text.end());
     ctext.push_back(0);
@@ -797,6 +797,12 @@ void DllTrialManager::drawTextWithBorder( string text, int screenX, int screenY,
                    (void*) FONT2,
                    0, 0, 0 );
 
+}
+
+void DllTrialManager::drawTextWithBorder( string text, int screenX, int screenY, int width, int height, int layer )
+{
+    drawText( text, screenX, screenY, width, height, layer );
+    drawTextBorder( text, screenX, screenY, width, height, layer );
 }
 
 void DllTrialManager::drawShadowButton( int buttonId, int screenX, int screenY, int width, int height )
@@ -990,105 +996,105 @@ int DllTrialManager::drawMove( Move move, MoveStatus color, int x, int y )
             moveWidth += 25;
         } else if ( token.type == String ) {
             if ( token.text == "Airbackdash" ) {
-                drawText( "A", currX, y+ytextoffset );
+                drawTextWithBorder( "A", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "i", currX, y+ytextoffset );
+                drawTextWithBorder( "i", currX, y+ytextoffset );
                 currX += 24 - 10;
-                drawText( "r", currX, y+ytextoffset );
+                drawTextWithBorder( "r", currX, y+ytextoffset );
                 currX += 24 - 10;
-                drawText( "b", currX, y+ytextoffset );
+                drawTextWithBorder( "b", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "a", currX, y+ytextoffset );
+                drawTextWithBorder( "a", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "c", currX, y+ytextoffset );
+                drawTextWithBorder( "c", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "k", currX, y+ytextoffset );
+                drawTextWithBorder( "k", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "d", currX, y+ytextoffset );
+                drawTextWithBorder( "d", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "a", currX, y+ytextoffset );
+                drawTextWithBorder( "a", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "s", currX, y+ytextoffset );
+                drawTextWithBorder( "s", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "h", currX, y+ytextoffset );
+                drawTextWithBorder( "h", currX, y+ytextoffset );
                 currX += 24;
                 moveWidth += 24*token.text.length() - 20;
             } else if ( token.text == "Airdash" ) {
-                drawText( "A", currX, y+ytextoffset );
+                drawTextWithBorder( "A", currX, y+ytextoffset );
                 currX += 24 - 8;
-                drawText( "i", currX, y+ytextoffset );
+                drawTextWithBorder( "i", currX, y+ytextoffset );
                 currX += 24 - 10;
-                drawText( "r", currX, y+ytextoffset );
+                drawTextWithBorder( "r", currX, y+ytextoffset );
                 currX += 24 - 11;
-                drawText( "d", currX, y+ytextoffset );
+                drawTextWithBorder( "d", currX, y+ytextoffset );
                 currX += 24 - 10;
-                drawText( "a", currX, y+ytextoffset );
+                drawTextWithBorder( "a", currX, y+ytextoffset );
                 currX += 24 - 8;
-                drawText( "s", currX, y+ytextoffset );
+                drawTextWithBorder( "s", currX, y+ytextoffset );
                 currX += 24 - 8;
-                drawText( "h", currX, y+ytextoffset );
+                drawTextWithBorder( "h", currX, y+ytextoffset );
                 currX += 24;
                 moveWidth += 24*token.text.length() -8 -8 -10 -10 - 11 -8;
             } else if ( token.text == "Airdodge" ) {
-                drawText( "A", currX, y+ytextoffset );
+                drawTextWithBorder( "A", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "i", currX, y+ytextoffset );
+                drawTextWithBorder( "i", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "r", currX, y+ytextoffset );
+                drawTextWithBorder( "r", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "d", currX, y+ytextoffset );
+                drawTextWithBorder( "d", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "o", currX, y+ytextoffset );
+                drawTextWithBorder( "o", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "d", currX, y+ytextoffset );
+                drawTextWithBorder( "d", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "g", currX, y+ytextoffset );
+                drawTextWithBorder( "g", currX, y+ytextoffset );
                 currX += 24;
-                drawText( "e", currX, y+ytextoffset );
+                drawTextWithBorder( "e", currX, y+ytextoffset );
                 currX += 24;
                 moveWidth += 24*token.text.length();
             } else {
-                drawText( token.text, currX, y+ytextoffset );
+                drawTextWithBorder( token.text, currX, y+ytextoffset, 24, 24, 0x2cc );
                 currX += 24*token.text.length();
                 moveWidth += 24*token.text.length();
                 if ( token.text[token.text.size() - 1] == ')') {
-                    currX -= 20;
-                    moveWidth -= 20;
+                    currX -= 15;
+                    moveWidth -= 15;
                 }
             }
         } else if ( token.type == Symbol ) {
             if ( token.text[ 0 ] == 'd' ) {
-                drawText( "d", currX, y+ytextoffset );
-                drawText( "j", currX + 14, y+ytextoffset );
-                drawText( ".", currX + 25, y+ytextoffset );
+                drawTextWithBorder( "d", currX, y+ytextoffset );
+                drawTextWithBorder( "j", currX + 14, y+ytextoffset );
+                drawTextWithBorder( ".", currX + 25, y+ytextoffset );
                 currX += 35 + 11;
                 moveWidth += 35 + 11;
             } else if ( token.text[ 0 ] == 'j' ) {
-                drawText( "j", currX, y+ytextoffset );
-                drawText( ".", currX + 10, y+ytextoffset );
+                drawTextWithBorder( "j", currX, y+ytextoffset );
+                drawTextWithBorder( ".", currX + 10, y+ytextoffset );
                 currX += 30;
                 moveWidth += 30;
             } else if ( token.text[ 0 ] == 'A' ) {
-                drawText( "A", currX, y+ytextoffset );
+                drawTextWithBorder( "A", currX, y+ytextoffset );
                 currX += 20;
                 moveWidth += 20;
-                drawText( "d", currX, y+ytextoffset );
+                drawTextWithBorder( "d", currX, y+ytextoffset );
                 currX += 16;
                 moveWidth += 16;
-                drawText( "d", currX, y+ytextoffset );
+                drawTextWithBorder( "d", currX, y+ytextoffset );
                 currX += 14;
                 moveWidth += 14;
-                drawText( ".", currX, y+ytextoffset );
+                drawTextWithBorder( ".", currX, y+ytextoffset );
                 currX += 17;
                 moveWidth += 17;
             } else if ( token.text[ 0 ] == 't' ) {
-                drawText( "t", currX, y+ytextoffset );
+                drawTextWithBorder( "t", currX, y+ytextoffset );
                 currX += 15;
                 moveWidth += 15;
-                drawText( "k", currX, y+ytextoffset );
+                drawTextWithBorder( "k", currX, y+ytextoffset );
                 currX += 11;
                 moveWidth += 11;
-                drawText( ".", currX, y+ytextoffset );
+                drawTextWithBorder( ".", currX, y+ytextoffset );
                 currX += 15;
                 moveWidth += 15;
             }
@@ -1122,7 +1128,6 @@ int DllTrialManager::drawMoveScaled( Move move, MoveStatus color, int x, int y, 
             currX += buttonWidth;
             moveWidth += buttonWidth;
         } else if ( token.type == String ) {
-            drawText( token.text, currX, y+ytextoffset, buttonWidth, buttonWidth );
             drawTextWithBorder( token.text, currX, y+ytextoffset, buttonWidth, buttonWidth );
             currX += buttonWidth*token.text.length();
             moveWidth += buttonWidth*token.text.length();
@@ -1132,22 +1137,18 @@ int DllTrialManager::drawMoveScaled( Move move, MoveStatus color, int x, int y, 
             }
         } else if ( token.type == Symbol ) {
             if ( token.text[ 0 ] == 'd' ) {
-                drawText( "dj.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 drawTextWithBorder( "dj.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 currX += buttonWidth*3;
                 moveWidth += buttonWidth*3;
             } else if ( token.text[ 0 ] == 'j' ) {
-                drawText( "j.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 drawTextWithBorder( "j.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 currX += buttonWidth*2;
                 moveWidth += buttonWidth*2;
             } else if ( token.text[ 0 ] == 'A' ) {
-                drawText( "Add.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 drawTextWithBorder( "Add.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 currX += buttonWidth*4;
                 moveWidth += buttonWidth*4;
             } else if ( token.text[ 0 ] == 't' ) {
-                drawText( "tk.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 drawTextWithBorder( "tk.", currX, y+ytextoffset, buttonWidth, buttonWidth );
                 currX += buttonWidth*3;
                 moveWidth += buttonWidth*3;
@@ -1189,7 +1190,7 @@ void DllTrialManager::drawCombo()
 
     if ( !TrialManager::inputGuideEnabled ) {
         drawText ( currentTrial.name, 30, y-16, 14, 16, 0x1f0 );
-        drawTextWithBorder ( currentTrial.name, 30, y-16, 14, 16, 0x1f0 );
+        drawTextBorder ( currentTrial.name, 30, y-16, 14, 16, 0x1f0 );
         drawSolidRect( 25, y-16, currentTrial.name.size() * 15, 17, bg, 0x2ef );
     }
     for( uint16_t i = 0; i < moveList.size(); ++i ) {
@@ -1363,7 +1364,7 @@ void DllTrialManager::drawAttackDisplay()
     int y = 0xe8;
     //drawText(test, leftX, y, 0xa, 0xe );
     //drawText(test, leftX, y, 0xa, 0xe );
-    //drawTextWithBorder(test, leftX, y, 0xa, 0xe );
+    //drawTextBorder(test, leftX, y, 0xa, 0xe );
     //drawText(testVal, rightX-0xa*2, y, 0xa, 0xe );
 
     int currentMeter = *CC_P1_METER_ADDR;
@@ -1384,17 +1385,13 @@ void DllTrialManager::drawAttackDisplay()
     char buf[10];
     sprintf(buf, "%d.%02d", meterGained/100, meterGained%100 );
     gained = string(buf);
-    drawText(meter, leftX, y, 0xa, 0xe );
     drawTextWithBorder(meter, leftX, y, 0xa, 0xe );
-    drawText(gained, rightX-0xa*gained.length(), y, 0xa, 0xe );
     drawTextWithBorder(gained, rightX-0xa*gained.length(), y, 0xa, 0xe );
     y+=14;
     string total = "TOTAL METER GAIN";
     sprintf(buf, "%d.%02d", showTotalMeterGained/100, showTotalMeterGained%100 );
     string totalgained = string(buf);
-    drawText(total, leftX, y, 0xa, 0xe );
     drawTextWithBorder(total, leftX, y, 0xa, 0xe );
-    drawText(totalgained, rightX-0xa*totalgained.length(), y, 0xa, 0xe );
     drawTextWithBorder(totalgained, rightX-0xa*totalgained.length(), y, 0xa, 0xe );
     y+=14;
     ifstream file( "trainingentries.txt");
@@ -1422,16 +1419,15 @@ void DllTrialManager::drawAttackDisplay()
         }
     }
 }
+
 void DllTrialManager::drawAttackDisplayRow( string label, string value, int y )
 {
     int leftX = 0x1a4;
     int rightX = leftX + 200;
-    drawText(label, leftX, y, 0xa, 0xe );
     drawTextWithBorder(label, leftX, y, 0xa, 0xe );
-    drawText(value, rightX-0xa*value.length(), y, 0xa, 0xe );
     drawTextWithBorder(value, rightX-0xa*value.length(), y, 0xa, 0xe );
-
 }
+
 void DllTrialManager::render()
 {
     if ( TrialManager::hideText )
@@ -1464,7 +1460,7 @@ void DllTrialManager::drawWineOverlay()
     if ( ! TrialManager::dtext.empty() && !TrialManager::hideText ) {
         left = 640 - 13*TrialManager::dtext.size();
         drawText ( TrialManager::dtext, left, 0, 14, textHeight, 0x1f0 );
-        drawTextWithBorder ( TrialManager::dtext, left, 0, 14, textHeight, 0x1f0 );
+        drawTextBorder ( TrialManager::dtext, left, 0, 14, textHeight, 0x1f0 );
     }
     if ( DllOverlayUi::isDisabled() )
         return;

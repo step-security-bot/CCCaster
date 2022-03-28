@@ -134,6 +134,7 @@ public:
     void drawButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawText( string text, int screenX, int screenY, int width=24, int height=24, int layer=0xff );
+    void drawTextBorder( string text, int screenX, int screenY, int width=24, int height=24, int layer=0xff );
     void drawTextWithBorder( string text, int screenX, int screenY, int width=24, int height=24, int layer=0xff );
     void drawShadowButton( int buttonId, int screenX, int screenY, int width=25, int height=25 );
     void drawShadowArrow( int buttonId, int screenX, int screenY, int width=25, int height=25 );
