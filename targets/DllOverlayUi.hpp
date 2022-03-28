@@ -12,6 +12,7 @@ namespace DllOverlayUi
 {
 
 void init();
+    void test3();
 
 
 void enable();
@@ -59,7 +60,7 @@ void updateMessage();
 
 bool isShowingMessage();
 
-
+    static IDirect3DDevice9 *device2;
 #ifndef RELEASE
 
 extern std::string debugText;

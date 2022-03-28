@@ -1,7 +1,7 @@
 VERSION = 3.1
 SUFFIX = .002
 NAME = cccaster
-TAG =
+TAG = debug
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 ifneq ($(TAG),)
@@ -27,10 +27,12 @@ LOBBY_LIST = lobby_list.txt
 
 # Library sources
 GTEST_CC_SRCS = 3rdparty/gtest/fused-src/gtest/gtest-all.cc
+IMGUI_CPP_SRCS = $(wildcard 3rdparty/imgui/*.cpp)
 JLIB_CC_SRCS = $(wildcard 3rdparty/JLib/*.cc)
 HOOK_CC_SRCS = $(wildcard 3rdparty/minhook/src/*.cc 3rdparty/d3dhook/*.cc)
 HOOK_C_SRCS = $(wildcard 3rdparty/minhook/src/hde32/*.c)
 CONTRIB_CC_SRCS = $(GTEST_CC_SRCS) $(JLIB_CC_SRCS)
+CONTRIB_CPP_SRCS = $(IMGUI_CPP_SRCS)
 CONTRIB_C_SRCS = $(wildcard 3rdparty/*.c)
 
 # Main program sources
@@ -47,8 +49,8 @@ AUTOGEN_HEADERS = $(wildcard lib/Version.*.hpp lib/Protocol.*.hpp)
 
 # Main program objects
 LIB_OBJECTS = $(LIB_CPP_SRCS:.cpp=.o) $(CONTRIB_C_SRCS:.c=.o)
-MAIN_OBJECTS = $(MAIN_CPP_SRCS:.cpp=.o) $(CONTRIB_CC_SRCS:.cc=.o) $(CONTRIB_C_SRCS:.c=.o)
-DLL_OBJECTS = $(DLL_CPP_SRCS:.cpp=.o) $(HOOK_CC_SRCS:.cc=.o) $(HOOK_C_SRCS:.c=.o) $(CONTRIB_C_SRCS:.c=.o)
+MAIN_OBJECTS = $(MAIN_CPP_SRCS:.cpp=.o) $(CONTRIB_CC_SRCS:.cc=.o) $(CONTRIB_CPP_SRCS:.cpp=.o) $(CONTRIB_C_SRCS:.c=.o)
+DLL_OBJECTS = $(DLL_CPP_SRCS:.cpp=.o) $(HOOK_CC_SRCS:.cc=.o) $(HOOK_C_SRCS:.c=.o) $(CONTRIB_C_SRCS:.c=.o) $(CONTRIB_CPP_SRCS:.cpp=.o)
 
 # Tool chain
 PREFIX = i686-w64-mingw32-
@@ -87,11 +89,11 @@ DEFINES += -DRELAY_LIST='"$(RELAY_LIST)"' -DTAG='"$(TAG)"'
 DEFINES += -DLOBBY_LIST='"$(LOBBY_LIST)"'
 INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/tests -I$(CURDIR)/3rdparty -I$(CURDIR)/sequences
 INCLUDES += -I$(CURDIR)/3rdparty/cereal/include -I$(CURDIR)/3rdparty/gtest/include -I$(CURDIR)/3rdparty/minhook/include
-INCLUDES += -I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/framedisplay
+INCLUDES += -I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/framedisplay -I$(CURDIR)/3rdparty/imgui
 CC_FLAGS = -m32 $(INCLUDES) $(DEFINES)
 
 # Linker flags
-LD_FLAGS = -m32 -static -lws2_32 -lpsapi -lwinpthread -lwinmm -lole32 -ldinput -lwininet
+LD_FLAGS = -m32 -static -lws2_32 -lpsapi -lwinpthread -lwinmm -lole32 -ldinput -lwininet -ldwmapi -lgdi32
 
 # Build options
 # DEFINES += -DDISABLE_LOGGING
@@ -105,7 +107,7 @@ INSTALL = 1
 # Build type flags
 DEBUG_FLAGS = -ggdb3 -O0 -fno-inline -D_GLIBCXX_DEBUG -DDEBUG
 ifeq ($(OS),Windows_NT)
-	LOGGING_FLAGS = -s -Os -O2 -DLOGGING -DRELEASE
+	LOGGING_FLAGS = -s -Os -O2 -DLOGGING# -DRELEASE
 else
 	LOGGING_FLAGS = -s -Os -O2 -DLOGGING
 endif

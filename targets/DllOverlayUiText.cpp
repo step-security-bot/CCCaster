@@ -12,6 +12,12 @@
 #include <vector>
 #include <iterator>
 
+
+#include "imgui.h"
+#include "imgui_impl_dx9.h"
+#include "imgui_impl_win32.h"
+
+
 using namespace std;
 using namespace DllOverlayUi;
 
@@ -385,12 +391,24 @@ void invalidateOverlayText()
     }
 }
 
+void test2 ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport ){
+    LOG("test2");
+    /*
+    LOG("A");
+    ImGui_ImplDX9_NewFrame();
+    LOG("B");
+    ImGui::EndFrame();
+    LOG("C");
+    */
+
+}
 void renderOverlayText ( IDirect3DDevice9 *device, const D3DVIEWPORT9& viewport )
 {
 #ifndef RELEASE
 
     if ( ! debugText.empty() )
     {
+        test2(device, viewport);
         RECT rect;
         rect.top = rect.left = 0;
         rect.right = viewport.Width;

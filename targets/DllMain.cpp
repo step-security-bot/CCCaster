@@ -723,14 +723,14 @@ struct DllMain
                 // Indicate we're re-running to the current frame
                 fastFwdStopFrame = netMan.getIndexedFrame();
 
+                LOG_TO ( syncLog, "%s Rollback: target=[%s]; actual=[%s]",
+                         before, target, netMan.getIndexedFrame() );
+
                 // Reset the game state (this resets game state AND netMan state)
                 if ( rollMan.loadState ( target, netMan ) )
                 {
                     // Start fast-forwarding now
                     *CC_SKIP_FRAMES_ADDR = 1;
-
-                    LOG_TO ( syncLog, "%s Rollback: target=[%s]; actual=[%s]",
-                             before, target, netMan.getIndexedFrame() );
 
                     LOG_SYNC ( "Reinputs: 0x%04x 0x%04x", netMan.getRawInput ( 1 ), netMan.getRawInput ( 2 ) );
 
@@ -2191,6 +2191,7 @@ extern "C" void callback()
 extern "C" void renderCallback()
 {
     mainApp->trialMan.render();
+    DllOverlayUi::test3();
 }
 
 } // namespace AsmHacks

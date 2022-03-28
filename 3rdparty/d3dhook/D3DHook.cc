@@ -247,6 +247,7 @@ string InitDirectX ( void *hwnd )
     assert ( pVTable );
     m_nDX9_Present = ( pVTable[INTF_DX9_Present] - g_DX9.get_DllInt() );
     m_nDX9_Reset = ( pVTable[INTF_DX9_Reset] - g_DX9.get_DllInt() );
+    //m_nDX9_EndScene = ( pVTable[INTF_DX9_EndScene] - g_DX9.get_DllInt() );
 
     // LOG ( "InitDirectX: %08x, Present=0%x, Reset=0%x ",
     //       ( UINT_PTR ) pD3DDevice.get_RefObj(), m_nDX9_Present, m_nDX9_Reset );

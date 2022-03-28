@@ -474,7 +474,9 @@ int main ( int argc, char *argv[] )
         netplayConfig.hostPlayer = 1;
 
         // // Rollback testing
-        // netplayConfig.rollback = MAX_ROLLBACK;
+        if ( opt[Options::SyncTest] ) {
+            netplayConfig.rollback = MAX_ROLLBACK;
+        }
 
         if ( opt[Options::Offline].arg && !opt[Options::Tournament] )
         {
