@@ -2191,7 +2191,6 @@ extern "C" void callback()
 extern "C" void renderCallback()
 {
     mainApp->trialMan.render();
-    DllOverlayUi::test3();
 }
 
 } // namespace AsmHacks

@@ -28,12 +28,14 @@ inline string toHexString ( const T& val )
 #define INTF_Release        2
 #define INTF_DX9_Reset      16
 #define INTF_DX9_Present    17
+#define INTF_DX9_EndScene   42
 
 typedef IDirect3D9 * ( __stdcall *DIRECT3DCREATE9 ) ( UINT );
 typedef ULONG   ( __stdcall *PFN_DX9_ADDREF ) ( IDirect3DDevice9 *pDevice );
 typedef ULONG   ( __stdcall *PFN_DX9_RELEASE ) ( IDirect3DDevice9 *pDevice );
 typedef HRESULT ( __stdcall *PFN_DX9_RESET ) ( IDirect3DDevice9 *pDevice, LPVOID );
 typedef HRESULT ( __stdcall *PFN_DX9_PRESENT ) ( IDirect3DDevice9 *pDevice, const RECT *, const RECT *, HWND, LPVOID );
+typedef HRESULT ( __stdcall *PFN_DX9_ENDSCENE ) ( IDirect3DDevice9 *pDevice );
 
 CDllFile g_DX9;
 IDirect3DDevice9 *g_pDevice = 0;
@@ -41,9 +43,11 @@ ULONG g_iRefCount = 1;
 ULONG g_iRefCountMe = 0;
 UINT_PTR m_nDX9_Present;
 UINT_PTR m_nDX9_Reset;
+UINT_PTR m_nDX9_EndScene;
 
 CHookJump m_Hook_Present;
 CHookJump m_Hook_Reset;
+CHookJump m_Hook_EndScene;
 UINT_PTR *m_Hook_AddRef = 0;
 UINT_PTR *m_Hook_Release = 0;
 
@@ -51,6 +55,7 @@ PFN_DX9_ADDREF  s_D3D9_AddRef = 0;
 PFN_DX9_RELEASE s_D3D9_Release = 0;
 PFN_DX9_RESET   s_D3D9_Reset = 0;
 PFN_DX9_PRESENT s_D3D9_Present = 0;
+PFN_DX9_ENDSCENE s_D3D9_EndScene = 0;
 
 EXTERN_C ULONG __declspec ( dllexport ) __stdcall DX9_AddRef ( IDirect3DDevice9 *pDevice )
 {
@@ -136,6 +141,36 @@ void DX9_HooksVerify ( IDirect3DDevice9 *pDevice )
         pVTable[INTF_Release] = ( UINT_PTR ) DX9_Release;
         // DEBUG_MSG(( "DX9_HooksVerify: pDevice->Release() re-hooked." LOG_CR));
     }
+}
+
+EXTERN_C HRESULT __declspec ( dllexport ) __stdcall DX9_EndScene ( IDirect3DDevice9 *pDevice )
+{
+    // New EndScene function
+    // put back saved code fragment
+    m_Hook_EndScene.SwapOld ( ( void * ) s_D3D9_EndScene );
+
+    // LOG(( "DX9_EndScene: called." LOG_CR));
+
+    g_pDevice = pDevice;
+
+    // remember IDirect3DDevice9::Release pointer so that we can clean-up properly.
+    if ( m_Hook_AddRef == 0 || m_Hook_Release == 0 )
+    {
+        DX9_HooksInit ( pDevice );
+    }
+
+    EndScene ( pDevice );
+
+    // call real EndScene()
+    HRESULT hRes = s_D3D9_EndScene ( pDevice );
+
+    DX9_HooksVerify ( pDevice );
+
+    // DEBUG_MSG(( "DX9_EndScene: done." LOG_CR));
+
+    // put JMP instruction again
+    m_Hook_EndScene.SwapReset ( ( void * ) s_D3D9_EndScene );
+    return hRes;
 }
 
 EXTERN_C HRESULT __declspec ( dllexport ) __stdcall DX9_Reset ( IDirect3DDevice9 *pDevice, LPVOID params )
@@ -247,7 +282,7 @@ string InitDirectX ( void *hwnd )
     assert ( pVTable );
     m_nDX9_Present = ( pVTable[INTF_DX9_Present] - g_DX9.get_DllInt() );
     m_nDX9_Reset = ( pVTable[INTF_DX9_Reset] - g_DX9.get_DllInt() );
-    //m_nDX9_EndScene = ( pVTable[INTF_DX9_EndScene] - g_DX9.get_DllInt() );
+    m_nDX9_EndScene = ( pVTable[INTF_DX9_EndScene] - g_DX9.get_DllInt() );
 
     // LOG ( "InitDirectX: %08x, Present=0%x, Reset=0%x ",
     //       ( UINT_PTR ) pD3DDevice.get_RefObj(), m_nDX9_Present, m_nDX9_Reset );
@@ -266,17 +301,21 @@ string HookDirectX()
     // the JMP instruction back into the beginning of IDirect3DDevice9::Present, and
     // returns.
 
-    if ( !m_nDX9_Present || !m_nDX9_Reset )
+    if ( !m_nDX9_Present || !m_nDX9_Reset || !m_nDX9_EndScene )
         return "No info on 'Present' and/or 'Reset'";
 
     s_D3D9_Present = ( PFN_DX9_PRESENT ) ( g_DX9.get_DllInt() + m_nDX9_Present );
     s_D3D9_Reset = ( PFN_DX9_RESET ) ( g_DX9.get_DllInt() + m_nDX9_Reset );
+    s_D3D9_EndScene = ( PFN_DX9_ENDSCENE ) ( g_DX9.get_DllInt() + m_nDX9_EndScene );
 
     if ( !m_Hook_Present.InstallHook ( ( void * ) s_D3D9_Present, ( void * ) DX9_Present ) )
         return "m_Hook_Present failed";
 
     if ( !m_Hook_Reset.InstallHook ( ( void * ) s_D3D9_Reset, ( void * ) DX9_Reset ) )
         return "m_Hook_Reset failed";
+
+    if ( !m_Hook_EndScene.InstallHook ( ( void * ) s_D3D9_EndScene, ( void * ) DX9_EndScene ) )
+        return "m_Hook_EndScene failed";
 
     return "";
 }
@@ -296,6 +335,7 @@ void UnhookDirectX()
     // restore IDirect3D9Device methods
     m_Hook_Present.RemoveHook ( ( void * ) s_D3D9_Present );
     m_Hook_Reset.RemoveHook ( ( void * ) s_D3D9_Reset );
+    m_Hook_EndScene.RemoveHook ( ( void * ) s_D3D9_EndScene );
 
     InvalidateDeviceObjects();
 }

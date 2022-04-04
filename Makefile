@@ -143,15 +143,18 @@ palettes: $(PALETTES)
 $(ARCHIVE): $(BINARY) $(FOLDER)/$(DLL) $(FOLDER)/$(LAUNCHER) $(FOLDER)/$(UPDATER)
 $(ARCHIVE): $(FOLDER)/unzip.exe $(FOLDER)/$(README) $(FOLDER)/$(CHANGELOG) $(FOLDER)/trials
 	@echo
-	rm -f $(wildcard $(NAME)*.zip)
-	$(ZIP) $(ARCHIVE) $^
-	$(ZIP) $(ARCHIVE) -j scripts/Add_Handler_Protocol.bat
-	$(ZIP) $(ARCHIVE) -j $(RELAY_LIST)
-	$(ZIP) $(ARCHIVE) -j $(LOBBY_LIST)
-	cp -r res/GRP GRP
-	$(ZIP) $(ARCHIVE) -r GRP
-	$(ZIP) $(ARCHIVE) -r cccaster/trials
-	rm -rf GRP
+ifneq (,$(findstring release,$(MAKECMDGOALS)))
+		rm -f $(wildcard $(NAME)*.zip)
+		$(ZIP) $(ARCHIVE) $^
+		$(ZIP) $(ARCHIVE) -j scripts/Add_Handler_Protocol.bat
+		$(ZIP) $(ARCHIVE) -j $(RELAY_LIST)
+		$(ZIP) $(ARCHIVE) -j $(LOBBY_LIST)
+		cp -r res/GRP GRP
+		$(ZIP) $(ARCHIVE) -r GRP
+		$(ZIP) $(ARCHIVE) -r cccaster/trials
+		rm -rf GRP
+endif
+	echo $(MAKECMDGOALS)
 	$(GRANT)
 
 $(BINARY): $(addprefix $(BUILD_PREFIX)/,$(MAIN_OBJECTS)) res/icon.res
