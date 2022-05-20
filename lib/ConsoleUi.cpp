@@ -196,7 +196,9 @@ void ConsoleUi::Menu::initialize()
 
 void ConsoleUi::Menu::setTimeout( int timeout )
 {
-    menu.setTimeout( timeout );
+    if ( timeout > 0 ) {
+        menu.setTimeout( timeout );
+    }
 }
 void ConsoleUi::Menu::show()
 {

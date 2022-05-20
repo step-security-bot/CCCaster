@@ -392,8 +392,7 @@ DWORD ScrollingMenu::Show()
             return 0;
         }
         pCore->SaveScreen(menuBuffer,bufferSize,bufferOrigin);
-        int c;
-        while (1) {
+        while (timeout) {
             if ( kbhit() )
                 break;
             if ( timeout < 0 ) {
@@ -405,6 +404,7 @@ DWORD ScrollingMenu::Show()
                 if ( seconds >= timeout )
                     return MENUTIMEOUT;
             }
+            Sleep(16);
         }
         switch(int c = _getch())
         {
