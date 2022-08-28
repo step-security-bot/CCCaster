@@ -1364,7 +1364,6 @@ void MainUi::settings()
                             }
 
                         _ui->pop();
-                        break;
                     } else {
                         _ui->pop();
                         break;

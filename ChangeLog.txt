@@ -1,3 +1,7 @@
+v3.1.003
+- Updated relay.txt
+- Fixed issue causing high CPU usage in caster menu
+
 v3.1.002
 - Fixed replays not saving correctly
 - Fixed an issue where UDP connections would not be attempted
