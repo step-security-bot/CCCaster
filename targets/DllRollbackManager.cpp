@@ -186,7 +186,7 @@ bool DllRollbackManager::loadState ( IndexedFrame indexedFrame, NetplayManager& 
                         }
                         RepInputState* state = &(inputs->states[inputs->activeIndex]);
                         if (!state->frameCount) {
-                            LOG( "player %d no framecount", i );
+                            LOG( "player %d no framecount", i+1 );
                             continue;
                         }
                         if (state->frameCount == 1) {
