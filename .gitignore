@@ -28,4 +28,3 @@ TAGS
 scripts/seqlists*
 
 *.code-workspace
-Makefile_*
