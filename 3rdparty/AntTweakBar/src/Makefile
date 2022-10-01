@@ -14,7 +14,7 @@ OUT_DIR		= ../lib
 #LFLAGS		=
 #OUT_DIR	= ../lib/debug
 
-CXX         = i686-w64-mingw32-g++ -m32
+CXX         = $(CXX) -m32
 CC          = i686-w64-mingw32-gcc -m32
 CXXFLAGS 	= $(CXXCFG) -Wall -fPIC -fno-strict-aliasing -D_WINDOWS -D_WIN32 -D__PLACEMENT_NEW_INLINE
 INCPATH  	= -I../include -I../../freeglut

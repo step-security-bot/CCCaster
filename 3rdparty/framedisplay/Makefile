@@ -16,7 +16,7 @@ else
 endif
 
 
-CXX = i686-w64-mingw32-g++ -m32
+CXX = $(CXX) -m32
 
 CFLAGS = -s -O3 -Os -Wall -I"$(CURDIR)" -I"$(CURDIR)/../libpng" -I"$(CURDIR)/../libz" -I"$(CURDIR)/../SDL" -I$(OPENGL_HEADERS)
 

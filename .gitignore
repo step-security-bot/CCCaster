@@ -26,3 +26,5 @@ TAGS
 *.bmp
 *.png
 scripts/seqlists*
+
+*.code-workspace

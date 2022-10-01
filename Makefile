@@ -1,489 +1,108 @@
-VERSION = 3.1
-SUFFIX = .002
-NAME = cccaster
-TAG = debug
-BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
-
-ifneq ($(TAG),)
-DOT_TAG = .$(TAG)
-endif
-
-# Main program files
-ARCHIVE = $(NAME).v$(VERSION)$(SUFFIX)$(DOT_TAG).zip
-BINARY = $(NAME).v$(VERSION)$(DOT_TAG).exe
-FOLDER = $(NAME)
-PALETTES_FOLDER = palettes
-DLL = hook$(DOT_TAG).dll
-LAUNCHER = launcher.exe
-UPDATER = updater.exe
-DEBUGGER = debugger.exe
-GENERATOR = generator.exe
-PALETTES = palettes.exe
-MBAA_EXE = MBAA.exe
-README = README.md
-CHANGELOG = ChangeLog.txt
-RELAY_LIST = relay_list.txt
-LOBBY_LIST = lobby_list.txt
-
 # Library sources
-GTEST_CC_SRCS = 3rdparty/gtest/fused-src/gtest/gtest-all.cc
-IMGUI_CPP_SRCS = $(wildcard 3rdparty/imgui/*.cpp)
-JLIB_CC_SRCS = $(wildcard 3rdparty/JLib/*.cc)
 HOOK_CC_SRCS = $(wildcard 3rdparty/minhook/src/*.cc 3rdparty/d3dhook/*.cc)
 HOOK_C_SRCS = $(wildcard 3rdparty/minhook/src/hde32/*.c)
-CONTRIB_CC_SRCS = $(GTEST_CC_SRCS) $(JLIB_CC_SRCS)
-CONTRIB_CPP_SRCS = $(IMGUI_CPP_SRCS)
+CONTRIB_CC_SRCS = 3rdparty/gtest/fused-src/gtest/gtest-all.cc $(wildcard 3rdparty/JLib/*.cc)
+CONTRIB_CPP_SRCS = $(wildcard 3rdparty/imgui/*.cpp)
 CONTRIB_C_SRCS = $(wildcard 3rdparty/*.c)
 
 # Main program sources
 LIB_CPP_SRCS = $(wildcard lib/*.cpp)
-BASE_CPP_SRCS = $(wildcard netplay/*.cpp) $(LIB_CPP_SRCS) $(wildcard sequences/*.cpp)
-MAIN_CPP_SRCS = $(wildcard targets/Main*.cpp tests/*.cpp) $(BASE_CPP_SRCS)
-DLL_CPP_SRCS = $(wildcard targets/Dll*.cpp) $(filter-out lib/ConsoleUi.cpp,$(BASE_CPP_SRCS))
-
-NON_GEN_SRCS = \
-	$(wildcard netplay/*.cpp tools/*.cpp targets/*.cpp lib/*.cpp tests/*.cpp sequences/*.cpp)
-NON_GEN_HEADERS = \
-	$(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp tests/*.hpp sequences/*.hpp))
-AUTOGEN_HEADERS = $(wildcard lib/Version.*.hpp lib/Protocol.*.hpp)
-
-# Main program objects
-LIB_OBJECTS = $(LIB_CPP_SRCS:.cpp=.o) $(CONTRIB_C_SRCS:.c=.o)
-MAIN_OBJECTS = $(MAIN_CPP_SRCS:.cpp=.o) $(CONTRIB_CC_SRCS:.cc=.o) $(CONTRIB_CPP_SRCS:.cpp=.o) $(CONTRIB_C_SRCS:.c=.o)
-DLL_OBJECTS = $(DLL_CPP_SRCS:.cpp=.o) $(HOOK_CC_SRCS:.cc=.o) $(HOOK_C_SRCS:.c=.o) $(CONTRIB_C_SRCS:.c=.o) $(CONTRIB_CPP_SRCS:.cpp=.o)
-
-# Tool chain
-PREFIX = i686-w64-mingw32-
-GCC = $(PREFIX)gcc
-CXX = $(PREFIX)g++
-WINDRES = windres
-STRIP = strip
-TOUCH = touch
-ZIP = zip
-UNAME := $(shell uname)
-$(info VAR=$(UNAME))
-
-# OS specific tools / settings
-ifeq ($(OS),Windows_NT)
-	CHMOD_X = icacls $@ /grant Everyone:F
-	GRANT = icacls $@ /grant Everyone:F
-	ASTYLE = 3rdparty/astyle.exe
-	OPENGL_HEADERS = /usr/mingw/i686-w64-mingw32/include/GL
-else
-	WINDRES = $(PREFIX)windres
-	STRIP = $(PREFIX)strip
-	CHMOD_X = chmod +x $@
-	GRANT =
-	ASTYLE = 3rdparty/astyle
-	TOUCH = $(STRIP)
-	OPENGL_HEADERS = /usr/i686-w64-mingw32/include/GL
-endif
-
+MAIN_CPP_SRCS = $(wildcard targets/Main*.cpp tests/*.cpp) $(wildcard netplay/*.cpp) $(LIB_CPP_SRCS)
+DLL_CPP_SRCS = $(wildcard targets/Dll*.cpp) $(filter-out lib/ConsoleUi.cpp,$(wildcard netplay/*.cpp) $(LIB_CPP_SRCS))
 
 # Build flags
 DEFINES = -DWIN32_LEAN_AND_MEAN -DWINVER=0x501 -D_WIN32_WINNT=0x501 -D_M_IX86
-DEFINES += -DNAMED_PIPE='"\\\\.\\pipe\\cccaster_pipe"' -DNAMED_PIPE2='"\\\\.\\pipe\\cccaster2_pipe"' -DPALETTES_FOLDER='"$(PALETTES_FOLDER)\\"' -DREADME='"$(README)"'
-DEFINES += -DMBAA_EXE='"$(MBAA_EXE)"' -DBINARY='"$(BINARY)"' -DFOLDER='"$(FOLDER)\\"' -DCHANGELOG='"$(CHANGELOG)"'
-DEFINES += -DHOOK_DLL='"$(FOLDER)\\$(DLL)"' -DLAUNCHER='"$(FOLDER)\\$(LAUNCHER)"' -DUPDATER='"$(UPDATER)"'
-DEFINES += -DRELAY_LIST='"$(RELAY_LIST)"' -DTAG='"$(TAG)"'
-DEFINES += -DLOBBY_LIST='"$(LOBBY_LIST)"'
-INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/tests -I$(CURDIR)/3rdparty -I$(CURDIR)/sequences
+DEFINES += -DNAMED_PIPE='"\\\\.\\pipe\\cccaster_pipe"' -DNAMED_PIPE2='"\\\\.\\pipe\\cccaster2_pipe"' -DPALETTES_FOLDER='"palettes\\"' -DREADME='"README.md"'
+DEFINES += -DMBAA_EXE='"MBAA.exe"' -DBINARY='"cccaster.v3.1.release.exe"' -DFOLDER='"cccaster\\"' -DCHANGELOG='"ChangeLog.txt"'
+DEFINES += -DHOOK_DLL='"cccaster\\hook.release.dll"' -DLAUNCHER='"cccaster\\launcher.exe"' -DUPDATER='"updater.exe"'
+DEFINES += -DRELAY_LIST='"relay_list.txt"' -DTAG='"release"'
+DEFINES += -DLOBBY_LIST='"lobby_list.txt"'
+INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/tests -I$(CURDIR)/3rdparty
 INCLUDES += -I$(CURDIR)/3rdparty/cereal/include -I$(CURDIR)/3rdparty/gtest/include -I$(CURDIR)/3rdparty/minhook/include
 INCLUDES += -I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/framedisplay -I$(CURDIR)/3rdparty/imgui
-CC_FLAGS = -m32 $(INCLUDES) $(DEFINES)
 
-# Linker flags
-LD_FLAGS = -m32 -static -lws2_32 -lpsapi -lwinpthread -lwinmm -lole32 -ldinput -lwininet -ldwmapi -lgdi32
-
-# Build options
-# DEFINES += -DDISABLE_LOGGING
-# DEFINES += -DDISABLE_ASSERTS
-# DEFINES += -DLOGGER_MUTEXED
-# DEFINES += -DJLIB_MUTEXED
-
-# Install after make, set to 0 to disable install after make
-INSTALL = 1
-
-# Build type flags
-DEBUG_FLAGS = -ggdb3 -O0 -fno-inline -D_GLIBCXX_DEBUG -DDEBUG
-ifeq ($(OS),Windows_NT)
-	LOGGING_FLAGS = -s -Os -O2 -DLOGGING# -DRELEASE
-else
-	LOGGING_FLAGS = -s -Os -O2 -DLOGGING
-endif
-RELEASE_FLAGS = -s -Os -Ofast -fno-rtti -DNDEBUG -DRELEASE -DDISABLE_LOGGING -DDISABLE_ASSERTS
-
-# Build type
-BUILD_TYPE = build_debug
-BUILD_PREFIX = $(BUILD_TYPE)_$(BRANCH)
-
-# Default build target
-ifeq ($(OS),Windows_NT)
-	DEFAULT_TARGET = debug
-else
-	DEFAULT_TARGET = logging
-endif
-
-
-all: $(DEFAULT_TARGET)
-
-# target-profile: STRIP = $(TOUCH)
-# target-profile: DEFINES += -DNDEBUG -DRELEASE -DDISABLE_LOGGING -DDISABLE_ASSERTS
-# target-profile: CC_FLAGS += -O2 -fno-rtti -pg
-# target-profile: LD_FLAGS += -pg -lgmon
-# target-profile: $(ARCHIVE)
-
-
-launcher: $(FOLDER)/$(LAUNCHER)
-debugger: tools/$(DEBUGGER)
-generator: tools/$(GENERATOR)
-palettes: $(PALETTES)
-
-
-$(ARCHIVE): $(BINARY) $(FOLDER)/$(DLL) $(FOLDER)/$(LAUNCHER) $(FOLDER)/$(UPDATER)
-$(ARCHIVE): $(FOLDER)/unzip.exe $(FOLDER)/$(README) $(FOLDER)/$(CHANGELOG) $(FOLDER)/trials
-	@echo
-ifneq (,$(findstring release,$(MAKECMDGOALS)))
-		rm -f $(wildcard $(NAME)*.zip)
-		$(ZIP) $(ARCHIVE) $^
-		$(ZIP) $(ARCHIVE) -j scripts/Add_Handler_Protocol.bat
-		$(ZIP) $(ARCHIVE) -j $(RELAY_LIST)
-		$(ZIP) $(ARCHIVE) -j $(LOBBY_LIST)
-		cp -r res/GRP GRP
-		$(ZIP) $(ARCHIVE) -r GRP
-		$(ZIP) $(ARCHIVE) -r cccaster/trials
-		rm -rf GRP
-endif
-	echo $(MAKECMDGOALS)
-	$(GRANT)
-
-$(BINARY): $(addprefix $(BUILD_PREFIX)/,$(MAIN_OBJECTS)) res/icon.res
-	rm -f $(filter-out $(BINARY),$(wildcard $(NAME)*.exe))
-	$(CXX) -o $@ $(CC_FLAGS) -Wall -std=c++11 $^ $(LD_FLAGS)
-	@echo
-	$(STRIP) $@
-	$(CHMOD_X)
-	@echo
-
-$(FOLDER)/$(DLL): $(addprefix $(BUILD_PREFIX)/,$(DLL_OBJECTS)) res/rollback.o targets/CallDraw.s | $(FOLDER)
-	$(CXX) -o $@ $(CC_FLAGS) -Wall -std=c++11 $^ -shared $(LD_FLAGS) -ld3dx9
-	@echo
-	$(STRIP) $@
-	$(GRANT)
-	@echo
-
-$(FOLDER)/$(LAUNCHER): tools/Launcher.cpp | $(FOLDER)
-	$(CXX) -o $@ $^ -m32 -s -Os -O2 -Wall -static -mwindows
-	@echo
-	$(STRIP) $@
-	$(CHMOD_X)
-	@echo
-
-$(FOLDER)/$(UPDATER): tools/Updater.cpp lib/StringUtils.cpp | $(FOLDER)
-	$(CXX) -o $@ $^ -m32 -s -Os -O2 -std=c++11 -I$(CURDIR)/lib -Wall -static -lpsapi
-	@echo
-	$(STRIP) $@
-	$(CHMOD_X)
-	@echo
-
-$(FOLDER)/unzip.exe: 3rdparty/unzip.exe | $(FOLDER)
-	cp -f $^ $(FOLDER)/
-
-$(FOLDER)/trials: trials | $(FOLDER)
-	cp -r $^ $(FOLDER)/
-
-$(FOLDER)/$(README): $(README) | $(FOLDER)
-	cp -f $^ $(FOLDER)/
-
-$(FOLDER)/$(CHANGELOG): $(CHANGELOG) | $(FOLDER)
-	cp -f $^ $(FOLDER)/
-
-$(FOLDER):
-	mkdir -p $@
-
-res/rollback.bin: tools/$(GENERATOR)
-ifeq ($(UNAME),Darwin)
-	wine tools/$(GENERATOR) $@
-else ifeq ($(UNAME),Linux)
-	wine tools/$(GENERATOR) $@
-else
-	tools/$(GENERATOR) $@
-endif
-	@echo
-
-res/rollback.o: res/rollback.bin
-ifeq ($(UNAME),Darwin)
-	$(PREFIX)objcopy -I binary -O elf32-i386 -B i386 $< $@
-else
-	objcopy -I binary -O elf32-i386 -B i386 $< $@
-endif
-	@echo
-
-res/icon.res: res/icon.rc res/icon.ico
-	$(WINDRES) -F pe-i386 res/icon.rc -O coff -o $@
-	@echo
-
-
-LOGGING_PREFIX = build_logging_$(BRANCH)
-DEBUGGER_LIB_OBJECTS = \
-	$(addprefix $(LOGGING_PREFIX)/,$(filter-out lib/Version.o lib/LoggerLogVersion.o lib/ConsoleUi.o,$(LIB_OBJECTS)))
-
-tools/$(DEBUGGER): tools/Debugger.cpp $(DEBUGGER_LIB_OBJECTS)
-	$(CXX) -o $@ $(CC_FLAGS) $(LOGGING_FLAGS) -Wall -std=c++11 $^ $(LD_FLAGS) \
-	-I$(CURDIR)/3rdparty/distorm3/include -L$(CURDIR)/3rdparty/distorm3 -ldistorm3
-	@echo
-	$(STRIP) $@
-	$(CHMOD_X)
-	@echo
-
-
-GENERATOR_LIB_OBJECTS = \
-	$(addprefix $(LOGGING_PREFIX)/,$(filter-out lib/Version.o lib/LoggerLogVersion.o lib/ConsoleUi.o,$(LIB_OBJECTS)))
-
-tools/$(GENERATOR): tools/Generator.cpp $(GENERATOR_LIB_OBJECTS)
-	$(CXX) -o $@ $(CC_FLAGS) $(LOGGING_FLAGS) -Wall -std=c++11 $^ $(LD_FLAGS)
-	@echo
-	$(STRIP) $@
-	$(CHMOD_X)
-	@echo
-
-
-PALETTES_SRC = tools/Palettes.cpp tools/PaletteEditor.cpp netplay/PaletteManager.cpp netplay/CharacterSelect.cpp
-PALETTES_SRC += lib/StringUtils.cpp lib/KeyValueStore.cpp
-
-FRAMEDISPLAY_SRC = $(wildcard 3rdparty/framedisplay/*.cc)
-FRAMEDISPLAY_OBJECTS = $(FRAMEDISPLAY_SRC:.cc=.o)
-
-FRAMEDISPLAY_INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/3rdparty/framedisplay
-FRAMEDISPLAY_INCLUDES += -I$(CURDIR)/3rdparty/libpng -I$(CURDIR)/3rdparty/libz -I$(CURDIR)/3rdparty/glfw
-FRAMEDISPLAY_INCLUDES += -I"$(CURDIR)/3rdparty/AntTweakBar/include" -I$(OPENGL_HEADERS)
-
-# FRAMEDISPLAY_CC_FLAGS = -ggdb3 -O0 -fno-inline -D_GLIBCXX_DEBUG -DDEBUG
-FRAMEDISPLAY_CC_FLAGS = -s -Os -Ofast -fno-rtti
-FRAMEDISPLAY_CC_FLAGS += -DDISABLE_LOGGING -DDISABLE_SERIALIZATION -DPALETTES_FOLDER='"$(PALETTES_FOLDER)\\"'
-
-FRAMEDISPLAY_LD_FLAGS = -L$(CURDIR)/3rdparty/libpng -L$(CURDIR)/3rdparty/libz -L"$(CURDIR)/3rdparty/AntTweakBar/lib"
-FRAMEDISPLAY_LD_FLAGS += -L$(CURDIR)/3rdparty/glfw
-FRAMEDISPLAY_LD_FLAGS += -mwindows -static -lmingw32 -lpng -lz -lglfw -lopengl32 -lglu32
-
-3rdparty/framedisplay/%.o: 3rdparty/framedisplay/%.cc
-	$(CXX) $(FRAMEDISPLAY_CC_FLAGS) $(FRAMEDISPLAY_INCLUDES) -o $@ -c $<
-
-3rdparty/AntTweakBar/lib/libAntTweakBar.a: $(wildcard 3rdparty/AntTweakBar/src/*.c* 3rdparty/AntTweakBar/src/*.h)
-	$(MAKE) --directory=3rdparty/AntTweakBar/src
-
-$(PALETTES): $(PALETTES_SRC) $(FRAMEDISPLAY_OBJECTS) res/palettes.res 3rdparty/AntTweakBar/lib/libAntTweakBar.a
-	$(CXX) $(FRAMEDISPLAY_CC_FLAGS) -o $@ $(FRAMEDISPLAY_INCLUDES) -Wall -std=c++11 -C $^ $(FRAMEDISPLAY_LD_FLAGS)
-	@echo
-	$(STRIP) $@
-	$(CHMOD_X)
-	@echo
-
-res/palettes.res: res/palettes.rc res/palettes.ico
-	$(WINDRES) -F pe-i386 res/palettes.rc -O coff -o $@
-	@echo
-
-
-define make_version
-@scripts/make_version $(VERSION)$(SUFFIX) > lib/Version.local.hpp
-endef
-
-define make_protocol
-@scripts/make_protocol $(NON_GEN_HEADERS)
-endef
-
-define make_depend
-@scripts/make_depend "$(CXX)" "-m32 $(INCLUDES)"
-endef
-
-
-version:
-	$(make_version)
-
-proto:
-	$(make_protocol)
-
-reset-proto:
-	rm -f lib/ProtocolEnums.hpp
-	@$(MAKE) proto
-
-depend: version proto
-	$(make_depend)
-
-.depend_$(BRANCH): $(NON_GEN_SRCS) $(NON_GEN_HEADERS)
-	$(make_version)
-	$(make_protocol)
-	$(make_depend)
-
-
-clean-proto:
-	git checkout -- lib/ProtocolEnums.hpp
-	rm -f $(AUTOGEN_HEADERS)
-
-clean-res:
-	rm -f res/rollback.* res/icon.res
-	rm -rf GRP
-
-clean-lib:
-	$(MAKE) --directory=3rdparty/AntTweakBar/src clean
-	rm -f 3rdparty/framedisplay/*.o
-
-clean-common: clean-proto clean-res clean-lib
-	rm -rf tmp*
-	rm -rf $(FOLDER)/trials
-	rm -f .depend_$(BRANCH) .include_$(BRANCH) *.exe *.zip tools/*.exe \
-$(filter-out $(FOLDER)/$(TAG)config.ini $(wildcard $(FOLDER)/*.mappings $(FOLDER)/*.log),$(wildcard $(FOLDER)/*))
-
-clean-debug: clean-common
-	rm -rf build_debug_$(BRANCH)
-
-clean-logging: clean-common
-	rm -rf build_logging_$(BRANCH)
-
-clean-release: clean-common
-	rm -rf build_release_$(BRANCH)
-
-clean: clean-debug clean-logging clean-release
-
-clean-all: clean-debug clean-logging clean-release
-	rm -rf .include* .depend* build*
-
-
-check:
-	cppcheck --enable=all $(NON_GEN_SRCS) $(NON_GEN_HEADERS)
-
-trim:
-	sed --binary --in-place 's/\\r$$//' $(NON_GEN_SRCS) $(NON_GEN_HEADERS)
-	sed --in-place 's/[[:space:]]\\+$$//' $(NON_GEN_SRCS) $(NON_GEN_HEADERS)
-
-format:
-	$(ASTYLE)                   	\
-    --indent=spaces=4           	\
-    --convert-tabs              	\
-    --indent-preprocessor       	\
-    --indent-switches           	\
-    --style=allman              	\
-    --max-code-length=120       	\
-    --pad-paren                 	\
-    --pad-oper                  	\
-    --suffix=none               	\
-    --formatted                 	\
-    --keep-one-line-blocks      	\
-    --align-pointer=name        	\
-    --align-reference=type      	\
-$(filter-out tools/Generator.cpp netplay/CharacterSelect.cpp lib/KeyboardVKeyNames.hpp targets/DllAsmHacks.hpp,\
-$(NON_GEN_SRCS) $(NON_GEN_HEADERS))
-
-count:
-	@wc -l $(NON_GEN_SRCS) $(NON_GEN_HEADERS) | sort -nr | head -n 10 && echo '    ...'
-
-
-ifeq (,$(findstring version,$(MAKECMDGOALS)))
-ifeq (,$(findstring proto,$(MAKECMDGOALS)))
-ifeq (,$(findstring depend,$(MAKECMDGOALS)))
-ifeq (,$(findstring clean,$(MAKECMDGOALS)))
-ifeq (,$(findstring check,$(MAKECMDGOALS)))
-ifeq (,$(findstring trim,$(MAKECMDGOALS)))
-ifeq (,$(findstring format,$(MAKECMDGOALS)))
-ifeq (,$(findstring count,$(MAKECMDGOALS)))
-ifeq (,$(findstring install,$(MAKECMDGOALS)))
-ifeq (,$(findstring palettes,$(MAKECMDGOALS)))
--include .depend_$(BRANCH)
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-
-
-pre-build:
-	$(make_version)
-	$(make_protocol)
+all: $(wildcard netplay/*.cpp tools/*.cpp targets/*.cpp lib/*.cpp tests/*.cpp) $(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp tests/*.hpp))
 	@echo
 	@echo ========== Main-build ==========
 	@echo
-
-post-build: main-build
-	@echo
-	@echo ========== Post-build ==========
-	@echo
-	if [ $(INSTALL) = 1 ] && [ -s ./scripts/install ]; then ./scripts/install; fi;
-
-
-debug: post-build
-logging: post-build
-release: post-build
-profile: post-build
-
-target-debug: $(ARCHIVE)
-target-logging: $(ARCHIVE)
-target-release: $(ARCHIVE)
-
-
-ifneq (,$(findstring logging,$(MAKECMDGOALS)))
-main-build: pre-build
-	@$(MAKE) --no-print-directory target-logging BUILD_TYPE=build_logging
-else
-ifneq (,$(findstring release,$(MAKECMDGOALS)))
-main-build: pre-build
+	@scripts/make_version 3.1.2 > lib/Version.local.hpp
+	@scripts/make_protocol $(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp tests/*.hpp))
 	@$(MAKE) --no-print-directory target-release BUILD_TYPE=build_release
-else
-ifneq (,$(findstring profile,$(MAKECMDGOALS)))
-main-build: pre-build
-	@$(MAKE) --no-print-directory target-profile BUILD_TYPE=build_debug STRIP=touch
-else
-ifeq ($(DEFAULT_TARGET),logging)
-main-build: pre-build
-	@$(MAKE) --no-print-directory target-logging BUILD_TYPE=build_logging
-else
-main-build: pre-build
-	@$(MAKE) --no-print-directory target-debug BUILD_TYPE=build_debug STRIP=touch
-endif
-endif
-endif
-endif
 
+target-release: cccaster.v3.1.release.exe cccaster/hook.release.dll cccaster/launcher.exe
+	@echo
+	rm -f $(wildcard cccaster*.zip)
+	zip cccaster.v3.1.2.release.zip $^
+	zip cccaster.v3.1.2.release.zip -j relay_list.txt
+	cp -r res/GRP GRP
+	zip cccaster.v3.1.2.release.zip -r GRP
+	rm -rf GRP
+	@echo $(MAKECMDGOALS)
 
-build_debug_$(BRANCH):
+build_release_$(shell git rev-parse --abbrev-ref HEAD):
 	rsync -a -f"- .git/" -f"- build_*/" -f"+ */" -f"- *" --exclude=".*" . $@
 
-build_debug_$(BRANCH)/%.o: %.cpp | build_debug_$(BRANCH)
-	$(CXX) $(CC_FLAGS) $(DEBUG_FLAGS) -Wall -Wempty-body -std=c++11 -o $@ -c $<
+build_release_$(shell git rev-parse --abbrev-ref HEAD)/%.o: %.cpp | build_release_$(shell git rev-parse --abbrev-ref HEAD)
+	i686-w64-mingw32-g++ -m32 $(INCLUDES) $(DEFINES) -s -Os -Ofast -fno-rtti -DNDEBUG -DRELEASE -DDISABLE_LOGGING -DDISABLE_ASSERTS -std=c++11 -o $@ -c $<
 
-build_debug_$(BRANCH)/%.o: %.cc | build_debug_$(BRANCH)
-	$(CXX) $(CC_FLAGS) $(DEBUG_FLAGS) -o $@ -c $<
+build_release_$(shell git rev-parse --abbrev-ref HEAD)/%.o: %.cc | build_release_$(shell git rev-parse --abbrev-ref HEAD)
+	i686-w64-mingw32-g++ -m32 $(INCLUDES) $(DEFINES) -s -Os -Ofast -fno-rtti -DNDEBUG -DRELEASE -DDISABLE_LOGGING -DDISABLE_ASSERTS -o $@ -c $<
 
-build_debug_$(BRANCH)/%.o: %.c | build_debug_$(BRANCH)
-	$(GCC) $(filter-out -fno-rtti,$(CC_FLAGS) $(DEBUG_FLAGS)) -Wno-attributes -o $@ -c $<
+build_release_$(shell git rev-parse --abbrev-ref HEAD)/%.o: %.c | build_release_$(shell git rev-parse --abbrev-ref HEAD)
+	i686-w64-mingw32-gcc $(filter-out -fno-rtti,-m32 $(INCLUDES) $(DEFINES) -s -Os -Ofast -fno-rtti -DNDEBUG -DRELEASE -DDISABLE_LOGGING -DDISABLE_ASSERTS) -Wno-attributes -o $@ -c $<
 
+cccaster:
+	mkdir -p $@
 
-build_logging_$(BRANCH):
-	rsync -a -f"- .git/" -f"- build_*/" -f"+ */" -f"- *" --exclude=".*" . $@
+cccaster/launcher.exe: tools/Launcher.cpp | cccaster
+	i686-w64-mingw32-g++ -o $@ $^ -m32 -s -Os -O2 -Wall -static -mwindows
+	@echo
+	i686-w64-mingw32-strip $@
+	chmod +x $@
+	@echo
 
-build_logging_$(BRANCH)/%.o: %.cpp | build_logging_$(BRANCH)
-	$(CXX) $(CC_FLAGS) $(LOGGING_FLAGS) -Wall -Wempty-body -std=c++11 -o $@ -c $<
+tools/generator.exe: tools/Generator.cpp $(addprefix build_release_$(shell git rev-parse --abbrev-ref HEAD)/,$(filter-out lib/Version.o lib/LoggerLogVersion.o lib/ConsoleUi.o,$(LIB_CPP_SRCS:.cpp=.o) $(CONTRIB_C_SRCS:.c=.o)))
+	i686-w64-mingw32-g++ -o $@ -m32 $(INCLUDES) $(DEFINES) -s -Os -O2 -DLOGGING -Wall -std=c++11 $^ -m32 -static -lws2_32 -lpsapi -lwinpthread -lwinmm -lole32 -ldinput -lwininet -ldwmapi -lgdi32
+	@echo
+	i686-w64-mingw32-strip $@
+	chmod +x $@
+	@echo
 
-build_logging_$(BRANCH)/%.o: %.cc | build_logging_$(BRANCH)
-	$(CXX) $(CC_FLAGS) $(LOGGING_FLAGS) -o $@ -c $<
+cccaster.v3.1.release.exe: $(addprefix build_release_$(shell git rev-parse --abbrev-ref HEAD)/,$(MAIN_CPP_SRCS:.cpp=.o) $(CONTRIB_CC_SRCS:.cc=.o) $(CONTRIB_CPP_SRCS:.cpp=.o) $(CONTRIB_C_SRCS:.c=.o)) res/icon.res
+	rm -f $(filter-out cccaster.v3.1.release.exe,$(wildcard cccaster*.exe))
+	i686-w64-mingw32-g++ -o $@ -m32 $(INCLUDES) $(DEFINES) -Wall -std=c++11 $^ -m32 -static -lws2_32 -lpsapi -lwinpthread -lwinmm -lole32 -ldinput -lwininet -ldwmapi -lgdi32
+	@echo
+	i686-w64-mingw32-strip $@
+	chmod +x $@
+	@echo
 
-build_logging_$(BRANCH)/%.o: %.c | build_logging_$(BRANCH)
-	$(GCC) $(filter-out -fno-rtti,$(CC_FLAGS) $(LOGGING_FLAGS)) -Wno-attributes -o $@ -c $<
+cccaster/hook.release.dll: $(addprefix build_release_$(shell git rev-parse --abbrev-ref HEAD)/,$(DLL_CPP_SRCS:.cpp=.o) $(HOOK_CC_SRCS:.cc=.o) $(HOOK_C_SRCS:.c=.o) $(CONTRIB_C_SRCS:.c=.o) $(CONTRIB_CPP_SRCS:.cpp=.o)) res/rollback.o targets/CallDraw.s | cccaster
+	i686-w64-mingw32-g++ -o $@ -m32 $(INCLUDES) $(DEFINES) -Wall -std=c++11 $^ -shared -m32 -static -lws2_32 -lpsapi -lwinpthread -lwinmm -lole32 -ldinput -lwininet -ldwmapi -lgdi32 -ld3dx9
+	@echo
+	i686-w64-mingw32-strip $@
+	@echo
 
+res/rollback.bin: tools/generator.exe
+	wine tools/generator.exe $@
+	@echo
 
-build_release_$(BRANCH):
-	rsync -a -f"- .git/" -f"- build_*/" -f"+ */" -f"- *" --exclude=".*" . $@
+res/rollback.o: res/rollback.bin
+	objcopy -I binary -O elf32-i386 -B i386 $< $@
+	@echo
 
-build_release_$(BRANCH)/%.o: %.cpp | build_release_$(BRANCH)
-	$(CXX) $(CC_FLAGS) $(RELEASE_FLAGS) -std=c++11 -o $@ -c $<
+res/icon.res: res/icon.rc res/icon.ico
+	i686-w64-mingw32-windres -F pe-i386 res/icon.rc -O coff -o $@
+	@echo
 
-build_release_$(BRANCH)/%.o: %.cc | build_release_$(BRANCH)
-	$(CXX) $(CC_FLAGS) $(RELEASE_FLAGS) -o $@ -c $<
-
-build_release_$(BRANCH)/%.o: %.c | build_release_$(BRANCH)
-	$(GCC) $(filter-out -fno-rtti,$(CC_FLAGS) $(RELEASE_FLAGS)) -Wno-attributes -o $@ -c $<
-
+clean:
+	rm -rf build_release_$(shell git rev-parse --abbrev-ref HEAD)
+	rm -rf tmp*
+	rm -rf cccaster/trials
+	rm -f .depend_$(shell git rev-parse --abbrev-ref HEAD) .include_$(shell git rev-parse --abbrev-ref HEAD) *.exe *.zip tools/*.exe \
+$(filter-out cccaster/debugconfig.ini $(wildcard cccaster/*.mappings cccaster/*.log),$(wildcard cccaster/*))
+	git checkout -- lib/ProtocolEnums.hpp
+	rm -f $(wildcard lib/Version.*.hpp lib/Protocol.*.hpp)
+	rm -f res/rollback.* res/icon.res
+	rm -rf GRP
+	$(MAKE) --directory=3rdparty/AntTweakBar/src clean
+	rm -f 3rdparty/framedisplay/*.o
