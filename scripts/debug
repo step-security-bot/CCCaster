@@ -1,3 +1,0 @@
-#!/bin/sh
-
-gdb --command=gdb_main.txt --args cccaster*.exe --folder ~/MBAACC "$@"

@@ -60,6 +60,48 @@ seems to be called on every frame and during character select
 
 rand func decompiled
 
+int* CC_RAND0_ADDR;
+int* CC_RAND1_ADDR;
+int* CC_RAND2_ADDR;
+int* CC_RAND3_ADDR[ 55 ];
+
+CC_RAND2_ADDR is:
+1, <=55
+1-55 range
+
+int  eax;
+int  edx;
+
+edx is:
+>=-20, 22-34
+-20-34 range
+
+
+if ( *CC_RAND2_ADDR + 1 >= 56 ) {
+    *CC_RAND2_ADDR = 1;
+
+} else {
+    *CC_RAND2_ADDR += 1;
+}
+
+if ( *CC_RAND2_ADDR + 21 > 34 ) {
+    edx = *CC_RAND2_ADDR - 34;
+
+} else {
+    edx = *CC_RAND2_ADDR + 21;
+}
+
+eax = *CC_RAND3_ADDR[ *CC_RAND2_ADDR ] - *CC_RAND3_ADDR[ edx ];
+
+if ( eax < 0 ) {
+    eax += INT32_MAX;
+}
+
+*CC_RAND0_ADDR = eax;
+*CC_RAND1_ADDR += 1;
+*CC_RAND3_ADDR[ *CC_RAND2_ADDR ] = eax;
+
+
 ecx = *CC_RAND2_ADDR
 ecx += 1
 if (ecx >= 0x38)
@@ -71,7 +113,7 @@ if (ecx > 0x22)
 eax = *(int *)(CC_RAND3_ADDR + ecx * 4);
 eax -= *(int *)(CC_RAND3_ADDR + edx * 4);
 if (eax < 0)
-    eax += 0x7FFFFFFF;
+    eax += 0x7F_FFF_FFF;
 *(int *)CC_RAND1_ADDR += 1;
 *(int *)(CC_RAND3_ADDR + ecx * 4) = eax;
 *(int *)CC_RAND0_ADDR = eax;
