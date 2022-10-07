@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#include <defines.hpp>
+
 
 void ProcessManager::writeGameInput ( uint8_t player, uint16_t direction, uint16_t buttons )
 {

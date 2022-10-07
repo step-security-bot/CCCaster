@@ -4,6 +4,8 @@
 #include "CharacterSelect.hpp"
 #include "ProcessManager.hpp"
 
+#define PALETTES_FOLDER "palettes\\"
+
 using namespace std;
 
 

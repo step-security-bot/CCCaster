@@ -1,10 +1,9 @@
-#include "Main.hpp"
-#include "MainUi.hpp"
-#include "Test.hpp"
-#include "Exceptions.hpp"
-#include "StringUtils.hpp"
-#include "ConsoleUi.hpp"
-#include "Version.hpp"
+#include <Main.hpp>
+#include <MainUi.hpp>
+#include <Exceptions.hpp>
+#include <StringUtils.hpp>
+#include <ConsoleUi.hpp>
+#include <Version.hpp>
 
 #include <optionparser.h>
 #include <windows.h>
@@ -15,6 +14,7 @@
 using namespace std;
 using namespace option;
 
+#include <defines.hpp>
 
 #define LOG_FILE FOLDER "debug.log"
 

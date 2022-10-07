@@ -12,6 +12,10 @@
 
 #include <unordered_set>
 
+#include <defines.hpp>
+
+
+#define LOBBY_LIST "lobby_list.txt"
 
 // Log file that contains all the data needed to keep games in sync
 #define SYNC_LOG_FILE FOLDER "sync.log"

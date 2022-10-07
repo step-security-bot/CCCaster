@@ -12,15 +12,10 @@ DLL_CPP_SRCS = $(wildcard targets/Dll*.cpp) \
 $(filter-out lib/ConsoleUi.cpp,$(wildcard netplay/*.cpp) $(LIB_CPP_SRCS))
 
 # Build flags
-DEFINES = -DWIN32_LEAN_AND_MEAN -DWINVER=0x501 -D_WIN32_WINNT=0x501 -D_M_IX86 \
--DNAMED_PIPE='"\\\\.\\pipe\\cccaster_pipe"' -DNAMED_PIPE2='"\\\\.\\pipe\\cccaster2_pipe"' -DPALETTES_FOLDER='"palettes\\"' -DREADME='"README.md"' \
--DMBAA_EXE='"MBAA.exe"' -DBINARY='"cccaster.v3.1.release.exe"' -DFOLDER='"cccaster\\"' -DCHANGELOG='"ChangeLog.txt"' \
--DHOOK_DLL='"cccaster\\hook.release.dll"' -DLAUNCHER='"cccaster\\launcher.exe"' -DUPDATER='"updater.exe"' \
--DRELAY_LIST='"relay_list.txt"' -DTAG='"release"' \
--DLOBBY_LIST='"lobby_list.txt"'
-INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/tests -I$(CURDIR)/3rdparty \
+DEFINES = -DWIN32_LEAN_AND_MEAN -DWINVER=0x501 -D_WIN32_WINNT=0x501 -D_M_IX86
+INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/3rdparty \
 -I$(CURDIR)/3rdparty/cereal/include -I$(CURDIR)/3rdparty/gtest/include -I$(CURDIR)/3rdparty/minhook/include \
--I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/framedisplay -I$(CURDIR)/3rdparty/imgui
+-I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/imgui -I$(CURDIR)/targets
 
 all: $(wildcard netplay/*.cpp tools/*.cpp targets/*.cpp lib/*.cpp) \
 $(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp))

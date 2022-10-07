@@ -3,6 +3,9 @@
 #include "Logger.hpp"
 #include "StringUtils.hpp"
 
+#define LAUNCHER "cccaster\\launcher.exe"
+#define HOOK_DLL "cccaster\\hook.release.dll"
+
 
 struct Exception
 {

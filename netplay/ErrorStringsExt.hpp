@@ -2,6 +2,7 @@
 
 #include "ErrorStrings.hpp"
 
+#include <defines.hpp>
 
 #define ERROR_PIPE_OPEN             "Failed to start game!\nIs " MBAA_EXE " already running?"
 

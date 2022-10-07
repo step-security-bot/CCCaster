@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#include <defines.hpp>
+
 
 // Main update archive file name
 #define UPDATE_ARCHIVE_FILE "update.zip"

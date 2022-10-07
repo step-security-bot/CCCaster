@@ -212,26 +212,31 @@
  */
 
 #ifndef OPTIONPARSER_H_
+
 #define OPTIONPARSER_H_
 
 /** @brief The namespace of The Lean Mean C++ Option Parser. */
-namespace option
-{
+namespace option {
 
 #ifdef _MSC_VER
+
 #include <intrin.h>
-#pragma intrinsic(_BitScanReverse)
-struct MSC_Builtin_CLZ
-{
-  static int builtin_clz(unsigned x)
-  {
+
+#pragma intrinsic( _BitScanReverse )
+
+struct MSC_Builtin_CLZ {
+  static int builtin_clz( unsigned x ) {
     unsigned long index;
-    _BitScanReverse(&index, x);
-    return 32-index; // int is always 32bit on Windows, even for target x64
+
+    _BitScanReverse( &index, x );
+
+    return ( 32 - index ); // int is always 32bit on Windows, even for target x64
   }
 };
-#define __builtin_clz(x) MSC_Builtin_CLZ::builtin_clz(x)
-#endif
+
+#define __builtin_clz( x ) MSC_Builtin_CLZ::builtin_clz( x )
+
+#endif // _MSC_VER
 
 class Option;
 
@@ -241,16 +246,11 @@ class Option;
  * In the case that no argument is provided for an option that takes an
  * optional argument, return codes @c ARG_OK and @c ARG_IGNORE are equivalent.
  */
-enum ArgStatus
-{
-  //! The option does not take an argument.
-  ARG_NONE,
-  //! The argument is acceptable for the option.
-  ARG_OK,
-  //! The argument is not acceptable but that's non-fatal because the option's argument is optional.
-  ARG_IGNORE,
-  //! The argument is not acceptable and that's fatal.
-  ARG_ILLEGAL
+enum ArgStatus {
+  ARG_NONE,   //< The option does not take an argument.
+  ARG_OK,     //< The argument is acceptable for the option.
+  ARG_IGNORE, //< The argument is not acceptable but that's non-fatal because the option's argument is optional.
+  ARG_ILLEGAL //< The argument is not acceptable and that's fatal.
 };
 
 /**
@@ -281,7 +281,7 @@ enum ArgStatus
  * @li @c Arg::Optional @copybrief Arg::Optional
  *
  */
-typedef ArgStatus (*CheckArg)(const Option& option, bool msg);
+typedef ArgStatus (*CheckArg)( const Option& option, bool msg );
 
 /**
  * @brief Describes an option, its help text (usage) and how it should be parsed.
@@ -305,8 +305,7 @@ typedef ArgStatus (*CheckArg)(const Option& option, bool msg);
  * };
  * @endcode
  */
-struct Descriptor
-{
+struct Descriptor {
   /**
    * @brief Index of this option's linked list in the array filled in by the parser.
    *
@@ -432,10 +431,10 @@ struct Descriptor
  *     @code for (Option* opt = options[FILE]; opt; opt = opt->next())
  *   fname = opt->arg; ... @endcode
  */
-class Option
-{
+class Option {
   Option* next_;
   Option* prev_;
+
 public:
   /**
    * @brief Pointer to this Option's Descriptor.
@@ -523,18 +522,24 @@ public:
    * }
    * @endcode
    */
-  int type() const
-  {
-    return desc == 0 ? 0 : desc->type;
+  int type( void ) const {
+    return (
+      ( desc == 0 )
+          ? 0
+          : desc->type
+    );
   }
 
   /**
    * @brief Returns Descriptor::index of this Option's Descriptor, or -1 if this Option
    * is invalid (unused).
    */
-  int index() const
-  {
-    return desc == 0 ? -1 : desc->index;
+  int index( void ) const {
+    return (
+      ( desc == 0 )
+          ? -1
+          : desc->index
+    );
   }
 
   /**
@@ -549,16 +554,16 @@ public:
    *
    * Returns 0 when called for an unused/invalid option.
    */
-  int count() const
-  {
-    int c = (desc == 0 ? 0 : 1);
+  int count( void ) const {
+    int c = ( ( desc == 0 ) ? 0 : 1 );
     const Option* p = first();
-    while (!p->isLast())
-    {
+    while ( !p->isLast() ) {
       ++c;
+
       p = p->next_;
     };
-    return c;
+
+    return ( c );
   }
 
   /**
@@ -569,9 +574,8 @@ public:
    *
    * Returns true for an unused/invalid option.
    */
-  bool isFirst() const
-  {
-    return isTagged(prev_);
+  bool isFirst( void ) const {
+    return ( isTagged( prev_ ) );
   }
 
   /**
@@ -582,9 +586,8 @@ public:
    *
    * Returns true for an unused/invalid option.
    */
-  bool isLast() const
-  {
-    return isTagged(next_);
+  bool isLast( void ) const {
+    return ( isTagged( next_ ) );
   }
 
   /**
@@ -598,20 +601,24 @@ public:
    * This method may be called on an unused/invalid option and will return a pointer to the
    * option itself.
    */
-  const Option* first() const
-  {
+  const Option* first( void ) const {
     const Option* p = this;
-    while (!p->isFirst())
+
+    while ( !p->isFirst() ) {
       p = p->prev_;
-    return p;
+    }
+
+    return ( p );
   }
 
-  Option* first()
-  {
+  Option* first( void ) {
     Option* p = this;
-    while (!p->isFirst())
+
+    while ( !p->isFirst() ) {
       p = p->prev_;
-    return p;
+    }
+
+    return ( p );
   }
 
   /**
@@ -630,14 +637,12 @@ public:
    * Descriptor::type and all you have to do is check <code> last()->type() </code> to get
    * the state listed last on the command line.
    */
-  const Option* last() const
-  {
-    return first()->prevwrap();
+  const Option* last( void ) const {
+    return ( first()->prevwrap() );
   }
 
-  Option* last()
-  {
-    return first()->prevwrap();
+  Option* last( void ) {
+    return ( first()->prevwrap() );
   }
 
   /**
@@ -648,14 +653,20 @@ public:
    * option with the same Descriptor::index that precedes this option on the command
    * line.
    */
-  const Option* prev() const
-  {
-    return isFirst() ? 0 : prev_;
+  const Option* prev( void ) const {
+    return (
+      ( isFirst() )
+          ? 0
+          : prev_
+    );
   }
 
-  Option* prev()
-  {
-    return isFirst() ? 0 : prev_;
+  Option* prev( void ) {
+    return (
+      ( isFirst() )
+          ? 0
+          : prev_
+    );
   }
 
   /**
@@ -666,14 +677,12 @@ public:
    * option with the same Descriptor::index that precedes this option on the command
    * line.
    */
-  const Option* prevwrap() const
-  {
-    return untag(prev_);
+  const Option* prevwrap( void ) const {
+    return ( untag( prev_ ) );
   }
 
-  Option* prevwrap()
-  {
-    return untag(prev_);
+  Option* prevwrap( void ) {
+    return ( untag( prev_ ) );
   }
 
   /**
@@ -684,14 +693,20 @@ public:
    * option with the same Descriptor::index that follows this option on the command
    * line.
    */
-  const Option* next() const
-  {
-    return isLast() ? 0 : next_;
+  const Option* next( void ) const {
+    return (
+      ( isLast() )
+          ? 0
+          : next_
+    );
   }
 
-  Option* next()
-  {
-    return isLast() ? 0 : next_;
+  Option* next( void ) {
+    return (
+      ( isLast() )
+          ? 0
+          : next_
+    );
   }
 
   /**
@@ -702,14 +717,12 @@ public:
    * option with the same Descriptor::index that follows this option on the command
    * line.
    */
-  const Option* nextwrap() const
-  {
-    return untag(next_);
+  const Option* nextwrap( void ) const {
+    return ( untag( next_  ) );
   }
 
-  Option* nextwrap()
-  {
-    return untag(next_);
+  Option* nextwrap( void ) {
+    return ( untag( next_ ) );
   }
 
   /**
@@ -722,14 +735,16 @@ public:
    * @c new_last must not yet be part of a list, or that list will become corrupted, because
    * this method does not unchain @c new_last from an existing list.
    */
-  void append(Option* new_last)
-  {
+  void append( Option* new_last ) {
     Option* p = last();
     Option* f = first();
+
     p->next_ = new_last;
+
     new_last->prev_ = p;
-    new_last->next_ = tag(f);
-    f->prev_ = tag(new_last);
+    new_last->next_ = tag( f );
+
+    f->prev_ = tag( new_last );
   }
 
   /**
@@ -748,9 +763,12 @@ public:
    * @code for (Option* opt = options[FILE]; opt; opt = opt->next())
    *   fname = opt->arg; ... @endcode
    */
-  operator const Option*() const
-  {
-    return desc ? this : 0;
+  operator const Option*( void ) const {
+    return (
+      ( desc )
+          ? this
+          : 0
+    );
   }
 
   /**
@@ -769,20 +787,26 @@ public:
    * @code for (Option* opt = options[FILE]; opt; opt = opt->next())
    *   fname = opt->arg; ... @endcode
    */
-  operator Option*()
-  {
-    return desc ? this : 0;
+  operator Option*( void ) {
+    return (
+      ( desc )
+          ? this
+          : 0
+    );
   }
 
   /**
    * @brief Creates a new Option that is a one-element linked list and has NULL
    * @ref desc, @ref name, @ref arg and @ref namelen.
    */
-  Option() :
-      desc(0), name(0), arg(0), namelen(0)
+  Option( void ) :
+      desc( 0 ),
+      name( 0 ),
+      arg( 0 ),
+      namelen( 0 )
   {
-    prev_ = tag(this);
-    next_ = tag(this);
+    prev_ = tag( this );
+    next_ = tag( this );
   }
 
   /**
@@ -793,9 +817,8 @@ public:
    * short option and @ref namelen will be set to 1. Otherwise the length will extend to
    * the first '=' character or the string's 0-terminator.
    */
-  Option(const Descriptor* desc_, const char* name_, const char* arg_)
-  {
-    init(desc_, name_, arg_);
+  Option( const Descriptor* desc_, const char* name_, const char* arg_ ) {
+    init( desc_, name_, arg_ );
   }
 
   /**
@@ -803,9 +826,8 @@ public:
    *
    * After this operation @c *this will be a one-element linked list.
    */
-  void operator=(const Option& orig)
-  {
-    init(orig.desc, orig.name, orig.arg);
+  void operator=( const Option& orig ) {
+    init( orig.desc, orig.name, orig.arg );
   }
 
   /**
@@ -813,9 +835,8 @@ public:
    *
    * After this operation @c *this will be a one-element linked list.
    */
-  Option(const Option& orig)
-  {
-    init(orig.desc, orig.name, orig.arg);
+  Option( const Option& orig ) {
+    init( orig.desc, orig.name, orig.arg );
   }
 
 private:
@@ -827,46 +848,47 @@ private:
    * short option and @ref namelen will be set to 1. Otherwise the length will extend to
    * the first '=' character or the string's 0-terminator.
    */
-  void init(const Descriptor* desc_, const char* name_, const char* arg_)
-  {
-    desc = desc_;
-    name = name_;
-    arg = arg_;
-    prev_ = tag(this);
-    next_ = tag(this);
+  void init( const Descriptor* desc_, const char* name_, const char* arg_ ) {
+    desc    = desc_;
+    name    = name_;
+    arg     = arg_;
+    prev_   = tag( this );
+    next_   = tag( this );
     namelen = 0;
-    if (name == 0)
+
+    if ( name == 0 ) {
       return;
+    }
+
     namelen = 1;
-    if (name[0] != '-')
+
+    if ( name[ 0 ] != '-' ) {
       return;
-    while (name[namelen] != 0 && name[namelen] != '=')
+    }
+
+    while ( ( name[ namelen ] != 0 ) && ( name[ namelen ] != '=' ) ) {
       ++namelen;
+    }
   }
 
-  static const Option* tag(const Option* ptr)
-  {
-    return (Option*) ((unsigned long long) ptr | 1);
+  static const Option* tag( const Option* ptr ) {
+    return ( (Option*)( (unsigned long long) ptr | 1 ) );
   }
 
-  static Option* tag(Option* ptr)
-  {
-    return (Option*) ((unsigned long long) ptr | 1);
+  static Option* tag( Option* ptr ) {
+    return ( (Option*)( (unsigned long long) ptr | 1 ) );
   }
 
-  static const Option* untag(const Option* ptr)
-  {
-    return (Option*) ((unsigned long long) ptr & ~1ull);
+  static const Option* untag( const Option* ptr ) {
+    return ( (Option*)( (unsigned long long) ptr & ~1ull ) );
   }
 
-  static Option* untag(Option* ptr)
-  {
-    return (Option*) ((unsigned long long) ptr & ~1ull);
+  static Option* untag( Option* ptr ) {
+    return ( (Option*)( (unsigned long long) ptr & ~1ull ) );
   }
 
-  static bool isTagged(const Option* ptr)
-  {
-    return ((unsigned long long) ptr & 1);
+  static bool isTagged( const Option* ptr ) {
+    return ( ( (unsigned long long) ptr & 1 ) );
   }
 };
 
@@ -924,73 +946,85 @@ private:
  * };
  * @endcode
  */
-struct Arg
-{
+struct Arg {
   //! @brief For options that don't take an argument: Returns ARG_NONE.
-  static ArgStatus None(const Option&, bool)
-  {
-    return ARG_NONE;
+  static ArgStatus None( const Option&, bool ) {
+    return ( ARG_NONE );
   }
 
   //! @brief Returns ARG_OK if the argument is attached and ARG_IGNORE otherwise.
-  static ArgStatus Optional(const Option& option, bool)
-  {
-    if (option.arg != 0 && option.arg[0] != 0)
-      return ARG_OK;
-    else
+  static ArgStatus Optional( const Option& option, bool ) {
+    if ( ( option.arg != 0 ) && ( option.arg[ 0 ] != 0 ) ) {
+      return ( ARG_OK );
+
+    } else {
       return ARG_IGNORE;
+    }
   }
 
-  static ArgStatus OptionalNumeric(const Option& option, bool msg)
-  {
-    if (Numeric(option, false) == ARG_OK)
-      return ARG_OK;
-    else
-      return ARG_IGNORE;
+  static ArgStatus OptionalNumeric( const Option& option, bool msg ) {
+    if ( Numeric( option, false ) == ARG_OK ) {
+      return ( ARG_OK );
+
+    } else {
+      return ( ARG_IGNORE );
+    }
   }
 
-  static ArgStatus Unknown(const Option& option, bool msg)
-  {
-    if (msg) printError("Unknown option '", option, "'\n");
-    return ARG_ILLEGAL;
+  static ArgStatus Unknown( const Option& option, bool msg ) {
+    if ( msg ) {
+      printError( "Unknown option \'", option, "\'\n" );
+    }
+
+    return ( ARG_ILLEGAL );
   }
 
-  static ArgStatus Required(const Option& option, bool msg)
-  {
-    if (option.arg != 0)
-      return ARG_OK;
+  static ArgStatus Required( const Option& option, bool msg ) {
+    if ( option.arg != 0 ) {
+      return ( ARG_OK );
+    }
 
-    if (msg) printError("Option '", option, "' requires an argument\n");
-    return ARG_ILLEGAL;
+    if ( msg ) {
+      printError( "Option \'", option, "\' requires an argument\n" );
+    }
+
+    return ( ARG_ILLEGAL );
   }
 
-  static ArgStatus NonEmpty(const Option& option, bool msg)
-  {
-    if (option.arg != 0 && option.arg[0] != 0)
-      return ARG_OK;
+  static ArgStatus NonEmpty( const Option& option, bool msg ) {
+    if ( ( option.arg != 0 ) && ( option.arg[ 0 ] != 0 ) ) {
+      return ( ARG_OK );
+    }
 
-    if (msg) printError("Option '", option, "' requires a non-empty argument\n");
-    return ARG_ILLEGAL;
+    if ( msg ) {
+      printError( "Option \'", option, "\' requires a non-empty argument\n" );
+    }
+
+    return ( ARG_ILLEGAL );
   }
 
-  static ArgStatus Numeric(const Option& option, bool msg)
-  {
+  static ArgStatus Numeric( const Option& option, bool msg ) {
     char* endptr = 0;
-    if (option.arg != 0 && strtol(option.arg, &endptr, 10)){};
-    if (endptr != option.arg && *endptr == 0)
-      return ARG_OK;
 
-    if (msg) printError("Option '", option, "' requires a numeric argument\n");
-    return ARG_ILLEGAL;
+    if ( ( option.arg != 0 ) && ( strtol( option.arg, &endptr, 10 ) ) ) {
+    }
+
+    if ( ( endptr != option.arg ) && ( *endptr == 0 ) ) {
+      return ( ARG_OK );
+    }
+
+    if ( msg ) {
+      printError( "Option \'", option, "\' requires a numeric argument\n" );
+    }
+
+    return ( ARG_ILLEGAL );
   }
 
 private:
-
-  static void printError(const char* msg1, const Option& opt, const char* msg2)
-  {
-    fprintf(stderr, "Error: %s", msg1);
-    fwrite(opt.name, opt.namelen, 1, stderr);
-    fprintf(stderr, "%s", msg2);
+  static void printError( const char* msg1, const Option& opt, const char* msg2 ) {
+    fprintf( stderr, "Error: %s", msg1 );
+    fwrite( opt.name, opt.namelen, 1, stderr );
+    fprintf( stderr, "%s", msg2 );
   }
 };
 
@@ -1003,8 +1037,7 @@ private:
  * Stats work cumulative. You can first pass in your default options and then the real
  * options and afterwards the counts will reflect the union.
  */
-struct Stats
-{
+struct Stats {
   /**
    * @brief Number of elements needed for a @c buffer[] array to be used for
    * @ref Parser::parse() "parsing" the same argument vectors that were fed
@@ -1032,8 +1065,9 @@ struct Stats
   /**
    * @brief Creates a Stats object with counts set to 1 (for the sentinel element).
    */
-  Stats() :
-      buffer_max(1), options_max(1) // 1 more than necessary as sentinel
+  Stats( void ) :
+      buffer_max( 1 ),
+      options_max( 1 ) // 1 more than necessary as sentinel
   {
   }
 
@@ -1046,35 +1080,39 @@ struct Stats
    * The calls to Stats methods must match the later calls to Parser methods.
    * See Parser::parse() for the meaning of the arguments.
    */
-  Stats(bool gnu, const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
-        bool single_minus_longopt = false) :
-      buffer_max(1), options_max(1) // 1 more than necessary as sentinel
+  Stats( bool gnu, const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
+        bool single_minus_longopt = false ) :
+      buffer_max( 1 ),
+      options_max( 1 ) // 1 more than necessary as sentinel
   {
-    add(gnu, usage, argc, argv, min_abbr_len, single_minus_longopt);
+    add( gnu, usage, argc, argv, min_abbr_len, single_minus_longopt );
   }
 
   //! @brief Stats(...) with non-const argv.
-  Stats(bool gnu, const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
-        bool single_minus_longopt = false) :
-      buffer_max(1), options_max(1) // 1 more than necessary as sentinel
+  Stats( bool gnu, const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
+        bool single_minus_longopt = false ) :
+      buffer_max( 1 ),
+      options_max( 1 ) // 1 more than necessary as sentinel
   {
-    add(gnu, usage, argc, (const char**) argv, min_abbr_len, single_minus_longopt);
+    add( gnu, usage, argc, (const char**)argv, min_abbr_len, single_minus_longopt );
   }
 
   //! @brief POSIX Stats(...) (gnu==false).
-  Stats(const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
-        bool single_minus_longopt = false) :
-      buffer_max(1), options_max(1) // 1 more than necessary as sentinel
+  Stats( const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
+        bool single_minus_longopt = false ) :
+      buffer_max( 1 ),
+      options_max( 1 ) // 1 more than necessary as sentinel
   {
-    add(false, usage, argc, argv, min_abbr_len, single_minus_longopt);
+    add( false, usage, argc, argv, min_abbr_len, single_minus_longopt );
   }
 
   //! @brief POSIX Stats(...) (gnu==false) with non-const argv.
-  Stats(const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
-        bool single_minus_longopt = false) :
-      buffer_max(1), options_max(1) // 1 more than necessary as sentinel
+  Stats( const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
+        bool single_minus_longopt = false ) :
+      buffer_max( 1 ),
+      options_max( 1 ) // 1 more than necessary as sentinel
   {
-    add(false, usage, argc, (const char**) argv, min_abbr_len, single_minus_longopt);
+    add( false, usage, argc, (const char**)argv, min_abbr_len, single_minus_longopt );
   }
 
   /**
@@ -1086,29 +1124,30 @@ struct Stats
    * The calls to Stats methods must match the later calls to Parser methods.
    * See Parser::parse() for the meaning of the arguments.
    */
-  void add(bool gnu, const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
-           bool single_minus_longopt = false);
+  void add( bool gnu, const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
+           bool single_minus_longopt = false );
 
   //! @brief add() with non-const argv.
-  void add(bool gnu, const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
-           bool single_minus_longopt = false)
+  void add( bool gnu, const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
+           bool single_minus_longopt = false )
   {
-    add(gnu, usage, argc, (const char**) argv, min_abbr_len, single_minus_longopt);
+    add( gnu, usage, argc, (const char**)argv, min_abbr_len, single_minus_longopt );
   }
 
   //! @brief POSIX add() (gnu==false).
-  void add(const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
-           bool single_minus_longopt = false)
+  void add( const Descriptor usage[], int argc, const char** argv, int min_abbr_len = 0, //
+           bool single_minus_longopt = false )
   {
-    add(false, usage, argc, argv, min_abbr_len, single_minus_longopt);
+    add( false, usage, argc, argv, min_abbr_len, single_minus_longopt );
   }
 
   //! @brief POSIX add() (gnu==false) with non-const argv.
-  void add(const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
-           bool single_minus_longopt = false)
+  void add( const Descriptor usage[], int argc, char** argv, int min_abbr_len = 0, //
+           bool single_minus_longopt = false )
   {
-    add(false, usage, argc, (const char**) argv, min_abbr_len, single_minus_longopt);
+    add( false, usage, argc, (const char**)argv, min_abbr_len, single_minus_longopt );
   }
+
 private:
   class CountOptionsAction;
 };
@@ -1133,19 +1172,21 @@ private:
  *   ...
  * @endcode
  */
-class Parser
-{
+class Parser {
   int op_count; //!< @internal @brief see optionsCount()
   int nonop_count; //!< @internal @brief see nonOptionsCount()
   const char** nonop_args; //!< @internal @brief see nonOptions()
   bool err; //!< @internal @brief see error()
-public:
 
+public:
   /**
    * @brief Creates a new Parser.
    */
-  Parser() :
-      op_count(0), nonop_count(0), nonop_args(0), err(false)
+  Parser( void ) :
+      op_count( 0 ),
+      nonop_count( 0 ),
+      nonop_args( 0 ),
+      err( false )
   {
   }
 

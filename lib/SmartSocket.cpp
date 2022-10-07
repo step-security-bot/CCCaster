@@ -6,6 +6,8 @@
 #include <ws2tcpip.h>
 #include <fstream>
 
+#include <defines.hpp>
+
 using namespace std;
 
 // TODO add more state to this log macro

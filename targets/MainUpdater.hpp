@@ -7,6 +7,7 @@
 
 #include <string>
 
+#define UPDATER "updater.exe"
 
 class MainUpdater
     : private HttpDownload::Owner

@@ -26,6 +26,8 @@
 
 using namespace std;
 
+#include <defines.hpp>
+
 
 // The main log file path
 #define LOG_FILE                    FOLDER "dll.log"

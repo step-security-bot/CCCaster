@@ -16,6 +16,7 @@
 
 using namespace std;
 
+#include <defines.hpp>
 
 #define GAME_START_INTERVAL     ( 2000 )
 

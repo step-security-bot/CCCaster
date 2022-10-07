@@ -1,20 +1,23 @@
 #include "Main.hpp"
 #include "MainUi.hpp"
-#include "Version.hpp"
-#include "ConsoleUi.hpp"
 #include "Exceptions.hpp"
 #include "ErrorStringsExt.hpp"
 #include "CharacterSelect.hpp"
 #include "StringUtils.hpp"
 #include "NetplayStates.hpp"
+#include "ConsoleUi.hpp"
+#include "Version.hpp"
 
 #include <algorithm>
 #include <iomanip>
 #include <mmsystem.h>
 #include <wininet.h>
 
+#include <defines.hpp>
+
 using namespace std;
 
+#define TAG "release"
 
 // Indent position of the pinging stats (must be a string)
 #define INDENT_STATS "20"
