@@ -1,3 +1,7 @@
+.PHONY: all clean target-release \
+build_release_$(shell git rev-parse --abbrev-ref HEAD) \
+build_release_$(shell git rev-parse --abbrev-ref HEAD)/%.o
+
 # Library sources
 HOOK_CC_SRCS = $(wildcard 3rdparty/minhook/src/*.cc 3rdparty/d3dhook/*.cc)
 HOOK_C_SRCS = $(wildcard 3rdparty/minhook/src/hde32/*.c)
@@ -17,12 +21,12 @@ INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/3rdparty 
 -I$(CURDIR)/3rdparty/cereal/include -I$(CURDIR)/3rdparty/gtest/include -I$(CURDIR)/3rdparty/minhook/include \
 -I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/imgui -I$(CURDIR)/targets
 
-all: $(wildcard netplay/*.cpp tools/*.cpp targets/*.cpp lib/*.cpp) \
+all: | build $(wildcard netplay/*.cpp tools/*.cpp targets/*.cpp lib/*.cpp) \
 $(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp))
 	@echo
 	@echo ========== Main-build ==========
 	@echo
-	@scripts/make_version 3.1.2 > lib/Version.local.hpp
+	@scripts/make_version "3.1.2" > lib/Version.local.hpp
 	@scripts/make_protocol $(filter-out lib/Version.%.hpp lib/Protocol.%.hpp,$(wildcard netplay/*.hpp targets/*.hpp lib/*.hpp))
 	@$(MAKE) --no-print-directory target-release BUILD_TYPE=build_release
 
@@ -34,7 +38,17 @@ target-release: cccaster.v3.1.release.exe cccaster/hook.release.dll cccaster/lau
 	cp -r res/GRP GRP
 	zip cccaster.v3.1.2.release.zip -r GRP
 	rm -rf GRP
+	mv cccaster build/
+	mv *.zip build/
+	mv *.exe build/
+	mv tools/*.exe build/
+	mv build_release_$(shell git rev-parse --abbrev-ref HEAD) build/
+	mv res/rollback.* build/
+	mv res/icon.res build/
 	@echo $(MAKECMDGOALS)
+
+build:
+	mkdir -p $@
 
 build_release_$(shell git rev-parse --abbrev-ref HEAD):
 	rsync -a -f"- .git/" -f"- build_*/" -f"+ */" -f"- *" --exclude=".*" . $@
@@ -90,11 +104,6 @@ res/icon.res: res/icon.rc res/icon.ico
 	i686-w64-mingw32-windres -F pe-i386 res/icon.rc -O coff -o $@
 
 clean:
-	rm -rf build_release_$(shell git rev-parse --abbrev-ref HEAD) \
-	cccaster \
-	*.exe *.zip tools/*.exe \
-	$(wildcard lib/Version.*.hpp lib/Protocol.*.hpp) \
-	res/rollback.* res/icon.res \
-	.depend_$(shell git rev-parse --abbrev-ref HEAD) \
-	.include_$(shell git rev-parse --abbrev-ref HEAD) 
+	rm -rf build/ \
+	$(wildcard lib/Version.*.hpp lib/Protocol.*.hpp)
 	git checkout -- lib/ProtocolEnums.hpp

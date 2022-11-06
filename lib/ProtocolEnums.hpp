@@ -25,7 +25,7 @@ SpectateConfig,
 SplitMessage,
 Statistics,
 SyncHash,
-TestMessage,
+TestMessage, // Deleted message
 UdpControl,
 Version,
 VersionConfig,

@@ -1,1 +1,6 @@
-install
+cccaster/
+*.code-workspace
+*.exe
+*.dll
+*.log
+*.zip
