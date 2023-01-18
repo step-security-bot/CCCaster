@@ -8,6 +8,7 @@
 #include <memory>
 #include <iostream>
 #include <sstream>
+#include <array>
 
 
 #define EMPTY_MESSAGE_BOILERPLATE(NAME)                                                                     \
