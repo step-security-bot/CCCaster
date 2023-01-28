@@ -1547,6 +1547,11 @@ struct DllMain
                 } else {
                     netMan.autoReplaySave = false;
                 }
+                if ( options[Options::FrameLimiter] ) {
+                    
+                } else {
+                    DllFrameRate::enable();
+                }
 
                 // This will log in the previous appDir folder it not the same
                 LOG ( "appDir='%s'", ProcessManager::appDir );

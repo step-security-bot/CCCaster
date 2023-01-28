@@ -1285,7 +1285,10 @@ struct MainApp
         {
             options.set ( Options::AutoReplaySave, 1 );
         }
-
+        if ( ui.getConfig().getInteger ( "frameLimiter" ) > 0 )
+        {
+            options.set ( Options::FrameLimiter, 1 );
+        }
         if ( ! ProcessManager::getIsWindowed() )
         {
             ProcessManager::setIsWindowed ( true );

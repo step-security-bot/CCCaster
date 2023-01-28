@@ -968,6 +968,7 @@ void MainUi::settings()
         "Automatic Replay Save",
         "Matchmaking Region",
         "Trial Input Guide Settings",
+        "Experimental Settings",
         "About",
     };
 
@@ -1345,6 +1346,34 @@ void MainUi::settings()
                 }
                 break;
             case 12:
+                _ui->pushInFront ( new ConsoleUi::Menu ( "Experimental Options",
+                                                         { "Disable Caster Frame Limiter" }, "Cancel" ),
+                                   { 0, 0 }, true ); // Don't expand but DO clear top
+                while ( true ) {
+                    _ui->popUntilUserInput();
+                    int setting = _ui->top()->resultInt;
+                    if ( setting == 0 ) {
+                        _ui->pushInFront ( new ConsoleUi::Menu ( "Disable Caster Frame Limiter?",
+                                                                 { "Yes", "No" }, "Cancel" ),
+                                           { 0, 0 }, true ); // Don't expand but DO clear top
+
+                        _ui->top<ConsoleUi::Menu>()->setPosition ( ( _config.getInteger ( "frameLimiter" ) + 1 ) % 2 );
+                        _ui->popUntilUserInput();
+
+                        if ( _ui->top()->resultInt >= 0 && _ui->top()->resultInt <= 1 )
+                            {
+                                _config.setInteger ( "frameLimiter", ( _ui->top()->resultInt + 1 ) % 2 );
+                                saveConfig();
+                            }
+
+                        _ui->pop();
+                    } else {
+                        _ui->pop();
+                        break;
+                    }
+                }
+                break;
+            case 13:
                 _ui->pushInFront ( new ConsoleUi::TextBox ( format ( "CCCaster %s%s\n\nRevision %s\n\nBuilt on %s\n\n"
                                    "Created by Madscientist\n\nPress any key to go back",
                                    LocalVersion.code,
@@ -1475,6 +1504,7 @@ void MainUi::initialize()
     _config.setInteger ( "defaultRollback", 4 );
     _config.setInteger ( "autoCheckUpdates", 1 );
     _config.setInteger ( "autoReplaySave", 1 );
+    _config.setInteger ( "frameLimiter", 0 );
     _config.setString ( "matchmakingRegion", "NA West" );
     _config.setDouble ( "heldStartDuration", 1.5 );
     _config.setInteger ( "updateChannel", static_cast<int>(MainUpdater::Channel::Dev ) );

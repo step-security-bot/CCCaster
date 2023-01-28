@@ -25,6 +25,7 @@ ENUM ( Options,
        Fullscreen,
        AutoReplaySave,
        // Debug options
+       FrameLimiter,
        Tests,
        Stdout,
        FakeUi,
