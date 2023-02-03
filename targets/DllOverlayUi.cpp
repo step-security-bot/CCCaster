@@ -45,7 +45,9 @@ void InitializeDirectX ( IDirect3DDevice9 *device )
     initalizedDirectX = true;
 
     initOverlayText ( device );
+#ifdef LOGGING
     initImGui ( device );
+#endif
 }
 
 void InvalidateDeviceObjects()
@@ -72,6 +74,7 @@ void PresentFrameBegin ( IDirect3DDevice9 *device )
         return;
 
     renderOverlayText ( device, viewport );
+#ifdef LOGGING
     doEndScene = true;
     if (device->BeginScene() >= 0)
     {
@@ -79,4 +82,5 @@ void PresentFrameBegin ( IDirect3DDevice9 *device )
         // because there's about 100 begin/endscene pairs between present calls
         device->EndScene();
     }
+#endif
 }

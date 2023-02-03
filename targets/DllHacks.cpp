@@ -211,7 +211,7 @@ void initializePostLoad()
 
     // Apparently this needs to be applied AFTER the game loads
     // TODO: Make toggle
-    // DllFrameRate::enable();
+    DllFrameRate::enable();
 
     // Hook the game's DirectX calls
     string err;

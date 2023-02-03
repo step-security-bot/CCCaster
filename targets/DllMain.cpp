@@ -1545,8 +1545,8 @@ struct DllMain
                 } else {
                     netMan.autoReplaySave = false;
                 }
-                if ( options[Options::FrameLimiter] ) {
-                    
+                if ( ProcessManager::isWine() || options[Options::FrameLimiter] ) {
+
                 } else {
                     DllFrameRate::enable();
                 }
