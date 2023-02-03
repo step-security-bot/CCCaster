@@ -27,7 +27,7 @@ LOBBY_LIST = lobby_list.txt
 
 # Library sources
 GTEST_CC_SRCS = 3rdparty/gtest/fused-src/gtest/gtest-all.cc
-IMGUI_CPP_SRCS = $(wildcard 3rdparty/imgui/*.cpp)
+IMGUI_CPP_SRCS = $(wildcard 3rdparty/imgui/*.cpp) 3rdparty/imgui/backends/imgui_impl_win32.cpp 3rdparty/imgui/backends/imgui_impl_dx9.cpp
 JLIB_CC_SRCS = $(wildcard 3rdparty/JLib/*.cc)
 HOOK_CC_SRCS = $(wildcard 3rdparty/minhook/src/*.cc 3rdparty/d3dhook/*.cc)
 HOOK_C_SRCS = $(wildcard 3rdparty/minhook/src/hde32/*.c)
@@ -89,7 +89,7 @@ DEFINES += -DRELAY_LIST='"$(RELAY_LIST)"' -DTAG='"$(TAG)"'
 DEFINES += -DLOBBY_LIST='"$(LOBBY_LIST)"'
 INCLUDES = -I$(CURDIR) -I$(CURDIR)/netplay -I$(CURDIR)/lib -I$(CURDIR)/tests -I$(CURDIR)/3rdparty -I$(CURDIR)/sequences
 INCLUDES += -I$(CURDIR)/3rdparty/cereal/include -I$(CURDIR)/3rdparty/gtest/include -I$(CURDIR)/3rdparty/minhook/include
-INCLUDES += -I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/framedisplay -I$(CURDIR)/3rdparty/imgui
+INCLUDES += -I$(CURDIR)/3rdparty/d3dhook -I$(CURDIR)/3rdparty/framedisplay -I$(CURDIR)/3rdparty/imgui -I$(CURDIR)/3rdparty/imgui/backends
 CC_FLAGS = -m32 $(INCLUDES) $(DEFINES)
 
 # Linker flags
