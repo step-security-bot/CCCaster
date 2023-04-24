@@ -1,7 +1,7 @@
 VERSION = 3.1
-SUFFIX = .003
+SUFFIX = .004
 NAME = cccaster
-TAG =
+TAG = beta
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 ifneq ($(TAG),)
@@ -153,9 +153,9 @@ ifneq (,$(findstring release,$(MAKECMDGOALS)))
 		$(ZIP) $(ARCHIVE) -r GRP
 		$(ZIP) $(ARCHIVE) -r cccaster/trials
 		rm -rf GRP
+	        $(GRANT)
 endif
 	echo $(MAKECMDGOALS)
-	$(GRANT)
 
 $(BINARY): $(addprefix $(BUILD_PREFIX)/,$(MAIN_OBJECTS)) res/icon.res
 	rm -f $(filter-out $(BINARY),$(wildcard $(NAME)*.exe))

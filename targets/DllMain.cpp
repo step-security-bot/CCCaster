@@ -161,6 +161,7 @@ struct DllMain
 
     // If we should fast-forward when spectating
     bool spectateFastFwd = true;
+    bool spectateHardSync = false;
 
     // The minimum number of frames that must run normally, before we're allowed to do another rollback
     uint8_t minRollbackSpacing = 2;
@@ -229,6 +230,26 @@ struct DllMain
                     else if ( !doneSkipping && *CC_SKIP_FRAMES_ADDR == 0 )
                     {
                         doneSkipping = true;
+                    }
+                }
+
+                // Hard Sync to current state
+                if ( spectateHardSync && clientMode.isSpectate() && netMan.getState() != NetplayState::Loading )
+                {
+                    static bool doneSkipping = true;
+
+                    const IndexedFrame remoteIndexedFrame = netMan.getRemoteIndexedFrame();
+
+                    if ( doneSkipping && remoteIndexedFrame.value > netMan.getIndexedFrame().value + 2 * NUM_INPUTS )
+                    {
+                        uint32_t framesToSkip = remoteIndexedFrame - (netMan.getIndexedFrame().value + 2 * NUM_INPUTS) - 1;
+                        *CC_SKIP_FRAMES_ADDR = framesToSkip;
+                        doneSkipping = false;
+                    }
+                    else if ( !doneSkipping && *CC_SKIP_FRAMES_ADDR == 0 )
+                    {
+                        doneSkipping = true;
+                        spectateHardSync = false;
                     }
                 }
 
@@ -318,8 +339,12 @@ struct DllMain
                 }
                 else if ( clientMode.isSpectate() )                                         // Spectator controls
                 {
-                    if ( KeyboardState::isPressed ( VK_SPACE ) )
-                        spectateFastFwd = !spectateFastFwd;
+                    if ( KeyboardState::isPressed ( VK_SPACE ) ) {
+                        if ( KeyboardState::isDown ( VK_MENU ) ) {
+                            spectateHardSync = !spectateHardSync;
+                        } else {
+                            spectateFastFwd = !spectateFastFwd;
+                        }
                 }
                 else
                 {
