@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys, socket, select, struct, traceback
 
-IP_ADDR_PORT = ( '', 3939 )
+IP_ADDR_PORT = ("", 3939)
 
 TCP_BACKLOG = 5
 
@@ -26,6 +26,7 @@ matches = {}
 
 currentMatchId = 0
 
+
 def nextMatchId():
     global currentMatchId
 
@@ -36,7 +37,7 @@ def nextMatchId():
 
     while currentMatchId in matches:
         currentMatchId += 1
-        currentMatchId %= ( 2**32 )
+        currentMatchId %= 2**32
 
     if currentMatchId == 0:
         currentMatchId = 1
@@ -48,7 +49,7 @@ def close():
     for s in inputSockets:
         s.close()
 
-    exit ( 0 )
+    exit(0)
 
 
 def reset():
@@ -58,28 +59,28 @@ def reset():
         s.close()
 
     try:
-        tcpServerSocket = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
-        tcpServerSocket.setsockopt ( socket.SOL_SOCKET, socket.SO_REUSEPORT, 1 )
-        tcpServerSocket.setblocking ( 0 )
-        tcpServerSocket.bind ( IP_ADDR_PORT )
+        tcpServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcpServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        tcpServerSocket.setblocking(0)
+        tcpServerSocket.bind(IP_ADDR_PORT)
 
-        udpServerSocket = socket.socket ( socket.AF_INET, socket.SOCK_DGRAM )
-        udpServerSocket.setsockopt ( socket.SOL_SOCKET, socket.SO_REUSEPORT, 1 )
-        udpServerSocket.setblocking ( 0 )
-        udpServerSocket.bind ( IP_ADDR_PORT )
+        udpServerSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udpServerSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        udpServerSocket.setblocking(0)
+        udpServerSocket.bind(IP_ADDR_PORT)
 
-        tcpServerSocket.listen ( TCP_BACKLOG )
+        tcpServerSocket.listen(TCP_BACKLOG)
 
-        inputSockets = [ tcpServerSocket, udpServerSocket ]
+        inputSockets = [tcpServerSocket, udpServerSocket]
 
         addresses = {}
 
         hosts = {}
 
     except:
-        print '=' * 60
-        traceback.print_exc ( file=sys.stdout )
-        print '=' * 60
+        print("=" * 60)
+        traceback.print_exc(file=sys.stdout)
+        print("=" * 60)
 
         close()
 
@@ -89,10 +90,12 @@ reset()
 
 while True:
     try:
-        readable, writable, exceptional = select.select ( inputSockets, outputSockets, inputSockets )
+        readable, writable, exceptional = select.select(
+            inputSockets, outputSockets, inputSockets
+        )
 
-        if len ( exceptional ) != 0:
-            print len ( exceptional ), 'exceptional sockets'
+        if len(exceptional) != 0:
+            print(len(exceptional), "exceptional sockets")
 
             reset()
             continue
@@ -100,34 +103,41 @@ while True:
         for s in readable:
             if s is tcpServerSocket:
                 tcpSocket, address = s.accept()
-                tcpSocket.setblocking ( 0 )
+                tcpSocket.setblocking(0)
 
-                inputSockets.append ( tcpSocket )
+                inputSockets.append(tcpSocket)
 
-                addresses[tcpSocket] = address[0];
+                addresses[tcpSocket] = address[0]
 
-                print 'accepted', address[0]
+                print("TCP accepted", address[0])
 
             elif s is udpServerSocket:
-                data, address = s.recvfrom ( BUFFER_SIZE )
+                data, address = s.recvfrom(BUFFER_SIZE)
 
-                print 'UDP data', repr ( data ), 'address', address
+                print("UDP 'accepted'", repr(data), "address", address)
 
                 try:
-                    index, matchId = struct.unpack ( '<BI', data )
+                    index, matchId = struct.unpack("<BI", data)
 
-                    if ( 0 <= index <= 1 ) and ( matchId in matches ):
+                    if (0 <= index <= 1) and (matchId in matches):
                         # if matching TCP socket is found, send UDP address once
                         if matches[matchId][index]:
-                            tunInfo = 'TunInfo' + struct.pack ( '<I', matchId ) + '%s:%u\0' % address
+                            tunInfo = (
+                                "TunInfo".encode("utf-8")
+                                + struct.pack("<I", matchId)
+                                + ("%s:%u\0" % address).encode("utf-8")
+                            )
 
-                            matches[matchId][index].send ( tunInfo )
+                            print("  sending TunInfo", tunInfo)
+
+                            matches[matchId][index].send(tunInfo)
                             matches[matchId][index] = None
 
                         # remove the match once both have been sent
-                        if ( not matches[matchId][0] ) and ( not matches[matchId][1] ):
+                        if (not matches[matchId][0]) and (not matches[matchId][1]):
                             del matches[matchId]
-                            print 'matches', matches.keys()
+                            print("  deleting match", matchId)
+                            print("  match list", list(matches.keys()))
 
                     continue
                 except:
@@ -135,66 +145,81 @@ while True:
 
             elif s in inputSockets:
                 try:
-                    data = s.recv ( BUFFER_SIZE )
+                    data = s.recv(BUFFER_SIZE)
                 except:
                     continue
 
-                print 'TCP data', repr ( data )
+                print("TCP data from existing client", repr(data))
 
                 if data:
-                    if len ( data ) == 3:
-                        socketType, port = struct.unpack ( '<cH', data )
+                    if len(data) == 3:
+                        socketType, port = struct.unpack("<cH", data)
 
-                        print 'type', [ 'TCP', 'UDP' ][socketType == 'UDP'], 'port', port
+                        print(
+                            "  type", ["TCP", "UDP"][socketType == "UDP"], "port", port
+                        )
 
                         # port must be non-zero
                         if socketType and port:
-                            address = '%s%s:%u' % ( socketType, addresses[s], port )
+                            address = "%s%s:%u" % (
+                                socketType.decode("utf-8"),
+                                addresses[s],
+                                port,
+                            )
 
                             hosts[address] = s
                             addresses[s] = address
 
-                            print 'hosts', hosts.keys()
+                            print("  hosts", list(hosts.keys()))
                             continue
 
-                    elif 10 <= len ( data ) <= 22: # min data "T1.1.1.1:0", max data "T255.255.255.255:65535"
+                    elif (
+                        10 <= len(data) <= 22
+                    ):  # min data "T1.1.1.1:0", max data "T255.255.255.255:65535"
                         # if matching
+                        data = data.decode("utf-8")
+                        print("  received IP", data)
                         if data in hosts:
                             matchId = nextMatchId()
 
-                            matchInfo = 'MatchInfo' + struct.pack ( '<I', matchId )
+                            matchInfo = "MatchInfo".encode("utf-8") + struct.pack(
+                                "<I", matchId
+                            )
 
-                            s.send ( matchInfo )
-                            hosts[data].send ( matchInfo )
+                            print("  sending MatchInfo to both players", matchInfo)
 
-                            matches[matchId] = [ s, hosts[data] ]
+                            s.send(matchInfo)
+                            hosts[data].send(matchInfo)
 
-                            print 'matched', data
-                            print 'matches', matches.keys()
+                            matches[matchId] = [s, hosts[data]]
+
+                            print("  matched", data)
+                            print("  match list", list(matches.keys()))
                             continue
 
                 # otherwise disconnect the client
+                print("disconnect")
                 if s in addresses:
                     if addresses[s] in hosts:
                         del hosts[addresses[s]]
-                        print 'hosts', hosts.keys()
+                        print("hosts", list(hosts.keys()))
                     del addresses[s]
 
-                for matchId, pair in matches.items():
-                    if ( s == pair[0] ) or ( s == pair[1] ):
+                for matchId, pair in list(matches.items()):
+                    if (s == pair[0]) or (s == pair[1]):
                         del matches[matchId]
-                        print 'matches', matches.keys()
+                        print("matches", list(matches.keys()))
 
-                inputSockets.remove ( s )
+                inputSockets.remove(s)
                 s.close()
 
     except KeyboardInterrupt:
         close()
 
     except:
-        print '=' * 60
-        traceback.print_exc ( file=sys.stdout )
-        print '=' * 60
+        print("=" * 60)
+        traceback.print_exc(file=sys.stdout)
+        print("=" * 60)
 
         reset()
         continue
