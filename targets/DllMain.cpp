@@ -242,7 +242,7 @@ struct DllMain
 
                     if ( doneSkipping && remoteIndexedFrame.value > netMan.getIndexedFrame().value + 2 * NUM_INPUTS )
                     {
-                        uint32_t framesToSkip = remoteIndexedFrame - (netMan.getIndexedFrame().value + 2 * NUM_INPUTS) - 1;
+                        uint32_t framesToSkip = remoteIndexedFrame.value - (netMan.getIndexedFrame().value + 2 * NUM_INPUTS) - 1;
                         *CC_SKIP_FRAMES_ADDR = framesToSkip;
                         doneSkipping = false;
                     }
@@ -345,6 +345,7 @@ struct DllMain
                         } else {
                             spectateFastFwd = !spectateFastFwd;
                         }
+                    }
                 }
                 else
                 {
