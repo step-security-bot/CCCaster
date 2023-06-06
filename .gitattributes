@@ -1,24 +1,41 @@
-# Normalize line-endings
-* text eol=lf
+# Auto detect text files and perform LF normalization
+*        text=auto
 
-# Binary files
-*.exe binary
-*.zip binary
-*.a binary
-*.lib binary
-*.png binary
-*.ico binary
-*.so binary
-*.pdf binary
-contrib/astyle binary
+# Always perform LF normalization on these files
+*.dart   text
+*.gradle text
+*.html   text
+*.java   text
+*.json   text
+*.md     text
+*.py     text
+*.sh     text
+*.txt    text
+*.xml    text
+*.yaml   text
+*.CT     text
 
-# Text files
-*.txt text
-*.CT text
+# Make sure that these Windows files always have CRLF line endings in checkout
+*.bat             text eol=crlf
+*.ps1             text eol=crlf
+*.rc              text eol=crlf
+*.sln             text eol=crlf
+*.props           text eol=crlf
+*.vcxproj         text eol=crlf
+*.vcxproj.filters text eol=crlf
+# Including templatized versions.
+*.sln.tmpl        text eol=crlf
+*.props.tmpl      text eol=crlf
+*.vcxproj.tmpl    text eol=crlf
 
-# Readme files
-README.txt text eol=crlf
-ChangeLog.txt text eol=crlf
+# Never perform LF normalization on these files
+*.ico    binary
+*.jar    binary
+*.png    binary
+*.zip    binary
+*.pdf    binary
 
-# Special files
-Add_Handler_Protocol.bat text eol=crlf
+# Language statistics
+3rdparty/* linguist-vendored
+res/* linguist-vendored
+trials/* linguist-vendored
