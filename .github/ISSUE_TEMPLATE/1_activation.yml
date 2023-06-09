@@ -1,0 +1,67 @@
+name: I am having difficulty installing CCCaster or getting it to work
+description: You have run into problems while downloading or installing CCCaster, or the
+  "CCCaster" tool is crashing, or you are running into some other issue before even
+  being able to use "CCCaster".
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for using CCCaster!
+
+        If you are looking for support, please check out our documentation:
+
+          - https://github.com/lurkydismal/CCCaster/wiki
+
+        If you have found a bug or if our documentation doesn't have an answer
+        to what you're looking for, then fill out the template below.
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+      - label: I have searched the [existing issues](https://github.com/lurkydismal/CCCaster/issues)
+        required: true
+      - label: I have read the [guide to filing a bug](https://github.com/lurkydismal/CCCaster/wiki/bug-reports)
+        required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Please tell us exactly how to reproduce the problem you are running into.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual results
+      description: Please tell us what is actually happening
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Logs
+      description: |
+        Include the full logs of the commands you are running between the lines
+        with the backticks below. If you are running any `CCCastwe` commands,
+        please include the output of running them with `--verbose`; for example,
+        the output of running `CCCaster --verbose offline training`.
+
+        If the logs are too large to be uploaded to Github, you may upload
+        them as a `txt` file or use online tools like https://pastebin.com to
+        share it.
+
+        Note: Please do not upload screenshots of text. Instead, use code blocks
+        or the above mentioned ways to upload logs.
+      value: |
+        <details>
+        <summary>Logs</summary>
+
+        ```console
+
+        <!-- Paste your logs here -->
+
+        ```
+
+        </details>
