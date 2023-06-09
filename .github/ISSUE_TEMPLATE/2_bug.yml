@@ -1,0 +1,78 @@
+name: Report a bug
+description: |
+  You found a bug in CCCaster causing your application to crash or
+  throw an exception, a widget is buggy, or something looks wrong.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for using CCCaster!
+
+        If you are looking for support, please check out our documentation:
+
+          - https://github.com/lurkydismal/CCCaster/wiki
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      options:
+      - label: I have searched the [existing issues](https://github.com/lurkydismal/CCCaster/issues)
+        required: true
+      - label: I have read the [guide to filing a bug](https://github.com/lurkydismal/CCCaster/wiki/bug-reports)
+        required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Please tell us exactly how to reproduce the problem you are running into.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected results
+      description: Please tell us what is expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual results
+      description: Please tell us what is actually happening.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Screenshots or Video
+      description: |
+        Upload any screenshots or video of the bug if applicable.
+      value: |
+        <details>
+        <summary>Screenshots / Video demonstration</summary>
+
+        [Upload media here]
+
+        </details>
+  - type: textarea
+    attributes:
+      label: Logs
+      description: |
+        Include the full logs of the commands you are running between the lines
+        with the backticks below. If you are running any `CCCaster` commands,
+        please include the output of running them with `--verbose`; for example,
+        the output of running `CCCaster --verbose offline training`.
+
+        If the logs are too large to be uploaded to GitHub, you may upload
+        them as a `txt` file or use online tools like https://pastebin.com to
+        share it.
+
+        Note: Please do not upload screenshots of text. Instead, use code blocks
+        or the above mentioned ways to upload logs.
+      value: |
+        <details><summary>Logs</summary>
+
+        ```console
+        [Paste your logs here]
+        ```
+
+        </details>
