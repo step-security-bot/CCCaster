@@ -20,6 +20,9 @@ on:
   schedule:
     - cron: '33 12 * * 0'
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     name: Analyze
@@ -40,22 +43,27 @@ jobs:
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
     steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+      with:
+        egress-policy: audit
+
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
     - name: Set up MinGW
-      uses: egor-tensin/setup-mingw@v2
+      uses: egor-tensin/setup-mingw@84c781b557efd538dec66bde06988d81cd3138cf # v2.2.0
       with:
         platform: x86
     - name: Cache APT Packages
-      uses: awalsh128/cache-apt-pkgs-action@v1.3.0
+      uses: awalsh128/cache-apt-pkgs-action@1850ee53f6e706525805321a3f2f863dcf73c962 # v1.3.0
       with:
         packages: wine
         version: 1.0
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@83f0fe6c4988d98a455712a27f0255212bba9bd4 # v2.3.6
       with:
         languages: ${{ matrix.language }}
         # If you wish to specify custom queries, you can do so here or in a config file.
@@ -82,6 +90,6 @@ jobs:
           make
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@83f0fe6c4988d98a455712a27f0255212bba9bd4 # v2.3.6
       with:
         category: "/language:${{matrix.language}}"
