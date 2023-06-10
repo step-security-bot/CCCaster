@@ -13,9 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Mirror SOURCE_BRANCH_NAME branch to DESTINATION_BRANCH_NAME branch
     steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@128a63446a954579617e875aaab7d2978154e969 # v2.4.0
+      with:
+        egress-policy: audit
+
     - name: Mirror action step
       id: mirror
-      uses: google/mirror-branch-action@v1.0
+      uses: google/mirror-branch-action@c6b07e441a7ffc5ae15860c1d0a8107a3a151db8 # v1.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         source: 'main'
