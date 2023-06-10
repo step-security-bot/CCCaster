@@ -3,8 +3,13 @@ on:
     branches:
       - 'main'
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   mirror_job:
+    permissions:
+        pull-requests: write
     runs-on: ubuntu-latest
     name: Mirror SOURCE_BRANCH_NAME branch to DESTINATION_BRANCH_NAME branch
     steps:
