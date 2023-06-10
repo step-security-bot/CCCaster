@@ -1,3 +1,5 @@
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/lurkydismal/CCCaster/badge)](https://api.securityscorecards.dev/projects/github.com/lurkydismal/CCCaster)
+
 Netplay tool for Melty Blood Actress Again Current Code
 
     Public domain, no license, no warranty. Here be dragons.
