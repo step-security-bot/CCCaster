@@ -1,4 +1,5 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/lurkydismal/CCCaster/badge)](https://api.securityscorecards.dev/projects/github.com/lurkydismal/CCCaster)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/984a0814a2224d44a6609e4ba4b11ee2)](https://app.codacy.com/gh/lurkydismal/CCCaster/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 Netplay tool for Melty Blood Actress Again Current Code
 
